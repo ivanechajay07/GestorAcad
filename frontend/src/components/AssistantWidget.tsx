@@ -12,6 +12,7 @@ import {
 import { knowledgeService } from '../services/knowledgeService';
 import type { AssistantSourceDto } from '../services/knowledgeService';
 import { useAssistantStatus } from '../hooks/useAssistantStatus';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 type WidgetMessage = {
   role: 'user' | 'assistant';
@@ -53,6 +54,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({ suppressed = f
   const bodyRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
+  const isMobile = useMediaQuery('(max-width: 560px)');
 
   const closeWidget = () => {
     setOpen(false);
@@ -120,10 +122,15 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({ suppressed = f
 
   if (location.pathname === '/assistant') return null;
 
-  const panelStyle: React.CSSProperties = {
-    bottom: `calc(80px + ${keyboardInset}px)`,
-    maxHeight: `${Math.max(220, Math.min(620, viewportHeight - 130))}px`,
-  };
+  const panelStyle: React.CSSProperties = isMobile
+    ? {
+        bottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined,
+        maxHeight: keyboardInset > 0 ? `${Math.max(320, viewportHeight - 16)}px` : undefined,
+      }
+    : {
+        bottom: `calc(80px + ${keyboardInset}px)`,
+        maxHeight: `${Math.max(220, Math.min(620, viewportHeight - 130))}px`,
+      };
 
   const ask = async (question: string) => {
     const prompt = question.trim();
@@ -167,7 +174,13 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({ suppressed = f
   return (
     <div className={`assistant-widget-root${suppressed ? ' is-hidden' : ''}`}>
       {open && (
-        <section
+        <>
+          <div
+            className="assistant-widget__backdrop"
+            aria-hidden="true"
+            onClick={closeWidget}
+          />
+          <section
           id="assistant-widget-panel"
           className="assistant-widget"
           role="dialog"
@@ -298,6 +311,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({ suppressed = f
             </button>
           </form>
         </section>
+        </>
       )}
 
       <button

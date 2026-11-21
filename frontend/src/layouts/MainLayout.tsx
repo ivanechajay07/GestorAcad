@@ -52,7 +52,7 @@ export const MainLayout: React.FC = () => {
         <Header onToggleSidebar={handleToggleSidebar} />
         <main className="app-main" ref={mainRef}>
           <Suspense fallback={<PageSkeleton />}>
-            <div className="animate-fade-in" key={location.pathname}>
+            <div className={`animate-fade-in route-view`} key={location.pathname}>
               <Outlet />
             </div>
           </Suspense>
