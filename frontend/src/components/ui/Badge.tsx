@@ -32,7 +32,7 @@ export const Badge: React.FC<BadgeProps> = ({
         return { bg: 'transparent', text: 'var(--text-secondary)', dot: 'var(--text-secondary)', border: 'var(--border-light)' };
       case 'primary':
       default:
-        return { bg: 'var(--primary-glow)', text: 'var(--primary)', dot: 'var(--primary)', border: 'color-mix(in srgb, var(--primary) 32%, transparent)' };
+        return { bg: 'var(--primary-glow)', text: 'var(--primary-hover)', dot: 'var(--primary)', border: 'color-mix(in srgb, var(--primary) 32%, transparent)' };
     }
   };
 
@@ -48,8 +48,8 @@ export const Badge: React.FC<BadgeProps> = ({
         padding: size === 'sm' ? '2px 8px' : '4px 10px',
         fontSize: size === 'sm' ? '0.75rem' : '0.78rem',
         fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.04em',
+        textTransform: 'none',
+        letterSpacing: '0.01em',
         whiteSpace: 'nowrap',
         borderRadius: '9999px',
         backgroundColor: colors.bg,

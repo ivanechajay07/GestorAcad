@@ -3,6 +3,9 @@
 **Objetivo:** mantener una interfaz consistente, accesible y fácil de evolucionar.
 Este documento es la referencia para nuevas pantallas y componentes.
 
+**Dirección vigente:** *Consola académica sobria*. Superficies planas, un solo
+acento azul, una sola familia tipográfica y color reservado para estados.
+
 ---
 
 ## 1. Principios
@@ -23,18 +26,21 @@ Este documento es la referencia para nuevas pantallas y componentes.
 | :--- | :--- | :--- | :--- |
 | `--primary` | `#2563eb` | `#3b82f6` | Acción principal, enlaces |
 | `--accent-cyan` | `#0891b2` | `#22d3ee` | Acento, datos secundarios |
-| `--bg-app` | `#f3f5fb` | `#0b0f19` | Fondo de aplicación |
+| `--bg-app` | `#f6f7f9` | `#0b0f19` | Fondo de aplicación |
 | `--bg-surface` | `#ffffff` | `#111827` | Tarjetas y modales |
 | `--text-main` | `#0f172a` | `#f9fafb` | Texto principal |
 | `--text-secondary` | `#475569` | `#9ca3af` | Texto de apoyo |
-| `--text-muted` | `#5f6f85` | `#9ca3af` | Metadatos y ayudas |
-| `--status-up` / `--status-up-text` | `#10b981` / `#047857` | `#10b981` / `#34d399` | Éxito |
+| `--text-muted` | `#5f6f85` | `#9ca3af` | Metadatos y ayudas || `--status-up` / `--status-up-text` | `#10b981` / `#047857` | `#10b981` / `#34d399` | Éxito |
 | `--status-warn` / `--status-warn-text` | `#f59e0b` / `#b45309` | `#f59e0b` / `#fbbf24` | Advertencia |
 | `--status-down` / `--status-down-text` | `#ef4444` / `#b91c1c` | `#ef4444` / `#f87171` | Error o peligro |
 
 Regla: los colores vivos se usan para **puntos, iconos y rellenos**; las variantes `*-text` para **texto**.
 
 ### Tipografía
+
+Una sola familia para toda la interfaz: **Plus Jakarta Sans**. Los títulos se
+diferencian por tamaño y peso, no por otra tipografía. No usar tamaños
+arbitrarios como `0.72rem` o `0.78rem`: elegir el token más cercano.
 
 | Token | Tamaño | Uso |
 | :--- | :--- | :--- |

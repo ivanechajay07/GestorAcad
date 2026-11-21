@@ -10918,3 +10918,205 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
     min-width: 0;
   }
 }
+
+/* =========================================================================
+   Piloto "Consola academica sobria"
+   Superficies planas, un acento y jerarquia por tipografia y bordes.
+   ========================================================================= */
+:root,
+:root[data-theme='light'] {
+  --bg-app: #f6f7f9;
+  --bg-card: #ffffff;
+  --bg-card-border: #e5e7eb;
+  --bg-surface-elevated: #f3f4f6;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 8px 24px -20px rgba(15, 23, 42, 0.25);
+  --font-display: var(--font-main);
+}
+
+:root[data-theme='dark'] {
+  --bg-card: #111827;
+  --bg-card-border: #1f2937;
+  --bg-surface-elevated: #1f2937;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 24px -20px rgba(0, 0, 0, 0.6);
+}
+
+.glass-panel,
+.card-fill,
+.dash-kpi {
+  background: var(--bg-card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+.glass-panel-interactive::before {
+  display: none;
+}
+
+.glass-panel-interactive:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border-strong);
+}
+
+.page-header {
+  padding: 2px 0 0;
+  gap: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.page-header__stats {
+  padding-top: 12px;
+  margin-top: 2px;
+}
+
+.page-header__stat .l {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.toolbar {
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border-light);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.btn {
+  background-image: none;
+  box-shadow: none;
+}
+
+.btn[data-variant='primary'] {
+  background: var(--primary);
+  box-shadow: none;
+}
+
+.btn[data-variant='secondary'] {
+  background: var(--bg-surface);
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+
+.btn[data-variant='danger'] {
+  background: var(--status-down-text);
+  box-shadow: none;
+}
+
+.btn:hover:not(:disabled) {
+  transform: none;
+  filter: brightness(0.96);
+  box-shadow: none;
+}
+
+.btn:active:not(:disabled) {
+  transform: none;
+}
+
+.nav-item.active {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  box-shadow: none;
+}
+
+.nav-item.active .nav-icon {
+  color: var(--primary);
+}
+
+.nav-item.active::before {
+  top: 8px;
+  bottom: 8px;
+  transform: none;
+  width: 3px;
+  background: var(--primary);
+  border-radius: 0 3px 3px 0;
+}
+
+.dash-topbar {
+  padding: 4px 2px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--border-light);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.dash-topbar::before {
+  display: none;
+}
+
+.dash-console__pane,
+.dash-console__single {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.dash-console__grid {
+  gap: 24px;
+}
+
+.dash-console__pane + .dash-console__pane {
+  border-left: 1px solid var(--border-light);
+  padding-left: 24px;
+}
+
+.dash-kpi__icon {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+
+.dash-kpi__meter-fill {
+  background-color: var(--primary) !important;
+}
+
+.dash-console__kicker {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.data-table tbody td {
+  padding: 10px 12px;
+}
+
+@media (max-width: 760px) {
+  .dash-console__pane + .dash-console__pane {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--border-light);
+    padding-top: 24px;
+  }
+}
+
+/* Contraste de acentos y navegacion activa */
+:root,
+:root[data-theme='light'] {
+  --accent-cyan: #0e7490;
+  --accent-emerald: #047857;
+  --accent-amber: #b45309;
+  --accent-rose: #be123c;
+  --accent-violet: #6d28d9;
+}
+
+.nav-item.active {
+  color: var(--text-main);
+}
+
+.nav-item.active .nav-icon {
+  color: var(--primary);
+}
+
+:root,
+:root[data-theme='light'] {
+  --accent-cyan-text: #155e75;
+}

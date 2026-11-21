@@ -152,11 +152,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onFocus={(event) => showTooltip(event.currentTarget, item.label)}
                       onBlur={() => setTooltip(null)}
                       className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                      style={({ isActive }) => ({
+                      style={{
                         justifyContent: collapsed && !mobile ? 'center' : 'space-between',
                         padding: collapsed && !mobile ? '11px' : '10px 12px',
-                        color: isActive ? '#ffffff' : undefined,
-                      })}
+                      }}
                     >
                       {({ isActive }) => (
                         <>
