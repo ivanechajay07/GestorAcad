@@ -10,6 +10,7 @@ import { LineChart } from '../components/ui/LineChart';
 import { BarChart } from '../components/ui/BarChart';
 import { DonutChart } from '../components/ui/DonutChart';
 import { KpiCard } from '../components/dashboard/KpiCard';
+import { PageHeader } from '../components/ui/PageHeader';
 import {
   formatCategoryLabel,
   formatCount,
@@ -27,6 +28,7 @@ import {
   Calendar,
   GraduationCap,
   Layers,
+  LayoutDashboard,
   MapPin,
   RefreshCw,
   ShieldCheck,
@@ -346,59 +348,60 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="dash-stack" aria-busy={initialLoading}>
-      <section className="dash-topbar" aria-labelledby="dash-hero-title">
-        <div className="dash-topbar__main">
-          <div className="dash-eyebrow">
-            <span className="dash-eyebrow__dot" aria-hidden="true" />
+      <PageHeader
+        title={`${greeting}, ${firstName}`}
+        subtitle={subtitle}
+        icon={<LayoutDashboard size={25} />}
+        accent="var(--primary)"
+        eyebrow={
+          <>
+            <span className="hero-dot" aria-hidden="true" />
             Panel institucional
-            <span className="dash-eyebrow__sep" aria-hidden="true">·</span>
+            <span className="hero-sep" aria-hidden="true">·</span>
             <Calendar size={13} aria-hidden="true" />
             {formatPeriod(institution?.periodo)}
-          </div>
-          <h2 id="dash-hero-title" className="dash-topbar__title">
-            {greeting}, {firstName}
-          </h2>
-          <p className="dash-topbar__subtitle">{subtitle}</p>
-          <div className="dash-topbar__meta">
+          </>
+        }
+        badges={
+          <>
             <Badge variant="outline">{role ?? 'SIN ROL'}</Badge>
-            <span className="dash-topbar__updated">
+            <span className="page-header__updated">
               <RefreshCw size={12} aria-hidden="true" />
               {refreshLabel(lastUpdated, now)}
             </span>
-          </div>
-        </div>
-
-        <div className="dash-topbar__actions">
-          <Link to={primaryAction.to} className="link-clean">
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={primaryAction.icon}
-              rightIcon={<ArrowRight size={15} />}
-            >
-              {primaryAction.label}
-            </Button>
-          </Link>
-          {primaryAction.to !== '/assistant' && (
-            <Link to="/assistant" className="link-clean">
-              <Button variant="secondary" size="sm" leftIcon={<Sparkles size={15} />}>
-                Asistente
+          </>
+        }
+        actions={
+          <>
+            <Link to={primaryAction.to} className="link-clean">
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={primaryAction.icon}
+                rightIcon={<ArrowRight size={15} />}
+              >
+                {primaryAction.label}
               </Button>
             </Link>
-          )}
-          <button
-            type="button"
-            className="dash-refresh"
-            onClick={reload}
-            disabled={loading}
-            aria-label="Actualizar panel"
-            title="Actualizar panel"
-          >
-            <RefreshCw size={15} className={loading ? 'is-spinning' : undefined} aria-hidden="true" />
-            <span className="dash-refresh__label">{loading ? 'Actualizando' : 'Actualizar'}</span>
-          </button>
-        </div>
-      </section>
+            {primaryAction.to !== '/assistant' && (
+              <Link to="/assistant" className="link-clean">
+                <Button variant="secondary" size="sm" leftIcon={<Sparkles size={15} />}>
+                  Asistente
+                </Button>
+              </Link>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={reload}
+              isLoading={loading}
+              leftIcon={<RefreshCw size={15} aria-hidden="true" />}
+            >
+              Actualizar
+            </Button>
+          </>
+        }
+      />
 
       {error && summary && (
         <div className="dash-alert" role="alert">
