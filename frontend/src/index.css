@@ -11952,3 +11952,41 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
     animation: none !important;
   }
 }
+
+/* Fase 5: acabado y rendimiento */
+.chart-empty {
+  display: grid;
+  place-items: center;
+  min-height: 170px;
+  padding: 24px;
+  border: 1px dashed var(--border-light);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-surface-elevated) 55%, transparent);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .page-header__orb {
+    filter: blur(38px);
+    opacity: 0.28;
+    animation-duration: 22s;
+  }
+
+  .page-header__orb--b {
+    display: none;
+  }
+
+  .assistant-fab__content,
+  .assistant-fab::after {
+    animation: none;
+  }
+}
+
+@media (hover: none) {
+  .glass-panel-interactive:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
