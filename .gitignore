@@ -1,0 +1,31 @@
+# Secretos y configuración local (nunca versionar)
+.env
+.env.local
+.env.*.local
+
+# Backend
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Reportes y artefactos
+*.log
+*.jar
+coverage/
+target/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+backups/
+*.sql.gz
+
+# Entornos de desarrollo
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

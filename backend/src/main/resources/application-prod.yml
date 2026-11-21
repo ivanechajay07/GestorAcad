@@ -1,0 +1,38 @@
+# ==============================================================================
+# PERFIL DE PRODUCCIÓN - GESTOR ACADÉMICO VIRTUAL
+# Activar con: SPRING_PROFILES_ACTIVE=prod
+# ==============================================================================
+
+spring:
+  jpa:
+    hibernate:
+      # En producción el esquema se gestiona con migraciones; Hibernate solo valida.
+      ddl-auto: validate
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoint:
+    health:
+      # Nunca exponer detalles de base de datos, disco o SSL sin autenticación.
+      show-details: never
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# La documentación interactiva de la API se deshabilita en producción.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+application:
+  security:
+    cors:
+      # Sin patrones comodín: solo los orígenes exactos de CORS_ALLOWED_ORIGINS.
+      allowed-origin-patterns: ""
