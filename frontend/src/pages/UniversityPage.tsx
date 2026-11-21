@@ -92,7 +92,6 @@ export const UniversityPage: React.FC = () => {
   const { confirm } = useConfirm();
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<TabKey>('general');
-  const [institutionStep, setInstitutionStep] = useState(0);
 
   const [university, setUniversity] = useState<UniversityDto | null>(null);
   const [campuses, setCampuses] = useState<CampusDto[]>([]);
@@ -557,31 +556,8 @@ export const UniversityPage: React.FC = () => {
                   </Badge>
                 }
               >
-                <div className="institution-stepper" role="tablist" aria-label="Pasos del formulario institucional">
-                  {[
-                    { title: 'Identidad', description: 'Nombre, sigla, tipo y lema' },
-                    { title: 'Licenciamiento', description: 'RUC, resolución y vigencia' },
-                    { title: 'Contacto', description: 'Dirección y canales oficiales' },
-                  ].map((step, index) => (
-                    <button
-                      key={step.title}
-                      type="button"
-                      role="tab"
-                      aria-selected={institutionStep === index}
-                      className={`institution-step${institutionStep === index ? ' is-active' : ''}`}
-                      onClick={() => setInstitutionStep(index)}
-                    >
-                      <span className="institution-step__number">{index + 1}</span>
-                      <span className="institution-step__copy">
-                        <strong>{step.title}</strong>
-                        <small>{step.description}</small>
-                      </span>
-                    </button>
-                  ))}
-                </div>
 
                 <div className="institution-form">
-                  {institutionStep === 0 && (
                   <section className="institution-form__section" aria-labelledby="university-identity">
                     <h4 id="university-identity" className="institution-section__title">
                       <Building2 size={14} aria-hidden="true" /> Identidad institucional
@@ -605,9 +581,7 @@ export const UniversityPage: React.FC = () => {
                       </Field>
                     </div>
                   </section>
-                  )}
 
-                  {institutionStep === 1 && (
                   <section className="institution-form__section" aria-labelledby="university-licensing">
                     <h4 id="university-licensing" className="institution-section__title">
                       <ShieldCheck size={14} aria-hidden="true" /> Licenciamiento y acreditación
@@ -630,9 +604,7 @@ export const UniversityPage: React.FC = () => {
                       </Field>
                     </div>
                   </section>
-                  )}
 
-                  {institutionStep === 2 && (
                   <section className="institution-form__section" aria-labelledby="university-contact">
                     <h4 id="university-contact" className="institution-section__title">
                       <MapPin size={14} aria-hidden="true" /> Contacto y ubicación
@@ -652,7 +624,6 @@ export const UniversityPage: React.FC = () => {
                       </Field>
                     </div>
                   </section>
-                  )}
                 </div>
 
                 <div className="institution-form__footer">
@@ -667,18 +638,9 @@ export const UniversityPage: React.FC = () => {
                     )}
                   </span>
                   <div className="institution-form__actions">
-                    {institutionStep > 0 && (
-                      <Button type="button" variant="secondary" onClick={() => setInstitutionStep((step) => step - 1)}>
-                        Anterior
-                      </Button>
-                    )}
-                    {institutionStep < 2 ? (
-                      <Button type="button" onClick={() => setInstitutionStep((step) => step + 1)}>
-                        Siguiente
-                      </Button>
-                    ) : canEditUniversity ? (
+                    {canEditUniversity ? (
                       <Button type="submit" leftIcon={<Save size={16} />} isLoading={isSubmitting}>
-                        Guardar Información
+                        Guardar información
                       </Button>
                     ) : null}
                   </div>

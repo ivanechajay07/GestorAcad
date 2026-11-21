@@ -9,7 +9,6 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Pagination } from '../components/ui/Pagination';
-import { RoleCard } from '../components/roles/RoleCard';
 import { RoleDetailPanel } from '../components/roles/RoleDetailPanel';
 import { PermissionPicker } from '../components/roles/PermissionPicker';
 import { useToast } from '../contexts/ToastContext';
@@ -27,6 +26,8 @@ import {
   Trash2,
   Users,
   X,
+  Eye,
+  Copy,
 } from 'lucide-react';
 import {
   buildRoleCode,
@@ -37,6 +38,7 @@ import {
   isProtectedRole,
   normalizeText,
   pluralize,
+  roleInitials,
 } from '../utils/roleFormatters';
 import { getApiErrorMessage, getApiFieldErrors } from '../utils/apiErrors';
 
@@ -542,20 +544,92 @@ export const RolesPage: React.FC = () => {
               }
             />
           ) : (
-            <div className="stagger roles-grid">
-              {filteredRoles.map((role) => (
-                <RoleCard
-                  key={role.id}
-                  role={role}
-                  canEdit={canEdit}
-                  canDelete={canDelete}
-                  onView={setDetailRole}
-                  onEdit={openEdit}
-                  onDuplicate={openDuplicate}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
+            <Card>
+              <p className="table-scroll-hint">Desliza para ver más columnas →</p>
+              <div className="data-table-wrap">
+                <table className="data-table data-table--stack">
+                  <thead>
+                    <tr>
+                      <th>Rol</th>
+                      <th>Descripción</th>
+                      <th>Usuarios</th>
+                      <th>Permisos</th>
+                      <th style={{ textAlign: 'center' }}>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRoles.map((role) => {
+                      const protectedRole = isProtectedRole(role.name);
+                      const assigned = (role.usuarios ?? 0) > 0;
+                      const deleteBlocked = protectedRole || assigned;
+                      return (
+                        <tr key={role.id}>
+                          <td className="cell-strong">
+                            <div className="table-person">
+                              <span className="table-avatar" aria-hidden="true">{roleInitials(role.name)}</span>
+                              <div className="table-person__copy">
+                                <span>{formatRoleName(role.name)}</span>
+                                <small className="cell-mono">{role.name}</small>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="roles-table__desc">{role.description || '—'}</td>
+                          <td><Badge variant="outline" size="sm">{role.usuarios ?? 0}</Badge></td>
+                          <td><Badge variant="role" size="sm">{role.permissions?.length ?? 0}</Badge></td>
+                          <td>
+                            <div className="action-group">
+                              <button
+                                type="button"
+                                className="action-btn info"
+                                title="Ver detalle"
+                                aria-label={`Ver detalle de ${formatRoleName(role.name)}`}
+                                onClick={() => setDetailRole(role)}
+                              >
+                                <Eye size={15} />
+                              </button>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  className="action-btn primary"
+                                  title="Editar"
+                                  aria-label={`Editar ${formatRoleName(role.name)}`}
+                                  onClick={() => openEdit(role)}
+                                >
+                                  <Pencil size={15} />
+                                </button>
+                              )}
+                              {canCreate && (
+                                <button
+                                  type="button"
+                                  className="action-btn"
+                                  title="Duplicar"
+                                  aria-label={`Duplicar ${formatRoleName(role.name)}`}
+                                  onClick={() => openDuplicate(role)}
+                                >
+                                  <Copy size={15} />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  type="button"
+                                  className="action-btn danger"
+                                  title={deleteBlocked ? 'No se puede eliminar: rol base o con usuarios asignados' : 'Eliminar'}
+                                  aria-label={`Eliminar ${formatRoleName(role.name)}`}
+                                  onClick={() => handleDelete(role)}
+                                  disabled={deleteBlocked}
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
         </section>
       ) : (

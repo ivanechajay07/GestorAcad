@@ -11825,3 +11825,14 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 .table-avatar {
   color: var(--primary-hover);
 }
+
+.roles-table__desc {
+  max-width: 360px;
+  color: var(--text-secondary);
+}
+
+.action-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  transform: none;
+}
