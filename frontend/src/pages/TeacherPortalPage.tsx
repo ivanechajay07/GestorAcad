@@ -101,7 +101,7 @@ export const TeacherPortalPage: React.FC = () => {
           </table>
         </div>
 
-        <p style={{ margin: '14px 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+        <p style={{ margin: '14px 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
           <GraduationCap size={14} style={{ verticalAlign: '-2px', marginRight: '4px' }} />
           Usa <strong>Gestionar</strong> para registrar notas, asistencia y cerrar el acta de cada sección.
         </p>

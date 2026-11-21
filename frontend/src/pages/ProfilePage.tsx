@@ -162,20 +162,20 @@ export const ProfilePage: React.FC = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '14px' }}>
           <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>USUARIO</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', marginTop: '4px' }}>{user?.username}</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 700 }}>USUARIO</div>
+            <div style={{ fontSize: 'var(--text-base)', color: 'var(--text-main)', marginTop: '4px' }}>{user?.username}</div>
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>NOMBRE COMPLETO</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', marginTop: '4px' }}>{user?.fullName}</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 700 }}>NOMBRE COMPLETO</div>
+            <div style={{ fontSize: 'var(--text-base)', color: 'var(--text-main)', marginTop: '4px' }}>{user?.fullName}</div>
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>CORREO</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', marginTop: '4px' }}>{user?.email}</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 700 }}>CORREO</div>
+            <div style={{ fontSize: 'var(--text-base)', color: 'var(--text-main)', marginTop: '4px' }}>{user?.email}</div>
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>DEPARTAMENTO</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', marginTop: '4px' }}>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 700 }}>DEPARTAMENTO</div>
+            <div style={{ fontSize: 'var(--text-base)', color: 'var(--text-main)', marginTop: '4px' }}>
               {user?.department || '—'}
             </div>
           </div>
@@ -197,7 +197,7 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         <div style={{ marginTop: '18px' }}>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '6px' }}>
             ROLES ASIGNADOS
           </div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -206,7 +206,7 @@ export const ProfilePage: React.FC = () => {
                 <Badge key={r} variant="primary" size="sm">{r}</Badge>
               ))
             ) : (
-              <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Sin roles</span>
+              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Sin roles</span>
             )}
           </div>
         </div>
@@ -234,7 +234,7 @@ export const ProfilePage: React.FC = () => {
               backgroundColor: 'rgba(16, 185, 129, 0.1)',
               border: '1px solid rgba(16, 185, 129, 0.35)',
               color: '#6ee7b7',
-              fontSize: '0.8125rem',
+              fontSize: 'var(--text-sm)',
             }}
           >
             <CheckCircle2 size={16} />
@@ -255,7 +255,7 @@ export const ProfilePage: React.FC = () => {
               backgroundColor: 'rgba(244, 63, 94, 0.1)',
               border: '1px solid rgba(244, 63, 94, 0.35)',
               color: '#fda4af',
-              fontSize: '0.8125rem',
+              fontSize: 'var(--text-sm)',
             }}
           >
             <AlertTriangle size={16} />
@@ -265,7 +265,7 @@ export const ProfilePage: React.FC = () => {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label htmlFor="profile-current-password" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+            <label htmlFor="profile-current-password" style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
               CONTRASEÑA ACTUAL
             </label>
             <input
@@ -282,7 +282,7 @@ export const ProfilePage: React.FC = () => {
                 borderRadius: 'var(--radius-md)',
                 padding: '9px 12px',
                 color: 'var(--text-main)',
-                fontSize: '0.875rem',
+                fontSize: 'var(--text-base)',
                 fontFamily: 'inherit',
                 boxSizing: 'border-box',
               }}
@@ -290,7 +290,7 @@ export const ProfilePage: React.FC = () => {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '14px' }}>
             <div>
-              <label htmlFor="profile-new-password" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+              <label htmlFor="profile-new-password" style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
                 NUEVA CONTRASEÑA
               </label>
               <input
@@ -309,14 +309,14 @@ export const ProfilePage: React.FC = () => {
                   borderRadius: 'var(--radius-md)',
                   padding: '9px 12px',
                   color: 'var(--text-main)',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--text-base)',
                   fontFamily: 'inherit',
                   boxSizing: 'border-box',
                 }}
               />
             </div>
             <div>
-              <label htmlFor="profile-confirm-password" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+              <label htmlFor="profile-confirm-password" style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
                 CONFIRMAR NUEVA CONTRASEÑA
               </label>
               <input
@@ -335,7 +335,7 @@ export const ProfilePage: React.FC = () => {
                   borderRadius: 'var(--radius-md)',
                   padding: '9px 12px',
                   color: 'var(--text-main)',
-                  fontSize: '0.875rem',
+                  fontSize: 'var(--text-base)',
                   fontFamily: 'inherit',
                   boxSizing: 'border-box',
                 }}
@@ -358,7 +358,7 @@ export const ProfilePage: React.FC = () => {
             <Button type="submit" variant="primary" isLoading={isSubmitting}>
               Actualizar Contraseña
             </Button>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
               <ShieldCheck size={14} color="var(--status-up)" />
               Cifrada con BCrypt
             </span>

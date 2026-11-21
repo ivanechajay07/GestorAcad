@@ -51,7 +51,7 @@ export const Card: React.FC<CardProps> = ({
               </h3>
             )}
             {subtitle && (
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
                 {subtitle}
               </p>
             )}

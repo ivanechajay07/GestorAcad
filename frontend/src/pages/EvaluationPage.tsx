@@ -349,7 +349,7 @@ export const EvaluationPage: React.FC = () => {
           </select>
         </div>
         {selectedSection && (
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', paddingBottom: '8px' }}>
+          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', paddingBottom: '8px' }}>
             <BookOpen size={14} style={{ verticalAlign: '-2px', marginRight: '5px' }} />
             {selectedSection.courseName} · Docente: {selectedSection.teacherName ?? 'sin asignar'} · Cupo: {selectedSection.enrolledCount}/{selectedSection.capacity}
           </div>
@@ -538,7 +538,7 @@ export const EvaluationPage: React.FC = () => {
                   <Button size="sm" variant="danger" onClick={handleCloseActa} isLoading={saving}>Cerrar acta</Button>
                 )}
               </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 0 }}>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 0 }}>
                 Peso acumulado: <strong>{totalWeight}%</strong>. Para cerrar el acta debe ser exactamente 100%.
                 {actClosed && acta?.closedAt && <> Cerrada el {new Date(acta.closedAt).toLocaleString('es-PE')}.</>}
               </p>

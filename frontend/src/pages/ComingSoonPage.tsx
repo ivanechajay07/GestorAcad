@@ -70,7 +70,7 @@ export const ComingSoonPage: React.FC<ComingSoonPageProps> = ({
         }
         subtitle="Este módulo se habilitará en su fase correspondiente"
       >
-        <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 10, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+        <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 10, color: 'var(--text-secondary)', fontSize: 'var(--text-base)' }}>
           {capabilities.map((item) => (
             <li key={item}>{item}</li>
           ))}

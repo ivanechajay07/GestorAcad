@@ -22,7 +22,7 @@ export const NotFoundPage: React.FC = () => {
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px 0' }}>
           404 - Página No Encontrada
         </h2>
-        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+        <p style={{ fontSize: 'var(--text-base)', color: 'var(--text-secondary)', marginBottom: '24px' }}>
           El recurso o ruta solicitada no existe o pertenece a un módulo no habilitado en la Fase actual.
         </p>
         <Link to="/dashboard" style={{ textDecoration: 'none' }}>

@@ -134,7 +134,7 @@ export const StudentPortalPage: React.FC = () => {
             <History size={19} color="var(--primary)" />
             <div>
               <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Historial académico</h2>
-              <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
                 Matrículas de todos los periodos, incluidas las retiradas.
               </p>
             </div>
@@ -230,7 +230,7 @@ export const StudentPortalPage: React.FC = () => {
                 <UserCheck size={20} color="var(--primary)" />
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>{selected.courseName}</h3>
-                  <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{selected.periodCode} · Sección {selected.sectionCode}</p>
+                  <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{selected.periodCode} · Sección {selected.sectionCode}</p>
                 </div>
               </div>
               <button type="button" onClick={() => setSelected(null)} aria-label="Cerrar" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>

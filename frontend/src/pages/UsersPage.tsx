@@ -341,21 +341,21 @@ export const UsersPage: React.FC = () => {
                         )}
                         <div style={{ minWidth: 0 }}>
                           <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{u.fullName}</h4>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>@{u.username}</span>
+                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>@{u.username}</span>
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                         <Badge variant={u.active ? 'success' : 'danger'} dot size="sm">
                           {u.active ? 'Activo' : 'Inactivo'}
                         </Badge>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', fontWeight: 700, color: presenceOf(u).color }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', fontWeight: 700, color: presenceOf(u).color }}>
                           <span style={{ width: 7, height: 7, borderRadius: '50%', background: presenceOf(u).color }} />
                           {presenceOf(u).label}
                         </span>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Mail size={14} /> {u.email}
                       </div>
@@ -410,7 +410,7 @@ export const UsersPage: React.FC = () => {
                         <tr key={u.id}>
                           <td className="cell-strong">
                             <div>{u.fullName}</div>
-                            <div className="cell-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+                            <div className="cell-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400 }}>
                               @{u.username}
                             </div>
                           </td>
@@ -479,12 +479,12 @@ export const UsersPage: React.FC = () => {
           onClose={() => setShowModal(false)}
         >
             {formError && (
-              <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-down-bg)', color: 'var(--status-down)', fontSize: '0.8rem', marginBottom: '14px' }}>
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-down-bg)', color: 'var(--status-down)', fontSize: 'var(--text-sm)', marginBottom: '14px' }}>
                 {formError}
               </div>
             )}
             {formSuccess && (
-              <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-up-bg)', color: 'var(--status-up)', fontSize: '0.8rem', marginBottom: '14px' }}>
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-up-bg)', color: 'var(--status-up)', fontSize: 'var(--text-sm)', marginBottom: '14px' }}>
                 {formSuccess}
               </div>
             )}
@@ -573,7 +573,7 @@ export const UsersPage: React.FC = () => {
           onClose={() => setEditOpen(false)}
         >
             {editError && (
-              <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-down-bg)', color: 'var(--status-down)', fontSize: '0.8rem', marginBottom: '14px' }}>{editError}</div>
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-down-bg)', color: 'var(--status-down)', fontSize: 'var(--text-sm)', marginBottom: '14px' }}>{editError}</div>
             )}
 
             <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

@@ -63,7 +63,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         borderTop: '1px solid var(--border-light)',
       }}
     >
-      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+      <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
         Mostrando <strong style={{ color: 'var(--text-secondary)' }}>{from}–{to}</strong> de{' '}
         <strong style={{ color: 'var(--text-secondary)' }}>{total}</strong> {itemLabel}
       </span>
@@ -98,7 +98,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                 background: p === page ? 'var(--primary)' : 'var(--bg-surface-elevated)',
                 color: p === page ? 'var(--primary-contrast)' : 'var(--text-main)',
                 cursor: 'pointer',
-                fontSize: '0.78rem',
+                fontSize: 'var(--text-sm)',
                 fontWeight: 600,
               }}
             >

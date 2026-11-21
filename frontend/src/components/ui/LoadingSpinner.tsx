@@ -31,7 +31,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = 28, messa
       >
         <path d="M21 12a9 9 0 1 1-6.219-8.56" />
       </svg>
-      {message && <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{message}</span>}
+      {message && <span style={{ fontSize: 'var(--text-base)', fontWeight: 500 }}>{message}</span>}
     </div>
   );
 };

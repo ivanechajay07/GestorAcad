@@ -691,7 +691,7 @@ export const UniversityPage: React.FC = () => {
           {activeTab === 'campuses' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--text-base)' }}>
                   Sedes, campus y filiales de la institución ({campuses.length}).
                 </p>
                 {canManageCampus && (
@@ -748,7 +748,7 @@ export const UniversityPage: React.FC = () => {
                   </Card>
                 ))}
                 {campuses.length === 0 && (
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem' }}>No hay sedes registradas.</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-base)' }}>No hay sedes registradas.</p>
                 )}
               </div>
             </div>
@@ -758,7 +758,7 @@ export const UniversityPage: React.FC = () => {
           {activeTab === 'faculties' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--text-base)' }}>
                   Catálogo de facultades ({faculties.length}). Cada facultad agrupa carreras y es la
                   adscripción de estudiantes y docentes.
                 </p>
@@ -817,7 +817,7 @@ export const UniversityPage: React.FC = () => {
                   </Card>
                 ))}
                 {faculties.length === 0 && (
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-base)' }}>
                     No hay facultades registradas. Crea la primera para poder asociar carreras.
                   </p>
                 )}
@@ -860,7 +860,7 @@ export const UniversityPage: React.FC = () => {
                   ))}
                 </select>
                 {faculties.length === 0 && (
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
                     Registra una facultad antes de crear carreras.
                   </span>
                 )}
@@ -883,7 +883,7 @@ export const UniversityPage: React.FC = () => {
                         <td className="cell-strong">
                           {c.name}
                           {c.description && (
-                            <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem', fontWeight: 400 }}>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', fontWeight: 400 }}>
                               {c.description}
                             </div>
                           )}
@@ -932,7 +932,7 @@ export const UniversityPage: React.FC = () => {
           {activeTab === 'authorities' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--text-base)' }}>
                   Autoridades rectorales y de gobierno universitario ({authorities.length}).
                 </p>
                 {canManageAuthority && (
@@ -984,7 +984,7 @@ export const UniversityPage: React.FC = () => {
                   </Card>
                 ))}
                 {authorities.length === 0 && (
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem' }}>No hay autoridades registradas.</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-base)' }}>No hay autoridades registradas.</p>
                 )}
               </div>
             </div>

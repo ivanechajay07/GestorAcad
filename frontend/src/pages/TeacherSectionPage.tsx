@@ -181,7 +181,7 @@ export const TeacherSectionPage: React.FC = () => {
             )}
           </div>
           {evaluations.length === 0 && (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>El administrador aún no registró evaluaciones para esta sección.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-base)' }}>El administrador aún no registró evaluaciones para esta sección.</p>
           )}
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
@@ -271,7 +271,7 @@ export const TeacherSectionPage: React.FC = () => {
             </table>
           </div>
           {closed && acta?.closedAt && (
-            <p style={{ margin: '12px 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            <p style={{ margin: '12px 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
               Cerrada el {new Date(acta.closedAt).toLocaleString('es-PE')}.
             </p>
           )}

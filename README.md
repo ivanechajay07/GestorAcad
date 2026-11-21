@@ -152,6 +152,8 @@ Consulte la carpeta `/docs` para ver el detalle de arquitectura, directrices fun
   pide confirmación; usar `-Force` para automatización.
 - **CI:** `.github/workflows/ci.yml` ejecuta `mvn verify` en backend y
   `npm ci`, lint, pruebas y build en frontend para cada push o pull request.
+- **Sistema de diseño:** ver `docs/26_sistema_diseno.md` (tokens, componentes,
+  responsive y checklist de accesibilidad).
 
 ---
 

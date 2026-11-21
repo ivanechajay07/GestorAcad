@@ -37,7 +37,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description
         {icon ?? <Inbox size={24} />}
       </span>
       <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{title}</div>
-      {description && <div style={{ fontSize: '0.82rem', maxWidth: '380px', lineHeight: 1.5 }}>{description}</div>}
+      {description && <div style={{ fontSize: 'var(--text-base)', maxWidth: '380px', lineHeight: 1.5 }}>{description}</div>}
       {action}
     </div>
   );

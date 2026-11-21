@@ -269,7 +269,7 @@ export const DashboardPage: React.FC = () => {
     kpis.push(
       <KpiCard
         key="auditoria"
-        label="Eventos (7 días)"
+        label="Eventos 7d"
         value={formatCount(auditWeekTotal)}
         hint={`Total histórico: ${formatCount(audit.eventosTotales)}`}
         icon={<Activity size={18} />}
@@ -286,7 +286,7 @@ export const DashboardPage: React.FC = () => {
         key="facultades"
         label="Facultades"
         value={formatCount(summary.facultades)}
-        hint="Con matrícula activa registrada"
+        hint="Con matrícula activa"
         icon={<Building2 size={18} />}
         accent="var(--accent-amber)"
         loading={loading}

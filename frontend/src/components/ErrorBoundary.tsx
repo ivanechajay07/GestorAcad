@@ -50,14 +50,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <h1 style={{ fontSize: '1.375rem', fontWeight: 700, marginBottom: '10px' }}>
             Ocurrió un error inesperado
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '8px' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-base)', marginBottom: '8px' }}>
             La aplicación encontró un problema al renderizar esta vista. Puede volver al panel principal e intentarlo de nuevo.
           </p>
           {this.state.message && (
             <p
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: '0.75rem',
+                fontSize: 'var(--text-xs)',
                 color: 'var(--text-muted)',
                 background: 'var(--bg-app)',
                 borderRadius: 'var(--radius-sm)',

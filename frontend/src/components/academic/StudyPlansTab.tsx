@@ -361,7 +361,7 @@ export const StudyPlansTab: React.FC = () => {
                   <AcademicField label="Ciclo">
                     <input style={academicInputStyle} type="number" min={1} max={20} value={cycleToAdd} onChange={(e) => setCycleToAdd(Number(e.target.value))} />
                   </AcademicField>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', paddingBottom: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-sm)', paddingBottom: '8px' }}>
                     <input type="checkbox" checked={mandatoryToAdd} onChange={(e) => setMandatoryToAdd(e.target.checked)} />
                     Obligatorio
                   </label>

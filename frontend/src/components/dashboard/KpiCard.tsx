@@ -79,7 +79,6 @@ export const KpiCard: React.FC<KpiCardProps> = ({
               }}
             />
           </div>
-          <span className="dash-kpi__meter-label">{meter.label}</span>
         </div>
       )}
     </Card>

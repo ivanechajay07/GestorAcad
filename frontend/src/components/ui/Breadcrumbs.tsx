@@ -23,7 +23,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items, light = false }
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        fontSize: '0.75rem',
+        fontSize: 'var(--text-xs)',
         color: baseColor,
         flexWrap: 'wrap',
       }}

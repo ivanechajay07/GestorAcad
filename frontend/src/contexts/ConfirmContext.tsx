@@ -79,7 +79,7 @@ export const ConfirmProvider: React.FC<{ children: React.ReactNode }> = ({ child
             <h3 id="confirm-dialog-title" style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '8px' }}>
               {state.title ?? 'Confirmar acción'}
             </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-base)', marginBottom: '24px' }}>
               {state.message}
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>

@@ -245,7 +245,7 @@ export const EnrollmentsTab: React.FC = () => {
           maxWidth="680px"
           onClose={() => setModalOpen(false)}
         >
-          {formError && <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-down-bg)', color: 'var(--status-down)', fontSize: '0.8rem', marginBottom: '12px' }}>{formError}</div>}
+          {formError && <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-down-bg)', color: 'var(--status-down)', fontSize: 'var(--text-sm)', marginBottom: '12px' }}>{formError}</div>}
           <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
               <AcademicField label="Periodo">
@@ -299,7 +299,7 @@ export const EnrollmentsTab: React.FC = () => {
             </div>
 
             {selectedSection && (
-              <div style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface-elevated)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+              <div style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface-elevated)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                 <strong>{selectedSection.courseName}</strong> · {selectedSection.credits} créditos ·
                 {' '}{selectedSection.periodCode} · Docente: {selectedSection.teacherName ?? 'sin asignar'} ·
                 {' '}Cupo disponible: {selectedSection.available}/{selectedSection.capacity}
