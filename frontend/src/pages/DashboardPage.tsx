@@ -70,12 +70,12 @@ const SectionHead: React.FC<{
 );
 
 const DONUT_COLORS = [
-  'var(--primary)',
-  'var(--accent-cyan)',
-  'var(--accent-violet)',
-  'var(--accent-amber)',
-  'var(--accent-emerald)',
-  'var(--accent-rose)',
+  '#1d4ed8',
+  '#3b82f6',
+  '#0e7490',
+  '#60a5fa',
+  '#64748b',
+  '#94a3b8',
 ];
 
 /**
@@ -315,7 +315,7 @@ export const DashboardPage: React.FC = () => {
   const hasStudentsDistribution = availableBreakdownModes.length > 0;
   const hasTeacherDistribution = teacherViews.length > 0;
   const teacherTotal = teacherItems.reduce((total, item) => total + item.value, 0);
-  const teacherColor = effectiveTeacherView === 'categoria' ? 'var(--accent-violet)' : 'var(--accent-amber)';
+  const teacherColor = 'var(--primary)';
 
   const analyticsTabs: Array<{ key: AnalyticsTab; label: string; icon: React.ReactNode }> = [
     { key: 'poblacion', label: 'Población estudiantil', icon: <Users size={15} aria-hidden="true" /> },

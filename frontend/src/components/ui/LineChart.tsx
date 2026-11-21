@@ -179,6 +179,7 @@ export const LineChart: React.FC<LineChartProps> = ({
             <path className="line-chart__area" d={areaFor(s.values)} fill={`url(#lg-${uid}-${i})`} />
             <path
               className="line-chart__line"
+              style={{ animationDelay: `${i * 120}ms` }}
               d={pathFor(s.values)}
               pathLength={1}
               fill="none"

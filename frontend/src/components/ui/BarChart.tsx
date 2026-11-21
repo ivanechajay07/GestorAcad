@@ -40,7 +40,7 @@ export const BarChart: React.FC<BarChartProps> = ({
 
   return (
     <div className={`bar-chart ${className}`.trim()} role="list" aria-label={ariaLabel}>
-      {items.map((item) => {
+      {items.map((item, index) => {
         const percentage = Math.round((item.value / max) * 100);
         const shareValue = showPercentage && total != null && total > 0
           ? (item.value / total) * 100
@@ -63,7 +63,11 @@ export const BarChart: React.FC<BarChartProps> = ({
             <span className="bar-chart__track" aria-hidden="true">
               <span
                 className="bar-chart__fill"
-                style={{ width: `${percentage}%`, backgroundColor: color }}
+                style={{
+                  width: `${percentage}%`,
+                  backgroundColor: color,
+                  animationDelay: `${index * 60}ms`,
+                }}
               />
             </span>
             <span className="bar-chart__value">

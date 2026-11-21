@@ -1410,14 +1410,16 @@ export const StudentsPage: React.FC = () => {
 
                       <tr key={s.id}>
 
-                        <td className="cell-strong cell-mono" style={{ color: 'var(--accent-cyan)' }}>{s.code}</td>
+                        <td className="cell-strong cell-mono table-code">{s.code}</td>
 
                         <td className="cell-strong">
-
-                          <div>{s.firstName} {s.lastName}</div>
-
-                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400 }}>DNI: {s.documentId || '—'}</div>
-
+                          <div className="table-person">
+                            <span className="table-avatar" aria-hidden="true">{(s.firstName?.[0] ?? '') + (s.lastName?.[0] ?? '')}</span>
+                            <div className="table-person__copy">
+                              <span>{s.firstName} {s.lastName}</span>
+                              <small>DNI: {s.documentId || '—'}</small>
+                            </div>
+                          </div>
                         </td>
 
                         <td>{s.career || '—'}</td>
@@ -1580,7 +1582,7 @@ export const StudentsPage: React.FC = () => {
 
                   type="button"
 
-                  className={`institution-step${studentStep === index ? ' is-active' : ''}`}
+                  className={`institution-step${studentStep === index ? ' is-active' : ''}${index < studentStep ? ' is-complete' : ''}`}
 
                   aria-current={studentStep === index ? 'step' : undefined}
 
@@ -1608,6 +1610,7 @@ export const StudentsPage: React.FC = () => {
 
             <div
 
+              key={studentStep}
               ref={studentStepRef}
 
               className="modal-step-panel"

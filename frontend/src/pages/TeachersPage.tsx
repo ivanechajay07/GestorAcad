@@ -1408,14 +1408,16 @@ export const TeachersPage: React.FC = () => {
 
                       <tr key={t.id}>
 
-                        <td className="cell-strong cell-mono" style={{ color: 'var(--accent-cyan)' }}>{t.code}</td>
+                        <td className="cell-strong cell-mono table-code">{t.code}</td>
 
                         <td className="cell-strong">
-
-                          <div>{t.firstName} {t.lastName}</div>
-
-                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400 }}>{t.academicDegree || '—'}</div>
-
+                          <div className="table-person">
+                            <span className="table-avatar" aria-hidden="true">{(t.firstName?.[0] ?? '') + (t.lastName?.[0] ?? '')}</span>
+                            <div className="table-person__copy">
+                              <span>{t.firstName} {t.lastName}</span>
+                              <small>{t.academicDegree || '—'}</small>
+                            </div>
+                          </div>
                         </td>
 
                         <td><Badge variant="outline" size="sm">{CATEGORY_LABEL(t.category)}</Badge></td>
@@ -1566,7 +1568,7 @@ export const TeachersPage: React.FC = () => {
 
                   type="button"
 
-                  className={`institution-step${teacherStep === index ? ' is-active' : ''}`}
+                  className={`institution-step${teacherStep === index ? ' is-active' : ''}${index < teacherStep ? ' is-complete' : ''}`}
 
                   aria-current={teacherStep === index ? 'step' : undefined}
 
@@ -1594,6 +1596,7 @@ export const TeachersPage: React.FC = () => {
 
             <div
 
+              key={teacherStep}
               ref={teacherStepRef}
 
               className="modal-step-panel"

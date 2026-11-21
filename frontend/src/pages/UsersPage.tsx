@@ -409,9 +409,12 @@ export const UsersPage: React.FC = () => {
                       {users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((u) => (
                         <tr key={u.id}>
                           <td className="cell-strong">
-                            <div>{u.fullName}</div>
-                            <div className="cell-mono" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400 }}>
-                              @{u.username}
+                            <div className="table-person">
+                              <span className="table-avatar" aria-hidden="true">{(u.firstName?.[0] ?? u.username?.[0] ?? '')}</span>
+                              <div className="table-person__copy">
+                                <span>{u.fullName}</span>
+                                <small className="cell-mono">@{u.username}</small>
+                              </div>
                             </div>
                           </td>
                           <td>{u.email}</td>

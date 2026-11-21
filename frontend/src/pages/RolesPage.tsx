@@ -755,7 +755,7 @@ export const RolesPage: React.FC = () => {
                 <button
                   key={step.title}
                   type="button"
-                  className={`institution-step${roleStep === index ? ' is-active' : ''}`}
+                  className={`institution-step${roleStep === index ? ' is-active' : ''}${index < roleStep ? ' is-complete' : ''}`}
                   aria-current={roleStep === index ? 'step' : undefined}
                   onClick={() => goRoleStep(index)}
                 >
@@ -769,6 +769,7 @@ export const RolesPage: React.FC = () => {
             </div>
 
             <div
+              key={roleStep}
               ref={roleStepRef}
               className="modal-step-panel"
               tabIndex={-1}

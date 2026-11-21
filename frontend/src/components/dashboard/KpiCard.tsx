@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../ui/Card';
+import { AnimatedNumber } from '../ui/AnimatedNumber';
 
 export interface KpiMeter {
   value: number;
@@ -48,7 +49,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
       <div className="dash-kpi__top">
         <div className="dash-kpi__body">
           <span className="dash-kpi__label">{label}</span>
-          <div className="dash-kpi__value">{value}</div>
+          <div className="dash-kpi__value"><AnimatedNumber value={value} /></div>
         </div>
         <span
           className="dash-kpi__icon"
