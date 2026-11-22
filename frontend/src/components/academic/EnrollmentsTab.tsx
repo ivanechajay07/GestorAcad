@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { EmptyState } from '../ui/EmptyState';
+import { SectionHeader } from '../ui/SectionHeader';
 import { SearchableSelect } from '../ui/SearchableSelect';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
@@ -169,18 +171,19 @@ export const EnrollmentsTab: React.FC = () => {
 
   return (
     <div className="glass-panel" style={{ padding: '18px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-          <UserCheck size={19} color="var(--primary)" />
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>
-            Matrículas · {activeCount} activas
-          </h2>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>Actualizar</Button>
-          {canCreate && <Button size="sm" onClick={openModal} leftIcon={<Plus size={15} />}>Nueva Matrícula</Button>}
-        </div>
-      </div>
+      <SectionHeader
+        compact
+        icon={<UserCheck size={18} />}
+        eyebrow="Matrícula"
+        title={`Matrículas · ${activeCount} activas`}
+        description="Estudiantes inscritos por sección y periodo."
+        aside={
+          <>
+            <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>Actualizar</Button>
+            {canCreate && <Button size="sm" onClick={openModal} leftIcon={<Plus size={15} />}>Nueva Matrícula</Button>}
+          </>
+        }
+      />
 
       <div className="data-table-wrap">
         <table className="data-table data-table--stack">
@@ -231,7 +234,16 @@ export const EnrollmentsTab: React.FC = () => {
               </tr>
             ))}
             {enrollments.length === 0 && (
-              <tr><td colSpan={8} style={{ color: 'var(--text-muted)' }}>No hay matrículas registradas.</td></tr>
+              <tr>
+              <td colSpan={8}>
+                <EmptyState
+                          compact
+                  icon={<UserCheck size={22} />}
+                  title="Sin matrículas registradas"
+                  description="Registra la primera matrícula para vincular estudiantes con secciones y periodos."
+                />
+              </td>
+            </tr>
             )}
           </tbody>
         </table>
@@ -246,8 +258,8 @@ export const EnrollmentsTab: React.FC = () => {
           onClose={() => setModalOpen(false)}
         >
           {formError && <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-down-bg)', color: 'var(--status-down)', fontSize: 'var(--text-sm)', marginBottom: '12px' }}>{formError}</div>}
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
+          <form onSubmit={handleSave} className="modal-form">
+            <div className="modal-field-grid">
               <AcademicField label="Periodo">
                 <select
                   style={academicInputStyle}
@@ -316,7 +328,7 @@ export const EnrollmentsTab: React.FC = () => {
               />
             </AcademicField>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <div className="modal-form-footer">
               <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancelar</Button>
               <Button type="submit" variant="primary" isLoading={isSubmitting}>Registrar matrícula</Button>
             </div>

@@ -11,6 +11,7 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 
 import { PageHeader } from '../components/ui/PageHeader';
+import { DatePicker } from '../components/ui/DatePicker';
 
 import { Pagination } from '../components/ui/Pagination';
 
@@ -29,6 +30,7 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { useToast } from '../contexts/ToastContext';
 
 import { studentService } from '../services/studentService';
+import { reportService } from '../services/reportService';
 
 import type { StudentAdmissionDto, StudentDto } from '../services/studentService';
 
@@ -67,6 +69,8 @@ import {
   Power,
 
   GraduationCap as DegreeIcon,
+
+  Download,
 
   Award,
 
@@ -331,6 +335,20 @@ export const StudentsPage: React.FC = () => {
   const { confirm } = useConfirm();
 
   const toast = useToast();
+  const canExport = hasPermission('ESTUDIANTE_EXPORT');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const filename = await reportService.exportStudents();
+      toast.success(`Exportación generada: ${filename}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo generar la exportación');
+    } finally {
+      setExporting(false);
+    }
+  };
 
 
 
@@ -1160,6 +1178,18 @@ export const StudentsPage: React.FC = () => {
 
           <>
 
+            {canExport && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleExport}
+                isLoading={exporting}
+                leftIcon={<Download size={15} />}
+              >
+                Exportar padrón
+              </Button>
+            )}
+
             <ViewToggle value={viewMode} onChange={setViewMode} />
 
           </>
@@ -1378,7 +1408,17 @@ export const StudentsPage: React.FC = () => {
 
               <div className="data-table-wrap">
 
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--students">
+                  <colgroup>
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: '7%' }} />
+                    <col style={{ width: '8%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '9%' }} />
+                  </colgroup>
 
                   <thead>
 
@@ -1416,13 +1456,13 @@ export const StudentsPage: React.FC = () => {
                           <div className="table-person">
                             <span className="table-avatar" aria-hidden="true">{(s.firstName?.[0] ?? '') + (s.lastName?.[0] ?? '')}</span>
                             <div className="table-person__copy">
-                              <span>{s.firstName} {s.lastName}</span>
+                              <span title={`${s.firstName} ${s.lastName}`}>{s.firstName} {s.lastName}</span>
                               <small>DNI: {s.documentId || '—'}</small>
                             </div>
                           </div>
                         </td>
 
-                        <td>{s.career || '—'}</td>
+                        <td title={s.career || undefined}>{s.career || '—'}</td>
 
                         <td><Badge variant="outline" size="sm">Ciclo {s.currentCycle ?? 1}</Badge></td>
 
@@ -1627,6 +1667,8 @@ export const StudentsPage: React.FC = () => {
 
                   <h4 className="modal-step-title"><Users size={15} /> Datos personales</h4>
 
+                  <div className="modal-form-section">
+                    <h5 className="modal-form-section__title">Identificación</h5>
                   <div className="modal-field-grid">
 
                     <Field label="Código de matrícula" icon={<Hash size={13} />} error={fieldErrors.code}>
@@ -1655,7 +1697,7 @@ export const StudentsPage: React.FC = () => {
 
                     <Field label="Fecha de nacimiento" icon={<CalendarDays size={13} />} error={fieldErrors.birthDate}>
 
-                      <input style={inputStyle} type="date" value={studentForm.birthDate ?? ''} onChange={(e) => setStudentField('birthDate', e.target.value)} />
+                      <DatePicker style={inputStyle} ariaLabel="Fecha de nacimiento" max={new Date().toISOString().slice(0, 10)} value={studentForm.birthDate ?? ''} onChange={(next) => setStudentField('birthDate', next)} />
 
                     </Field>
 
@@ -1671,6 +1713,11 @@ export const StudentsPage: React.FC = () => {
 
                     </Field>
 
+                  </div>
+                  </div>
+                  <div className="modal-form-section">
+                    <h5 className="modal-form-section__title">Contacto</h5>
+                    <div className="modal-field-grid">
                     <Field label="Correo institucional" icon={<Mail size={13} />} error={fieldErrors.email}>
 
                       <input style={inputStyle} type="email" maxLength={100} value={studentForm.email ?? ''} onChange={(e) => setStudentField('email', e.target.value)} placeholder="Ej. nombre@gestoracad.edu" autoComplete="email" />
@@ -1690,6 +1737,7 @@ export const StudentsPage: React.FC = () => {
                     <input style={inputStyle} maxLength={255} value={studentForm.address ?? ''} onChange={(e) => setStudentField('address', e.target.value)} placeholder="Ej. Av. Universitaria 1801, Lima" autoComplete="street-address" />
 
                   </Field>
+                  </div>
 
                 </>
 
@@ -2077,7 +2125,7 @@ export const StudentsPage: React.FC = () => {
 
                         <Field label="Fecha de admisión">
 
-                          <input style={inputStyle} type="date" value={admissionForm.admissionDate ?? ''} onChange={(e) => setAdmissionForm({ ...admissionForm, admissionDate: e.target.value })} />
+                          <DatePicker style={inputStyle} ariaLabel="Fecha de admisión" max={new Date().toISOString().slice(0, 10)} value={admissionForm.admissionDate ?? ''} onChange={(next) => setAdmissionForm({ ...admissionForm, admissionDate: next })} />
 
                         </Field>
 

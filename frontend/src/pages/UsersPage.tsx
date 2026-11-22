@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useConfirm } from '../contexts/ConfirmContext';
+import { reportService } from '../services/reportService';
 import { userService } from '../services/userService';
 import type { UserResponse, UserCreatePayload, UserUpdatePayload } from '../services/userService';
 import { Card } from '../components/ui/Card';
@@ -9,6 +11,7 @@ import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
+import { SectionHeader } from '../components/ui/SectionHeader';
 import { Pagination } from '../components/ui/Pagination';
 import { ViewToggle } from '../components/ui/ViewToggle';
 import { formControlStyle, formLabelStyle } from '../components/ui/formStyles';
@@ -20,6 +23,8 @@ import {
   Mail,
   Building2,
   Pencil,
+
+  Download,
   ImagePlus,
   Check,
   X,
@@ -44,6 +49,12 @@ const PasswordRules: React.FC<{ value: string }> = ({ value }) => (
   </ul>
 );
 
+const roleLabel = (role: string): string =>
+  role
+    .replace(/^ROLE_/, '')
+    .toLowerCase()
+    .replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+
 const presenceOf = (u: UserResponse): { label: string; color: string } => {
   if (!u.active || !u.lastSeen) return { label: 'Desconectado', color: 'var(--text-muted)' };
   const diffMin = (Date.now() - new Date(u.lastSeen).getTime()) / 60000;
@@ -53,7 +64,22 @@ const presenceOf = (u: UserResponse): { label: string; color: string } => {
 };
 
 export const UsersPage: React.FC = () => {
+  const { hasPermission } = useAuth();
   const toast = useToast();
+  const canExport = hasPermission('USUARIO_EXPORT');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const filename = await reportService.exportUsers();
+      toast.success(`Exportación generada: ${filename}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo generar la exportación');
+    } finally {
+      setExporting(false);
+    }
+  };
   const { confirm } = useConfirm();
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [page, setPage] = useState(1);
@@ -305,13 +331,29 @@ export const UsersPage: React.FC = () => {
 
       {/* Usuarios */}
       <section>
-        <div className="list-heading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <Users size={18} color="var(--primary)" />
-            Usuarios
-          </span>
-          <ViewToggle value={viewMode} onChange={setViewMode} />
-        </div>
+        <SectionHeader
+          compact
+          icon={<Users size={18} />}
+          eyebrow="Directorio"
+          title="Usuarios del sistema"
+          description="Cuentas, roles y estado de acceso a la plataforma."
+          aside={
+            <>
+              {canExport && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleExport}
+                  isLoading={exporting}
+                  leftIcon={<Download size={15} />}
+                >
+                  Exportar
+                </Button>
+              )}
+              <ViewToggle value={viewMode} onChange={setViewMode} />
+            </>
+          }
+        />
 
         {loading ? (
           <LoadingSpinner message="Consultando usuarios..." />
@@ -322,79 +364,122 @@ export const UsersPage: React.FC = () => {
         ) : (
           <>
             {viewMode === 'cards' ? (
-              <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '18px' }}>
-              {users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((u) => (
-                <Card key={u.id} interactive className="card-fill">
-                  <div className="entity-card" onClick={() => openEdit(u)} style={{ cursor: 'pointer' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center', minWidth: 0 }}>
-                        {u.avatar ? (
-                          <img
-                            src={u.avatar}
-                            alt={u.fullName}
-                            style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid var(--border-light)' }}
-                          />
-                        ) : (
-                          <span className="icon-tile" style={{ background: 'var(--primary-glow)', color: 'var(--primary)', borderRadius: '50%' }}>
-                            {u.firstName?.[0] || u.username[0].toUpperCase()}
+              <div className="stagger user-grid">
+                {users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((u) => {
+                  const presence = presenceOf(u);
+                  return (
+                    <Card
+                      key={u.id}
+                      interactive
+                      className="card-fill user-card"
+                      style={{ padding: 0 }}
+                    >
+                      <div
+                        className="user-card__body"
+                        onClick={() => openEdit(u)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            openEdit(u);
+                          }
+                        }}
+                        aria-label={`Editar a ${u.fullName}`}
+                      >
+                        <div className="user-card__head">
+                          <span className="user-card__avatar-wrap">
+                            {u.avatar ? (
+                              <img src={u.avatar} alt={u.fullName} className="user-card__avatar" />
+                            ) : (
+                              <span className="user-card__avatar user-card__avatar--initials" aria-hidden="true">
+                                {(u.firstName?.[0] || u.username[0] || '?').toUpperCase()}
+                              </span>
+                            )}
+                            <span
+                              className="user-card__presence-dot"
+                              style={{ background: presence.color }}
+                              aria-hidden="true"
+                            />
                           </span>
-                        )}
-                        <div style={{ minWidth: 0 }}>
-                          <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{u.fullName}</h4>
-                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>@{u.username}</span>
+                          <div className="user-card__identity">
+                            <h4 title={u.fullName}>{u.fullName}</h4>
+                            <span className="user-card__handle">@{u.username}</span>
+                          </div>
+                          <Badge variant={u.active ? 'success' : 'danger'} dot size="sm">
+                            {u.active ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </div>
+
+                        <div className="user-card__meta">
+                          <div className="user-card__meta-row">
+                            <span className="user-card__meta-icon" aria-hidden="true"><Mail size={14} /></span>
+                            <span title={u.email}>{u.email}</span>
+                          </div>
+                          <div className="user-card__meta-row">
+                            <span className="user-card__meta-icon" aria-hidden="true"><Building2 size={14} /></span>
+                            <span title={u.department || 'General'}>{u.department || 'General'}</span>
+                          </div>
+                        </div>
+
+                        <div className="user-card__roles">
+                          <span className="user-card__roles-label">Rol</span>
+                          {u.roles?.length ? (
+                            u.roles.map((r) => (
+                              <Badge key={r} variant="role" size="sm">{roleLabel(r)}</Badge>
+                            ))
+                          ) : (
+                            <span className="user-card__roles-empty">Sin rol asignado</span>
+                          )}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                        <Badge variant={u.active ? 'success' : 'danger'} dot size="sm">
-                          {u.active ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', fontWeight: 700, color: presenceOf(u).color }}>
-                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: presenceOf(u).color }} />
-                          {presenceOf(u).label}
+
+                      <div className="user-card__footer">
+                        <span className="user-card__presence" style={{ color: presence.color }}>
+                          <span
+                            className="user-card__presence-dot"
+                            style={{ background: presence.color }}
+                            aria-hidden="true"
+                          />
+                          {presence.label}
                         </span>
+                        <div className="user-card__actions">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            leftIcon={<Pencil size={14} />}
+                            onClick={() => openEdit(u)}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant={u.active ? 'ghost' : 'secondary'}
+                            size="sm"
+                            className={u.active ? 'user-card__toggle user-card__toggle--danger' : 'user-card__toggle'}
+                            leftIcon={<Power size={14} />}
+                            onClick={() => handleToggleStatus(u)}
+                          >
+                            {u.active ? 'Deshabilitar' : 'Habilitar'}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Mail size={14} /> {u.email}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Building2 size={14} /> {u.department || 'General'}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {u.roles?.map((r) => (
-                        <Badge key={r} variant="role" size="sm">
-                          {r.replace('ROLE_', '')}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: 'auto' }}>
-                      <Button variant="primary" size="sm" leftIcon={<Pencil size={14} />} onClick={(e) => { e.stopPropagation(); openEdit(u); }}>
-                        Editar
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        style={u.active ? { color: 'var(--status-down-text)' } : undefined}
-                        leftIcon={<Power size={14} />}
-                        onClick={(e) => { e.stopPropagation(); handleToggleStatus(u); }}
-                      >
-                        {u.active ? 'Deshabilitar' : 'Habilitar'}
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                    </Card>
+                  );
+                })}
+              </div>
             ) : (
               <Card>
                 <p className="table-scroll-hint">Desliza para ver más columnas →</p>
                 <div className="data-table-wrap">
-                  <table className="data-table data-table--stack">
+                  <table className="data-table data-table--stack table--users">
+                    <colgroup>
+                      <col style={{ width: '28%' }} />
+                      <col style={{ width: '24%' }} />
+                      <col style={{ width: '19%' }} />
+                      <col style={{ width: '10%' }} />
+                      <col style={{ width: '9%' }} />
+                      <col style={{ width: '10%' }} />
+                    </colgroup>
                     <thead>
                       <tr>
                         <th>Usuario</th>
@@ -412,7 +497,7 @@ export const UsersPage: React.FC = () => {
                             <div className="table-person">
                               <span className="table-avatar" aria-hidden="true">{(u.firstName?.[0] ?? u.username?.[0] ?? '')}</span>
                               <div className="table-person__copy">
-                                <span>{u.fullName}</span>
+                                <span title={u.fullName}>{u.fullName}</span>
                                 <small className="cell-mono">@{u.username}</small>
                               </div>
                             </div>
@@ -423,7 +508,7 @@ export const UsersPage: React.FC = () => {
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                               {u.roles?.map((r) => (
                                 <Badge key={r} variant="role" size="sm">
-                                  {r.replace('ROLE_', '')}
+                                  {roleLabel(r)}
                                 </Badge>
                               ))}
                             </div>

@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { EmptyState } from '../ui/EmptyState';
+import { SectionHeader } from '../ui/SectionHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -205,16 +207,19 @@ export const StudyPlansTab: React.FC = () => {
 
   return (
     <div className="glass-panel" style={{ padding: '18px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-          <ClipboardList size={19} color="var(--primary)" />
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Planes de estudio ({plans.length})</h2>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>Actualizar</Button>
-          {canCreate && <Button size="sm" onClick={() => openPlanModal()} leftIcon={<Plus size={15} />}>Nuevo Plan</Button>}
-        </div>
-      </div>
+      <SectionHeader
+        compact
+        icon={<ClipboardList size={18} />}
+        eyebrow="Currículo"
+        title={`Planes de estudio (${plans.length})`}
+        description="Malla curricular, cursos y créditos por carrera."
+        aside={
+          <>
+            <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>Actualizar</Button>
+            {canCreate && <Button size="sm" onClick={() => openPlanModal()} leftIcon={<Plus size={15} />}>Nuevo Plan</Button>}
+          </>
+        }
+      />
 
       <div className="data-table-wrap">
         <table className="data-table data-table--stack">
@@ -260,7 +265,16 @@ export const StudyPlansTab: React.FC = () => {
               </tr>
             ))}
             {plans.length === 0 && (
-              <tr><td colSpan={8} style={{ color: 'var(--text-muted)' }}>No hay planes de estudio registrados.</td></tr>
+              <tr>
+              <td colSpan={8}>
+                <EmptyState
+                          compact
+                  icon={<ClipboardList size={22} />}
+                  title="Sin planes de estudio"
+                  description="Crea el primer plan para organizar los cursos y créditos de una carrera."
+                />
+              </td>
+            </tr>
             )}
           </tbody>
         </table>
@@ -274,9 +288,9 @@ export const StudyPlansTab: React.FC = () => {
           onClose={() => setPlanModal(false)}
         >
           <AcademicFormError message={formError} />
-          <form onSubmit={handleSavePlan} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSavePlan} className="modal-form">
             <div className="form-section">Identificación del plan</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid">
               <AcademicField label="Código" icon={<Hash size={13} />} hint="Formato recomendado: PLAN-IS-2026.">
                 <input style={academicInputStyle} required value={planForm.code} onChange={(e) => setPlanForm({ ...planForm, code: e.target.value })} placeholder="Ej. PLAN-IS-2026" />
               </AcademicField>
@@ -302,7 +316,7 @@ export const StudyPlansTab: React.FC = () => {
             <AcademicField label="Descripción" icon={<AlignLeft size={13} />} hint="Resume el enfoque o alcance de este plan de estudios.">
               <input style={academicInputStyle} value={planForm.description ?? ''} onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })} placeholder="Ej. Malla curricular orientada a desarrollo de software y ciencia de datos" />
             </AcademicField>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <div className="modal-form-footer">
               <Button type="button" variant="secondary" onClick={() => setPlanModal(false)}>Cancelar</Button>
               <Button type="submit" variant="primary" isLoading={isSubmitting}>{planForm.id ? 'Guardar cambios' : 'Registrar plan'}</Button>
             </div>
@@ -344,7 +358,16 @@ export const StudyPlansTab: React.FC = () => {
                       </tr>
                     ))}
                     {planCourses.length === 0 && (
-                      <tr><td colSpan={5} style={{ color: 'var(--text-muted)' }}>La malla aún no tiene cursos.</td></tr>
+                      <tr>
+                <td colSpan={5}>
+                  <EmptyState
+                          compact
+                    icon={<BookOpen size={22} />}
+                    title="La malla aún no tiene cursos"
+                    description="Agrega cursos al plan para construir la ruta curricular."
+                  />
+                </td>
+              </tr>
                     )}
                   </tbody>
                 </table>

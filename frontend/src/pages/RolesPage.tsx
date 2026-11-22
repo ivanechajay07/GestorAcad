@@ -547,7 +547,14 @@ export const RolesPage: React.FC = () => {
             <Card>
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
               <div className="data-table-wrap">
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--roles">
+                  <colgroup>
+                    <col style={{ width: '24%' }} />
+                    <col style={{ width: '38%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '18%' }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Rol</th>
@@ -573,7 +580,7 @@ export const RolesPage: React.FC = () => {
                               </div>
                             </div>
                           </td>
-                          <td className="roles-table__desc">{role.description || '—'}</td>
+                          <td title={role.description || undefined} className="roles-table__desc">{role.description || '—'}</td>
                           <td><Badge variant="outline" size="sm">{role.usuarios ?? 0}</Badge></td>
                           <td><Badge variant="role" size="sm">{role.permissions?.length ?? 0}</Badge></td>
                           <td>
@@ -634,16 +641,7 @@ export const RolesPage: React.FC = () => {
         </section>
       ) : (
         <section className="roles-section" aria-label="Catálogo de permisos">
-          <Card
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                <Key size={19} color="var(--accent-cyan)" aria-hidden="true" />
-                <span>Catálogo de permisos</span>
-              </div>
-            }
-            subtitle="Cada permiso habilita una acción concreta y puede compartirse entre varios roles."
-            extra={<Badge variant="info" size="sm">{filteredPermissions.length} visibles</Badge>}
-          >
+          <Card>
             <div className="roles-toolbar roles-toolbar--inner">
               <div className="search-box">
                 <Search size={16} aria-hidden="true" />

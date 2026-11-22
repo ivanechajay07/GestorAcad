@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
+import { SectionHeader } from '../components/ui/SectionHeader';
 import { LineChart } from '../components/ui/LineChart';
 import { BarChart } from '../components/ui/BarChart';
 import { DonutChart } from '../components/ui/DonutChart';
@@ -51,23 +52,6 @@ const greetingFor = (hour: number): string => {
   if (hour < 19) return 'Buenas tardes';
   return 'Buenas noches';
 };
-
-const SectionHead: React.FC<{
-  id: string;
-  eyebrow: string;
-  title: string;
-  description?: string;
-  aside?: React.ReactNode;
-}> = ({ id, eyebrow, title, description, aside }) => (
-  <div className="dash-section__head">
-    <div>
-      <span className="dash-section__eyebrow">{eyebrow}</span>
-      <h3 id={id} className="dash-section__title">{title}</h3>
-      {description && <p className="dash-section__desc">{description}</p>}
-    </div>
-    {aside && <div className="dash-section__aside">{aside}</div>}
-  </div>
-);
 
 const DONUT_COLORS = [
   '#1d4ed8',
@@ -414,11 +398,12 @@ export const DashboardPage: React.FC = () => {
       {!isRolePortal && (
         <>
           <section className="dash-section" aria-labelledby="dash-kpis-title">
-            <SectionHead
+            <SectionHeader
               id="dash-kpis-title"
               eyebrow="Resumen"
               title="Indicadores institucionales"
               description="Cifras agregadas de la base institucional."
+              icon={<Activity size={18} />}
             />
 
             {error && !summary ? (
@@ -440,7 +425,7 @@ export const DashboardPage: React.FC = () => {
                 <span className="sr-only" role="status">Cargando indicadores del panel…</span>
               </>
             ) : kpis.length > 0 ? (
-              <div className="dash-kpi-grid">{kpis}</div>
+              <div className="dash-kpi-band">{kpis}</div>
             ) : (
               <Card className="dash-state-card">
                 <EmptyState
@@ -462,11 +447,12 @@ export const DashboardPage: React.FC = () => {
           {summary && (
             <>
               <section className="dash-section" aria-labelledby="dash-analytics-title">
-                <SectionHead
+                <SectionHeader
                   id="dash-analytics-title"
                   eyebrow="Analítica"
                   title="Estado académico e institucional"
                   description="Explora la población estudiantil, el claustro docente y la actividad registrada."
+                  icon={<TrendingUp size={18} />}
                 />
 
                 <div className="dash-console glass-panel">
@@ -789,35 +775,61 @@ export const DashboardPage: React.FC = () => {
               </section>
 
               <section className="dash-section" aria-labelledby="dash-coverage-title">
-                <SectionHead
+                <SectionHeader
                   id="dash-coverage-title"
                   eyebrow="Gobernanza"
                   title="Cobertura institucional"
                   description="Identidad, licenciamiento y sedes configuradas."
+                  icon={<ShieldCheck size={18} />}
                   aside={hasPermission('UNIVERSIDAD_VIEW') ? (
                     <Link to="/university" className="dash-text-link">
                       Ver institución <ArrowRight size={14} aria-hidden="true" />
                     </Link>
                   ) : undefined}
                 />
-                <div className="dash-coverage-bar glass-panel">
-                  <div className="dash-coverage-grid">
-                    <div className="dash-coverage-item dash-coverage-item--accent">
-                      <span className="dash-coverage-item__head"><Building2 size={14} aria-hidden="true" /> Institución</span>
+                <div className="dash-coverage-card">
+                  <div className="dash-coverage-brand">
+                    <span className="dash-coverage-logo" aria-hidden="true">
+                      <Building2 size={24} />
+                    </span>
+                    <div className="dash-coverage-copy">
+                      <span className="dash-coverage-kicker">Institución</span>
                       <strong>{institution?.nombre ?? 'No configurada'}</strong>
-                      {institution?.nombreCorto && <small>{institution.nombreCorto}</small>}
+                      <small>
+                        {institution?.nombreCorto
+                          ? `${institution.nombreCorto} · Panel institucional`
+                          : 'Configura la identidad en el módulo Universidad'}
+                      </small>
                     </div>
-                    <div className="dash-coverage-item">
-                      <span className="dash-coverage-item__head"><ShieldCheck size={14} aria-hidden="true" /> Licenciamiento</span>
-                      <strong>{institution?.estadoLicenciamiento ?? 'No registrado'}</strong>
+                  </div>
+
+                  <div className="dash-coverage-metrics">
+                    <div className="dash-coverage-metric" title={institution?.estadoLicenciamiento ?? 'No registrado'}>
+                      <span className="dash-coverage-metric__head">
+                        <ShieldCheck size={15} aria-hidden="true" /> Licenciamiento
+                      </span>
+                      <Badge
+                        variant={
+                          (institution?.estadoLicenciamiento ?? '').toUpperCase().includes('LICENCIAD')
+                            ? 'success'
+                            : 'outline'
+                        }
+                        size="sm"
+                        dot
+                      >
+                        {institution?.estadoLicenciamiento ?? 'No registrado'}
+                      </Badge>
                     </div>
                     {institution?.sedesActivas != null && (
-                      <div className="dash-coverage-item">
-                        <span className="dash-coverage-item__head"><MapPin size={14} aria-hidden="true" /> Sedes activas</span>
+                      <div className="dash-coverage-metric">
+                        <span className="dash-coverage-metric__head">
+                          <MapPin size={15} aria-hidden="true" /> Sedes activas
+                        </span>
                         <strong>{formatCount(institution.sedesActivas)}</strong>
                       </div>
                     )}
                   </div>
+
                   <p className="dash-note">
                     El panel muestra información agregada. No se transfieren datos personales de estudiantes
                     ni docentes al navegador.

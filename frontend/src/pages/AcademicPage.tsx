@@ -7,6 +7,9 @@ import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 import { PageHeader } from '../components/ui/PageHeader';
+import { DatePicker } from '../components/ui/DatePicker';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { EmptyState } from '../components/ui/EmptyState';
 
 import { useAuth } from '../contexts/AuthContext';
 
@@ -31,6 +34,8 @@ import { CoursePrerequisitesModal } from '../components/academic/CoursePrerequis
 import {
 
   AlignLeft,
+
+  ArrowRight,
 
   Award,
 
@@ -89,6 +94,8 @@ const inputStyle = academicInputStyle;
 const errMsg = academicErrMsg;
 
 const formatDate = academicFormatDate;
+
+const formatDateRange = (value?: string): string => formatDate(value).replace(/ /g, '\u00A0');
 
 const Field = AcademicField;
 
@@ -612,47 +619,37 @@ export const AcademicPage: React.FC = () => {
 
             <div className="glass-panel" style={{ padding: '18px' }}>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-
-                  <CalendarDays size={19} color="var(--primary)" />
-
-                  <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>
-
-                    Periodos académicos ({periods.length})
-
-                  </h2>
-
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-
-                  <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>
-
-                    Actualizar
-
-                  </Button>
-
-                  {canCreatePeriod && (
-
-                    <Button size="sm" onClick={() => openPeriodModal()} leftIcon={<Plus size={15} />}>
-
-                      Nuevo Periodo
-
+              <SectionHeader
+                compact
+                icon={<CalendarDays size={18} />}
+                eyebrow="Calendario"
+                title={`Periodos académicos (${periods.length})`}
+                description="Vigencia de clases y ventana de matrícula."
+                aside={
+                  <>
+                    <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>
+                      Actualizar
                     </Button>
-
-                  )}
-
-                </div>
-
-              </div>
-
-
+                    {canCreatePeriod && (
+                      <Button size="sm" onClick={() => openPeriodModal()} leftIcon={<Plus size={15} />}>
+                        Nuevo Periodo
+                      </Button>
+                    )}
+                  </>
+                }
+              />
 
               <div className="data-table-wrap">
 
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--periods">
+                  <colgroup>
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '26%' }} />
+                    <col style={{ width: '20%' }} />
+                    <col style={{ width: '20%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '12%' }} />
+                  </colgroup>
 
                   <thead>
 
@@ -662,7 +659,7 @@ export const AcademicPage: React.FC = () => {
 
                       <th>Nombre</th>
 
-                      <th>Inicio / Fin</th>
+                      <th>Clases</th>
 
                       <th>Matrícula</th>
 
@@ -678,15 +675,37 @@ export const AcademicPage: React.FC = () => {
 
                     {periods.map((period) => (
 
-                      <tr key={period.id}>
+                      <tr key={period.id} className={period.current ? 'is-current' : ''}>
 
-                        <td className="cell-strong cell-mono">{period.code}</td>
+                        <td className="cell-strong cell-mono table-code">{period.code}</td>
 
                         <td>{period.name}</td>
 
-                        <td>{formatDate(period.startDate)} — {formatDate(period.endDate)}</td>
+                        <td>
+                          <span
+                            className="date-range"
+                            title={`${formatDate(period.startDate)} → ${formatDate(period.endDate)}`}
+                          >
+                            <span>{formatDateRange(period.startDate)}</span>
+                            <ArrowRight size={12} aria-hidden="true" />
+                            <span>{formatDateRange(period.endDate)}</span>
+                          </span>
+                        </td>
 
-                        <td>{formatDate(period.enrollmentStart)} — {formatDate(period.enrollmentEnd)}</td>
+                        <td>
+                          {period.enrollmentStart || period.enrollmentEnd ? (
+                            <span
+                              className="date-range"
+                              title={`${formatDate(period.enrollmentStart)} → ${formatDate(period.enrollmentEnd)}`}
+                            >
+                              <span>{formatDateRange(period.enrollmentStart)}</span>
+                              <ArrowRight size={12} aria-hidden="true" />
+                              <span>{formatDateRange(period.enrollmentEnd)}</span>
+                            </span>
+                          ) : (
+                            <span className="cell-muted">—</span>
+                          )}
+                        </td>
 
                         <td>
 
@@ -788,7 +807,14 @@ export const AcademicPage: React.FC = () => {
 
                       <tr>
 
-                        <td colSpan={6} style={{ color: 'var(--text-muted)' }}>No hay periodos registrados.</td>
+                        <td colSpan={6}>
+                        <EmptyState
+                          compact
+                          icon={<CalendarDays size={22} />}
+                          title="Sin periodos registrados"
+                          description="Crea el primer periodo para habilitar la programación académica y la matrícula."
+                        />
+                      </td>
 
                       </tr>
 
@@ -810,47 +836,38 @@ export const AcademicPage: React.FC = () => {
 
             <div className="glass-panel" style={{ padding: '18px' }}>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-
-                  <BookOpen size={19} color="var(--accent-cyan)" />
-
-                  <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>
-
-                    Catálogo de cursos ({courses.length})
-
-                  </h2>
-
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-
-                  <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>
-
-                    Actualizar
-
-                  </Button>
-
-                  {canCreateCourse && (
-
-                    <Button size="sm" onClick={() => openCourseModal()} leftIcon={<Plus size={15} />}>
-
-                      Nuevo Curso
-
+              <SectionHeader
+                compact
+                icon={<BookOpen size={18} />}
+                eyebrow="Catálogo"
+                title={`Catálogo de cursos (${courses.length})`}
+                description="Créditos, carga horaria y vigencia de cada curso."
+                aside={
+                  <>
+                    <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>
+                      Actualizar
                     </Button>
-
-                  )}
-
-                </div>
-
-              </div>
-
-
+                    {canCreateCourse && (
+                      <Button size="sm" onClick={() => openCourseModal()} leftIcon={<Plus size={15} />}>
+                        Nuevo Curso
+                      </Button>
+                    )}
+                  </>
+                }
+              />
 
               <div className="data-table-wrap">
 
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--courses">
+                  <colgroup>
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '27%' }} />
+                    <col style={{ width: '8%' }} />
+                    <col style={{ width: '16%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '14%' }} />
+                  </colgroup>
 
                   <thead>
 
@@ -982,7 +999,14 @@ export const AcademicPage: React.FC = () => {
 
                       <tr>
 
-                        <td colSpan={7} style={{ color: 'var(--text-muted)' }}>No hay cursos registrados.</td>
+                        <td colSpan={7}>
+                        <EmptyState
+                          compact
+                          icon={<BookOpen size={22} />}
+                          title="Sin cursos registrados"
+                          description="Crea el primer curso del catálogo para empezar a construir planes de estudio."
+                        />
+                      </td>
 
                       </tr>
 
@@ -1028,11 +1052,11 @@ export const AcademicPage: React.FC = () => {
 
           <AcademicFormError message={formError} />
 
-          <form onSubmit={handleSavePeriod} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSavePeriod} className="modal-form">
 
             <div className="form-section">Identificación del periodo</div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid">
 
               <Field label="Código" icon={<Hash size={13} />} hint="Formato recomendado: AAAA-I o AAAA-II.">
 
@@ -1052,17 +1076,17 @@ export const AcademicPage: React.FC = () => {
 
             <div className="form-section">Calendario de clases</div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid">
 
               <Field label="Inicio de clases" icon={<CalendarDays size={13} />}>
 
-                <input style={inputStyle} type="date" required value={periodForm.startDate} onChange={(e) => setPeriodForm({ ...periodForm, startDate: e.target.value })} />
+                <DatePicker style={inputStyle} required ariaLabel="Inicio de clases" value={periodForm.startDate} onChange={(next) => setPeriodForm({ ...periodForm, startDate: next })} />
 
               </Field>
 
               <Field label="Fin de clases" icon={<CalendarDays size={13} />}>
 
-                <input style={inputStyle} type="date" required value={periodForm.endDate} onChange={(e) => setPeriodForm({ ...periodForm, endDate: e.target.value })} />
+                <DatePicker style={inputStyle} required ariaLabel="Fin de clases" value={periodForm.endDate} onChange={(next) => setPeriodForm({ ...periodForm, endDate: next })} />
 
               </Field>
 
@@ -1072,23 +1096,23 @@ export const AcademicPage: React.FC = () => {
 
             <div className="form-section">Ventana de matrícula</div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid">
 
               <Field label="Inicio de matrícula" icon={<UserCheck size={13} />}>
 
-                <input style={inputStyle} type="date" value={periodForm.enrollmentStart ?? ''} onChange={(e) => setPeriodForm({ ...periodForm, enrollmentStart: e.target.value })} />
+                <DatePicker style={inputStyle} ariaLabel="Inicio de matrícula" value={periodForm.enrollmentStart ?? ''} onChange={(next) => setPeriodForm({ ...periodForm, enrollmentStart: next })} />
 
               </Field>
 
               <Field label="Fin de matrícula" icon={<UserCheck size={13} />}>
 
-                <input style={inputStyle} type="date" value={periodForm.enrollmentEnd ?? ''} onChange={(e) => setPeriodForm({ ...periodForm, enrollmentEnd: e.target.value })} />
+                <DatePicker style={inputStyle} ariaLabel="Fin de matrícula" value={periodForm.enrollmentEnd ?? ''} onChange={(next) => setPeriodForm({ ...periodForm, enrollmentEnd: next })} />
 
               </Field>
 
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <div className="modal-form-footer">
 
               <Button type="button" variant="secondary" onClick={() => setPeriodModal(false)}>Cancelar</Button>
 
@@ -1118,17 +1142,19 @@ export const AcademicPage: React.FC = () => {
 
           icon={<BookOpen size={20} color="var(--accent-cyan)" />}
 
+          maxWidth="720px"
+
           onClose={() => setCourseModal(false)}
 
         >
 
           <AcademicFormError message={formError} />
 
-          <form onSubmit={handleSaveCourse} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSaveCourse} className="modal-form">
 
             <div className="form-section">Identificación del curso</div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(170px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid modal-field-grid--3">
 
               <Field label="Código" icon={<Hash size={13} />} hint="Formato recomendado: MAT-101.">
 
@@ -1158,7 +1184,7 @@ export const AcademicPage: React.FC = () => {
 
             <div className="form-section">Créditos y carga horaria</div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid modal-field-grid--3">
 
               <Field label="Créditos" icon={<Award size={13} />}>
 
@@ -1194,7 +1220,7 @@ export const AcademicPage: React.FC = () => {
 
             </p>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <div className="modal-form-footer">
 
               <Button type="button" variant="secondary" onClick={() => setCourseModal(false)}>Cancelar</Button>
 

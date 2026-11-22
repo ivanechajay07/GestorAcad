@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { EmptyState } from '../ui/EmptyState';
+import { SectionHeader } from '../ui/SectionHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -146,16 +148,19 @@ export const SectionsTab: React.FC = () => {
 
   return (
     <div className="glass-panel" style={{ padding: '18px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-          <Grid3X3 size={19} color="var(--accent-cyan)" />
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Secciones ({sections.length})</h2>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>Actualizar</Button>
-          {canCreate && <Button size="sm" onClick={() => openModal()} leftIcon={<Plus size={15} />}>Nueva Sección</Button>}
-        </div>
-      </div>
+      <SectionHeader
+        compact
+        icon={<Grid3X3 size={18} />}
+        eyebrow="Oferta académica"
+        title={`Secciones (${sections.length})`}
+        description="Periodo, curso, docente, cupo y horario por sección."
+        aside={
+          <>
+            <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>Actualizar</Button>
+            {canCreate && <Button size="sm" onClick={() => openModal()} leftIcon={<Plus size={15} />}>Nueva Sección</Button>}
+          </>
+        }
+      />
 
       <div className="data-table-wrap">
         <table className="data-table data-table--stack">
@@ -203,7 +208,16 @@ export const SectionsTab: React.FC = () => {
               </tr>
             ))}
             {sections.length === 0 && (
-              <tr><td colSpan={8} style={{ color: 'var(--text-muted)' }}>No hay secciones registradas.</td></tr>
+              <tr>
+              <td colSpan={8}>
+                <EmptyState
+                          compact
+                  icon={<Grid3X3 size={22} />}
+                  title="Sin secciones registradas"
+                  description="Crea la primera sección para asignar docentes, horarios y cupos."
+                />
+              </td>
+            </tr>
             )}
           </tbody>
         </table>
@@ -218,9 +232,9 @@ export const SectionsTab: React.FC = () => {
           onClose={() => setModalOpen(false)}
         >
           <AcademicFormError message={formError} />
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSave} className="modal-form">
             <div className="form-section">Oferta académica</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid">
               <AcademicField label="Periodo" icon={<CalendarDays size={13} />}>
                 <select style={academicInputStyle} required value={form.periodId || ''} onChange={(e) => setForm({ ...form, periodId: Number(e.target.value) })}>
                   <option value="">— Seleccione —</option>
@@ -251,7 +265,7 @@ export const SectionsTab: React.FC = () => {
             </div>
 
             <div className="form-section">Capacidad y modalidad</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid">
               <AcademicField label="Capacidad" icon={<Users size={13} />}>
                 <input style={academicInputStyle} type="number" min={1} max={200} required value={form.capacity} onChange={(e) => setForm({ ...form, capacity: Number(e.target.value) })} placeholder="Ej. 30" />
               </AcademicField>
@@ -265,7 +279,7 @@ export const SectionsTab: React.FC = () => {
             <p className="field-hint">
               Los bloques de día y hora se administran desde el botón <strong>Horario</strong> de la tabla.
             </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <div className="modal-form-footer">
               <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancelar</Button>
               <Button type="submit" variant="primary" isLoading={isSubmitting}>{form.id ? 'Guardar cambios' : 'Registrar sección'}</Button>
             </div>

@@ -99,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onScroll={() => setTooltip(null)}
       >
         <div className="sidebar-inner">
-          {/* Marca + botón de contraer */}
+          {/* Marca institucional */}
           <div className="sidebar-brand">
             <span className="sidebar-brand-logo">
               <GraduationCap size={21} />
@@ -107,72 +107,75 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {(!collapsed || mobile) && (
               <div className="sidebar-brand-text">
                 <strong>GESTOR ACADÉMICO <span>VIRTUAL</span></strong>
-                <small>{uniName ? uniName.toUpperCase() : 'PORTAL ACADÉMICO'}</small>
+                <small title={uniName || 'Portal académico'}>{uniName || 'Portal académico'}</small>
               </div>
-            )}
-            {!mobile && onToggleCollapse && (
-              <button
-                type="button"
-                className="sidebar-collapse-inline"
-                onClick={onToggleCollapse}
-                aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
-                title={collapsed ? 'Expandir menú' : 'Contraer menú'}
-              >
-                {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-              </button>
             )}
           </div>
 
-          {filteredSections.map((sec) => {
-            const isClosed = closedSections[sec.title];
-            return (
-              <div className="nav-section" key={sec.title}>
-                {!collapsed ? (
-                  <button
-                    type="button"
-                    className="nav-section-title"
-                    onClick={() => toggleSection(sec.title)}
-                    aria-expanded={!isClosed}
-                  >
-                    <span>{sec.title}</span>
-                    <ChevronDown size={14} className={`nav-chevron${isClosed ? ' closed' : ''}`} />
-                  </button>
-                ) : (
-                  <div className="nav-section-divider" />
-                )}
-                <nav className={`nav-list${isClosed ? ' is-collapsed' : ''}`}>
-                  {sec.items.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      aria-label={collapsed && !mobile ? item.label : undefined}
-                      onClick={mobile ? onClose : undefined}
-                      onMouseEnter={(event) => showTooltip(event.currentTarget, item.label)}
-                      onMouseLeave={() => setTooltip(null)}
-                      onFocus={(event) => showTooltip(event.currentTarget, item.label)}
-                      onBlur={() => setTooltip(null)}
-                      className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                      style={{
-                        justifyContent: collapsed && !mobile ? 'center' : 'space-between',
-                        padding: collapsed && !mobile ? '11px' : '10px 12px',
-                      }}
+          <div className="sidebar-nav">
+            {filteredSections.map((sec) => {
+              const isClosed = closedSections[sec.title];
+              return (
+                <div className="nav-section" key={sec.title}>
+                  {!collapsed ? (
+                    <button
+                      type="button"
+                      className="nav-section-title"
+                      onClick={() => toggleSection(sec.title)}
+                      aria-expanded={!isClosed}
                     >
-                      {({ isActive }) => (
-                        <>
-                          <span className="nav-icon">{item.icon}</span>
-                          {(!collapsed || mobile) && <span className="nav-label">{item.label}</span>}
-                          {(!collapsed || mobile) && item.badge && (
-                            <span className={`nav-badge${isActive ? ' on-active' : ''}`}>{item.badge}</span>
-                          )}
-                        </>
-                      )}
-                    </NavLink>
-                  ))}
-                </nav>
-              </div>
-            );
-          })}
+                      <span>{sec.title}</span>
+                      <ChevronDown size={14} className={`nav-chevron${isClosed ? ' closed' : ''}`} />
+                    </button>
+                  ) : (
+                    <div className="nav-section-divider" />
+                  )}
+                  <nav className={`nav-list${isClosed ? ' is-collapsed' : ''}`}>
+                    {sec.items.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        aria-label={collapsed && !mobile ? item.label : undefined}
+                        onClick={mobile ? onClose : undefined}
+                        onMouseEnter={(event) => showTooltip(event.currentTarget, item.label)}
+                        onMouseLeave={() => setTooltip(null)}
+                        onFocus={(event) => showTooltip(event.currentTarget, item.label)}
+                        onBlur={() => setTooltip(null)}
+                        className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                        style={{
+                          justifyContent: collapsed && !mobile ? 'center' : 'space-between',
+                          padding: collapsed && !mobile ? '11px' : '10px 12px',
+                        }}
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <span className="nav-icon">{item.icon}</span>
+                            {(!collapsed || mobile) && <span className="nav-label">{item.label}</span>}
+                            {(!collapsed || mobile) && item.badge && (
+                              <span className={`nav-badge${isActive ? ' on-active' : ''}`}>{item.badge}</span>
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    ))}
+                  </nav>
+                </div>
+              );
+            })}
+          </div>
         </div>
+
+        {!mobile && onToggleCollapse && (
+          <button
+            type="button"
+            className="sidebar-edge-toggle"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
+            title={collapsed ? 'Expandir menú' : 'Contraer menú'}
+          >
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </button>
+        )}
       </aside>
 
       {tooltip && typeof document !== 'undefined' && createPortal(

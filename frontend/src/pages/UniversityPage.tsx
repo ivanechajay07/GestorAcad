@@ -5,6 +5,9 @@ import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
+import { DatePicker } from '../components/ui/DatePicker';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { EmptyState } from '../components/ui/EmptyState';
 import { formControlStyle, formLabelStyle } from '../components/ui/formStyles';
 import { getApiErrorMessage } from '../utils/apiErrors';
 import { useAuth } from '../contexts/AuthContext';
@@ -59,6 +62,19 @@ type TabKey = 'general' | 'campuses' | 'faculties' | 'careers' | 'authorities' |
 
 const inputStyle = formControlStyle;
 const labelStyle = formLabelStyle;
+
+const humanize = (value?: string): string =>
+  value
+    ? value.replace(/_/g, ' ').toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase())
+    : '—';
+
+const VALUE_TYPE_LABELS: Record<string, string> = {
+  STRING: 'Texto',
+  NUMBER: 'Número',
+  BOOLEAN: 'Booleano',
+  DATE: 'Fecha',
+  JSON: 'JSON',
+};
 
 const errMsg = (err: unknown, fallback: string): string => getApiErrorMessage(err, fallback);
 
@@ -597,10 +613,10 @@ export const UniversityPage: React.FC = () => {
                         <input style={inputStyle} disabled={!canEditUniversity} value={university?.licensingStatus ?? ''} onChange={(e) => setUniField('licensingStatus', e.target.value)} placeholder="Ej. LICENCIADA" />
                       </Field>
                       <Field label="Vigencia de acreditación">
-                        <input style={inputStyle} type="date" disabled={!canEditUniversity} value={university?.accreditationValidity ?? ''} onChange={(e) => setUniField('accreditationValidity', e.target.value)} />
+                        <DatePicker style={inputStyle} ariaLabel="Vigencia de la acreditación" disabled={!canEditUniversity} value={university?.accreditationValidity ?? ''} onChange={(next) => setUniField('accreditationValidity', next)} />
                       </Field>
                       <Field label="Fecha de fundación" className="field--span-2">
-                        <input style={inputStyle} type="date" disabled={!canEditUniversity} value={university?.foundationDate ?? ''} onChange={(e) => setUniField('foundationDate', e.target.value)} />
+                        <DatePicker style={inputStyle} ariaLabel="Fecha de fundación" disabled={!canEditUniversity} value={university?.foundationDate ?? ''} onChange={(next) => setUniField('foundationDate', next)} />
                       </Field>
                     </div>
                   </section>
@@ -652,16 +668,19 @@ export const UniversityPage: React.FC = () => {
           {/* --------------------------- Sedes --------------------------- */}
           {activeTab === 'campuses' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--text-base)' }}>
-                  Sedes, campus y filiales de la institución ({campuses.length}).
-                </p>
-                {canManageCampus && (
-                  <Button size="sm" onClick={() => openCampusModal()} leftIcon={<Plus size={15} />}>
-                    Nueva Sede
-                  </Button>
-                )}
-              </div>
+              <SectionHeader
+                icon={<Building2 size={20} />}
+                eyebrow="Infraestructura"
+                title={`Sedes y campus (${campuses.length})`}
+                description="Sedes, filiales y campus operativos de la institución."
+                aside={
+                  canManageCampus ? (
+                    <Button size="sm" onClick={() => openCampusModal()} leftIcon={<Plus size={15} />}>
+                      Nueva Sede
+                    </Button>
+                  ) : undefined
+                }
+              />
               <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '16px' }}>
                 {campuses.map((c) => (
                   <Card key={c.id} interactive className="card-fill">
@@ -710,7 +729,11 @@ export const UniversityPage: React.FC = () => {
                   </Card>
                 ))}
                 {campuses.length === 0 && (
-                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-base)' }}>No hay sedes registradas.</p>
+                  <EmptyState
+                    icon={<Building2 size={24} />}
+                    title="Sin sedes registradas"
+                    description="Registra la primera sede o campus para organizar la oferta académica."
+                  />
                 )}
               </div>
             </div>
@@ -719,17 +742,19 @@ export const UniversityPage: React.FC = () => {
           {/* -------------------------- Facultades -------------------------- */}
           {activeTab === 'faculties' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--text-base)' }}>
-                  Catálogo de facultades ({faculties.length}). Cada facultad agrupa carreras y es la
-                  adscripción de estudiantes y docentes.
-                </p>
-                {canManageFaculty && (
-                  <Button size="sm" onClick={() => openFacultyModal()} leftIcon={<Plus size={15} />}>
-                    Nueva Facultad
-                  </Button>
-                )}
-              </div>
+              <SectionHeader
+                icon={<School size={20} />}
+                eyebrow="Organización académica"
+                title={`Facultades (${faculties.length})`}
+                description="Cada facultad agrupa carreras y es la adscripción de estudiantes y docentes."
+                aside={
+                  canManageFaculty ? (
+                    <Button size="sm" onClick={() => openFacultyModal()} leftIcon={<Plus size={15} />}>
+                      Nueva Facultad
+                    </Button>
+                  ) : undefined
+                }
+              />
               <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '16px' }}>
                 {faculties.map((f) => (
                   <Card key={f.id} interactive className="card-fill">
@@ -779,9 +804,11 @@ export const UniversityPage: React.FC = () => {
                   </Card>
                 ))}
                 {faculties.length === 0 && (
-                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-base)' }}>
-                    No hay facultades registradas. Crea la primera para poder asociar carreras.
-                  </p>
+                  <EmptyState
+                    icon={<School size={24} />}
+                    title="Sin facultades registradas"
+                    description="Crea la primera facultad para poder asociar carreras, estudiantes y docentes."
+                  />
                 )}
               </div>
             </div>
@@ -789,26 +816,26 @@ export const UniversityPage: React.FC = () => {
 
           {/* --------------------------- Carreras --------------------------- */}
           {activeTab === 'careers' && (
-            <Card
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <BookOpen size={20} color="var(--primary)" />
-                  <span>Carreras Profesionales ({careers.length})</span>
-                </div>
-              }
-              extra={
-                canManageCareer ? (
-                  <Button
-                    size="sm"
-                    onClick={() => openCareerModal()}
-                    leftIcon={<Plus size={15} />}
-                    disabled={faculties.length === 0}
-                  >
-                    Nueva Carrera
-                  </Button>
-                ) : undefined
-              }
-            >
+            <Card>
+              <SectionHeader
+                compact
+                icon={<BookOpen size={18} />}
+                eyebrow="Oferta académica"
+                title={`Carreras profesionales (${careers.length})`}
+                description="Programas profesionales adscritos a cada facultad."
+                aside={
+                  canManageCareer ? (
+                    <Button
+                      size="sm"
+                      onClick={() => openCareerModal()}
+                      leftIcon={<Plus size={15} />}
+                      disabled={faculties.length === 0}
+                    >
+                      Nueva Carrera
+                    </Button>
+                  ) : undefined
+                }
+              />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', marginBottom: '14px' }}>
                 <label style={{ ...labelStyle, marginBottom: 0 }}>Filtrar por facultad</label>
                 <select
@@ -893,16 +920,19 @@ export const UniversityPage: React.FC = () => {
           {/* ------------------------ Autoridades ------------------------ */}
           {activeTab === 'authorities' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--text-base)' }}>
-                  Autoridades rectorales y de gobierno universitario ({authorities.length}).
-                </p>
-                {canManageAuthority && (
-                  <Button size="sm" onClick={() => openAuthorityModal()} leftIcon={<Plus size={15} />}>
-                    Nueva Autoridad
-                  </Button>
-                )}
-              </div>
+              <SectionHeader
+                icon={<GraduationCap size={20} />}
+                eyebrow="Gobierno"
+                title={`Autoridades (${authorities.length})`}
+                description="Autoridades rectorales y de gobierno universitario."
+                aside={
+                  canManageAuthority ? (
+                    <Button size="sm" onClick={() => openAuthorityModal()} leftIcon={<Plus size={15} />}>
+                      Nueva Autoridad
+                    </Button>
+                  ) : undefined
+                }
+              />
               <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '16px' }}>
                 {authorities.map((a) => (
                   <Card key={a.id} interactive className="card-fill">
@@ -946,7 +976,11 @@ export const UniversityPage: React.FC = () => {
                   </Card>
                 ))}
                 {authorities.length === 0 && (
-                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-base)' }}>No hay autoridades registradas.</p>
+                  <EmptyState
+                    icon={<GraduationCap size={24} />}
+                    title="Sin autoridades registradas"
+                    description="Registra a las autoridades rectorales y de gobierno universitario."
+                  />
                 )}
               </div>
             </div>
@@ -954,23 +988,31 @@ export const UniversityPage: React.FC = () => {
 
           {/* ------------------------ Parámetros ------------------------ */}
           {activeTab === 'parameters' && hasPermission('PARAMETRO_VIEW') && (
-            <Card
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Settings2 size={20} color="var(--primary)" />
-                  <span>Parámetros de Configuración Global ({parameters.length})</span>
-                </div>
-              }
-              extra={
-                canManageParameter ? (
-                  <Button size="sm" onClick={() => openParameterModal()} leftIcon={<Plus size={15} />}>
-                    Nuevo Parámetro
-                  </Button>
-                ) : undefined
-              }
-            >
+            <Card>
+              <SectionHeader
+                compact
+                icon={<Settings2 size={18} />}
+                eyebrow="Configuración"
+                title={`Parámetros globales (${parameters.length})`}
+                description="Valores de configuración que afectan a todos los módulos."
+                aside={
+                  canManageParameter ? (
+                    <Button size="sm" onClick={() => openParameterModal()} leftIcon={<Plus size={15} />}>
+                      Nuevo Parámetro
+                    </Button>
+                  ) : undefined
+                }
+              />
               <div className="data-table-wrap">
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--parameters">
+                  <colgroup>
+                    <col style={{ width: '34%' }} />
+                    <col style={{ width: '16%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '12%' }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Clave</th>
@@ -984,10 +1026,15 @@ export const UniversityPage: React.FC = () => {
                   <tbody>
                     {parameters.map((p) => (
                       <tr key={p.id}>
-                        <td className="cell-strong cell-mono">{p.key}</td>
-                        <td>{p.value}</td>
-                        <td><Badge variant="role" size="sm">{p.module}</Badge></td>
-                        <td>{p.valueType}</td>
+                        <td className="cell-strong">
+                          <div className="parameter-key">
+                            <code>{p.key}</code>
+                            <small title={p.description || undefined}>{p.description || 'Sin descripción'}</small>
+                          </div>
+                        </td>
+                        <td><span className="parameter-value">{p.value}</span></td>
+                        <td><Badge variant="outline" size="sm">{humanize(p.module)}</Badge></td>
+                        <td><span className="parameter-type">{VALUE_TYPE_LABELS[p.valueType] ?? humanize(p.valueType)}</span></td>
                         <td>
                           <Badge variant={p.active === false ? 'danger' : 'success'} size="sm" dot>{p.active === false ? 'Inactivo' : 'Activo'}</Badge>
                         </td>
@@ -1026,13 +1073,13 @@ export const UniversityPage: React.FC = () => {
           title={campusForm.id ? 'Editar Sede' : 'Registrar Sede'}
           subtitle="Identifica la sede, registra su ubicación y describe su capacidad instalada."
           icon={<MapPin size={20} />}
-          maxWidth="700px"
+          maxWidth="720px"
           onClose={() => setCampusModal(false)}
         >
           <FormError message={formError} />
-          <form onSubmit={handleSaveCampus} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSaveCampus} className="modal-form">
             <div className="form-section">Identificación de la sede</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
+            <div className="institution-grid">
               <Field label="Nombre de la sede" icon={<Building2 size={13} />}>
                 <input style={inputStyle} required value={campusForm.name} onChange={(e) => setCampusForm({ ...campusForm, name: e.target.value })} placeholder="Ej. Campus Ate" autoComplete="organization" />
               </Field>
@@ -1049,7 +1096,7 @@ export const UniversityPage: React.FC = () => {
             </div>
 
             <div className="form-section">Ubicación</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(160px, 100%), 1fr))', gap: '12px' }}>
+            <div className="institution-grid">
               <Field label="Ciudad" icon={<Building2 size={13} />}>
                 <input style={inputStyle} value={campusForm.city ?? ''} onChange={(e) => setCampusForm({ ...campusForm, city: e.target.value })} placeholder="Ej. Lima" />
               </Field>
@@ -1065,7 +1112,7 @@ export const UniversityPage: React.FC = () => {
             </Field>
 
             <div className="form-section">Infraestructura</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))', gap: '12px' }}>
+            <div className="institution-grid">
               <Field label="Aforo" icon={<Users size={13} />}>
                 <input style={inputStyle} type="number" min={0} value={campusForm.capacity ?? ''} onChange={(e) => setCampusForm({ ...campusForm, capacity: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ej. 5000" />
               </Field>
@@ -1076,7 +1123,7 @@ export const UniversityPage: React.FC = () => {
                 <input style={inputStyle} type="number" min={0} value={campusForm.laboratories ?? ''} onChange={(e) => setCampusForm({ ...campusForm, laboratories: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ej. 12" />
               </Field>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <div className="modal-form-footer">
               <Button type="button" variant="secondary" onClick={() => setCampusModal(false)}>Cancelar</Button>
               <Button type="submit" isLoading={isSubmitting}>Guardar Sede</Button>
             </div>
@@ -1090,16 +1137,16 @@ export const UniversityPage: React.FC = () => {
           title={authorityForm.id ? 'Editar Autoridad' : 'Registrar Autoridad'}
           subtitle="Registra el cargo, los datos de contacto y el periodo de gestión."
           icon={<GraduationCap size={20} />}
-          maxWidth="700px"
+          maxWidth="720px"
           onClose={() => setAuthorityModal(false)}
         >
           <FormError message={formError} />
-          <form onSubmit={handleSaveAuthority} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSaveAuthority} className="modal-form">
             <div className="form-section">Cargo y datos personales</div>
             <Field label="Cargo" icon={<Briefcase size={13} />}>
               <input style={inputStyle} required value={authorityForm.position} onChange={(e) => setAuthorityForm({ ...authorityForm, position: e.target.value })} placeholder="Ej. Rector(a)" />
             </Field>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
+            <div className="institution-grid">
               <Field label="Nombres" icon={<UserRound size={13} />}>
                 <input style={inputStyle} required value={authorityForm.firstName} onChange={(e) => setAuthorityForm({ ...authorityForm, firstName: e.target.value })} placeholder="Ej. María Fernanda" autoComplete="given-name" />
               </Field>
@@ -1112,7 +1159,7 @@ export const UniversityPage: React.FC = () => {
             </Field>
 
             <div className="form-section">Contacto y nombramiento</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
+            <div className="institution-grid">
               <Field label="Correo" icon={<Mail size={13} />}>
                 <input style={inputStyle} type="email" value={authorityForm.email ?? ''} onChange={(e) => setAuthorityForm({ ...authorityForm, email: e.target.value })} placeholder="Ej. rectoria@universidad.edu.pe" autoComplete="email" />
               </Field>
@@ -1128,15 +1175,15 @@ export const UniversityPage: React.FC = () => {
             </Field>
 
             <div className="form-section">Periodo de gestión</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
+            <div className="institution-grid">
               <Field label="Inicio de periodo" icon={<CalendarDays size={13} />}>
-                <input style={inputStyle} type="date" value={authorityForm.periodStart ?? ''} onChange={(e) => setAuthorityForm({ ...authorityForm, periodStart: e.target.value })} />
+                <DatePicker style={inputStyle} ariaLabel="Inicio del periodo" value={authorityForm.periodStart ?? ''} onChange={(next) => setAuthorityForm({ ...authorityForm, periodStart: next })} />
               </Field>
               <Field label="Fin de periodo" icon={<CalendarDays size={13} />}>
-                <input style={inputStyle} type="date" value={authorityForm.periodEnd ?? ''} onChange={(e) => setAuthorityForm({ ...authorityForm, periodEnd: e.target.value })} />
+                <DatePicker style={inputStyle} ariaLabel="Fin del periodo" value={authorityForm.periodEnd ?? ''} onChange={(next) => setAuthorityForm({ ...authorityForm, periodEnd: next })} />
               </Field>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <div className="modal-form-footer">
               <Button type="button" variant="secondary" onClick={() => setAuthorityModal(false)}>Cancelar</Button>
               <Button type="submit" isLoading={isSubmitting}>Guardar Autoridad</Button>
             </div>
@@ -1150,13 +1197,13 @@ export const UniversityPage: React.FC = () => {
           title={parameterForm.id ? 'Editar Parámetro' : 'Registrar Parámetro'}
           subtitle="Define una clave de configuración y el valor que consumirá el sistema."
           icon={<Settings2 size={20} />}
-          maxWidth="700px"
+          maxWidth="720px"
           onClose={() => setParameterModal(false)}
         >
           <FormError message={formError} />
-          <form onSubmit={handleSaveParameter} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSaveParameter} className="modal-form">
             <div className="form-section">Definición del parámetro</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: '12px' }}>
+            <div className="institution-grid">
               <Field label="Clave" icon={<Key size={13} />} hint="Usa mayúsculas y guiones bajos. Ej. NOTA_MINIMA_APROBATORIA.">
                 <input style={inputStyle} required value={parameterForm.key} onChange={(e) => setParameterForm({ ...parameterForm, key: e.target.value })} placeholder="Ej. NOTA_MINIMA_APROBATORIA" />
               </Field>
@@ -1180,7 +1227,7 @@ export const UniversityPage: React.FC = () => {
             <Field label="Descripción" icon={<AlignLeft size={13} />} hint="Explica qué controla el parámetro y cómo afecta al sistema.">
               <input style={inputStyle} value={parameterForm.description ?? ''} onChange={(e) => setParameterForm({ ...parameterForm, description: e.target.value })} placeholder="Ej. Nota mínima para aprobar una asignatura" />
             </Field>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <div className="modal-form-footer">
               <Button type="button" variant="secondary" onClick={() => setParameterModal(false)}>Cancelar</Button>
               <Button type="submit" isLoading={isSubmitting}>Guardar Parámetro</Button>
             </div>
@@ -1193,11 +1240,11 @@ export const UniversityPage: React.FC = () => {
           title={facultyForm.id ? 'Editar Facultad' : 'Registrar Facultad'}
           subtitle="Agrupa carreras y define la adscripción académica de estudiantes y docentes."
           icon={<School size={20} />}
-          maxWidth="640px"
+          maxWidth="720px"
           onClose={() => setFacultyModal(false)}
         >
           <FormError message={formError} />
-          <form onSubmit={handleSaveFaculty} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSaveFaculty} className="modal-form">
             <div className="form-section">Datos de la facultad</div>
             <Field label="Nombre de la facultad" icon={<School size={13} />}>
               <input
@@ -1223,7 +1270,7 @@ export const UniversityPage: React.FC = () => {
               La facultad agrupa carreras y es la adscripción de estudiantes y docentes. No se puede
               desactivar mientras tenga carreras o personas activas asociadas.
             </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <div className="modal-form-footer">
               <Button type="button" variant="secondary" onClick={() => setFacultyModal(false)}>Cancelar</Button>
               <Button type="submit" isLoading={isSubmitting}>Guardar Facultad</Button>
             </div>
@@ -1237,11 +1284,11 @@ export const UniversityPage: React.FC = () => {
           title={careerForm.id ? 'Editar Carrera' : 'Registrar Carrera'}
           subtitle="Define el nombre, la facultad de adscripción y el alcance de la carrera."
           icon={<BookOpen size={20} />}
-          maxWidth="640px"
+          maxWidth="720px"
           onClose={() => setCareerModal(false)}
         >
           <FormError message={formError} />
-          <form onSubmit={handleSaveCareer} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSaveCareer} className="modal-form">
             <div className="form-section">Datos de la carrera</div>
             <Field label="Nombre de la carrera" icon={<BookOpen size={13} />}>
               <input
@@ -1279,7 +1326,7 @@ export const UniversityPage: React.FC = () => {
               Si cambias la facultad, los estudiantes de esta carrera se reasignan automáticamente
               para mantener la coherencia con el catálogo.
             </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <div className="modal-form-footer">
               <Button type="button" variant="secondary" onClick={() => setCareerModal(false)}>Cancelar</Button>
               <Button type="submit" isLoading={isSubmitting}>Guardar Carrera</Button>
             </div>

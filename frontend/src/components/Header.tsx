@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { NAV_SECTIONS } from '../config/navigation';
@@ -16,6 +16,7 @@ import {
   Sun,
   Moon,
   Sparkles,
+  CalendarDays,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -38,14 +39,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { user, roles, logout, hasPermission, hasAnyRole } = useAuth();
   const { mode, toggle: toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const paletteInputRef = useRef<HTMLInputElement>(null);
   const palettePanelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchTimerRef = useRef<number | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userTriggerRef = useRef<HTMLButtonElement>(null);
   const userMenuFirstRef = useRef<HTMLAnchorElement>(null);
@@ -66,6 +70,30 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       .map((item) => ({ ...item, section: section.title }))
   );
 
+  const currentItem = accessibleItems
+    .filter(
+      (item) =>
+        location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
+    )
+    .sort((a, b) => b.to.length - a.to.length)[0];
+
+  const today = new Date();
+  const todayLabel = today
+    .toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+    .replace('.', '')
+    .toUpperCase();
+  const todayWeekday = today.toLocaleDateString('es-PE', { weekday: 'long' });
+  const todayFull = today.toLocaleDateString('es-PE', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  useEffect(() => () => {
+    if (searchTimerRef.current) window.clearTimeout(searchTimerRef.current);
+  }, []);
+
   const query = normalize(paletteQuery.trim());
   const results = accessibleItems.filter(
     (item) => !query || normalize(`${item.label} ${item.section}`).includes(query)
@@ -76,6 +104,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   };
 
   const openPalette = () => {
+    setSearchExpanded(true);
     setPaletteQuery('');
     setPaletteOpen(true);
   };
@@ -83,12 +112,27 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const closePalette = () => {
     setPaletteOpen(false);
     setPaletteQuery('');
+    setSearchExpanded(false);
     triggerRef.current?.focus();
+  };
+
+  const handleSearchClick = () => {
+    if (paletteOpen) return;
+    if (searchExpanded) {
+      openPalette();
+      return;
+    }
+    setSearchExpanded(true);
+    searchTimerRef.current = window.setTimeout(() => {
+      setPaletteQuery('');
+      setPaletteOpen(true);
+    }, 180);
   };
 
   const goTo = (to: string) => {
     setPaletteOpen(false);
     setPaletteQuery('');
+    setSearchExpanded(false);
     navigate(to);
   };
 
@@ -97,6 +141,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
         event.preventDefault();
         setPaletteQuery('');
+        setSearchExpanded(true);
         setPaletteOpen(true);
       }
     };
@@ -228,20 +273,52 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           <button
             ref={triggerRef}
             type="button"
-            className="header-search-trigger"
-            onClick={openPalette}
+            className={`header-search-trigger${searchExpanded ? ' is-expanded' : ''}`}
+            onClick={handleSearchClick}
+            onFocus={() => setSearchExpanded(true)}
+            onBlur={() => {
+              if (!paletteOpen) setSearchExpanded(false);
+            }}
             aria-haspopup="dialog"
             aria-expanded={paletteOpen}
             aria-label="Buscar módulos o acciones Ctrl K"
             aria-keyshortcuts="Control+K Meta+K"
           >
-            <Search size={16} aria-hidden="true" />
-            <span>Buscar módulos o acciones</span>{' '}
+            <span className="header-search__icon" aria-hidden="true">
+              <Search size={15} />
+            </span>
+            <span className="header-search__label">Buscar módulos o acciones</span>
             <kbd>Ctrl K</kbd>
           </button>
+
+          {currentItem && (
+            <div
+              className="header-context"
+              title={`${currentItem.section} · ${currentItem.label}`}
+            >
+              <span className="header-context__icon" aria-hidden="true">
+                {currentItem.icon}
+              </span>
+              <span className="header-context__copy">
+                <small>{currentItem.section}</small>
+                <strong>{currentItem.label}</strong>
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="header-actions">
+          <div className="header-date" title={todayFull}>
+            <span className="header-date__icon" aria-hidden="true">
+              <CalendarDays size={16} />
+            </span>
+            <span className="sr-only">Fecha actual: {todayFull}</span>
+            <span className="header-date__copy" aria-hidden="true">
+              <small>{todayWeekday}</small>
+              <strong>{todayLabel}</strong>
+            </span>
+          </div>
+
           <div className="header-utility-group">
             <ThemeToggle />
             <NotificationBell />
@@ -263,10 +340,16 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 <span className="user-avatar__status" aria-hidden="true" />
               </span>
               <span className="user-meta">
-                <strong>{user?.fullName || 'Usuario'}</strong>
-                <small>
+                <strong title={user?.fullName || 'Usuario'}>{user?.fullName || 'Usuario'}</strong>
+                <small title={user?.department ? `${roleLabel} · ${user.department}` : roleLabel}>
+                  <span className="user-meta__dot" aria-hidden="true" />
                   {roleLabel}
-                  {user?.department ? ` · ${user.department}` : ''}
+                  {user?.department && (
+                    <>
+                      <span className="user-meta__sep" aria-hidden="true">·</span>
+                      <span className="user-meta__dept">{user.department}</span>
+                    </>
+                  )}
                 </small>
               </span>
               <ChevronDown

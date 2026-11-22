@@ -3,6 +3,9 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { PageHeader } from '../components/ui/PageHeader';
+import { DatePicker } from '../components/ui/DatePicker';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { EmptyState } from '../components/ui/EmptyState';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { useToast } from '../contexts/ToastContext';
@@ -38,6 +41,7 @@ import {
   RefreshCw,
   Trash2,
   UserCheck,
+  Users,
 } from 'lucide-react';
 
 type TabKey = 'evaluations' | 'grades' | 'attendance' | 'act';
@@ -331,9 +335,9 @@ export const EvaluationPage: React.FC = () => {
         }
       />
 
-      <div className="glass-panel" style={{ padding: '16px 18px', display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        <div style={{ flex: '1 1 360px' }}>
-          <label className="field-label" htmlFor="evaluation-section">Sección</label>
+      <div className="glass-panel evaluation-context">
+        <div className="evaluation-context__field">
+          <label className="field-label" htmlFor="evaluation-section">Sección activa</label>
           <select
             id="evaluation-section"
             style={academicInputStyle}
@@ -349,16 +353,31 @@ export const EvaluationPage: React.FC = () => {
           </select>
         </div>
         {selectedSection && (
-          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', paddingBottom: '8px' }}>
-            <BookOpen size={14} style={{ verticalAlign: '-2px', marginRight: '5px' }} />
-            {selectedSection.courseName} · Docente: {selectedSection.teacherName ?? 'sin asignar'} · Cupo: {selectedSection.enrolledCount}/{selectedSection.capacity}
+          <div className="evaluation-context__meta">
+            <span className="evaluation-context__chip">
+              <BookOpen size={13} aria-hidden="true" />
+              {selectedSection.courseName}
+            </span>
+            <span className="evaluation-context__chip">
+              <UserCheck size={13} aria-hidden="true" />
+              {selectedSection.teacherName ?? 'Sin docente asignado'}
+            </span>
+            <span className="evaluation-context__chip">
+              <Users size={13} aria-hidden="true" />
+              Cupo {selectedSection.enrolledCount}/{selectedSection.capacity}
+            </span>
           </div>
         )}
       </div>
 
       {!selectedSectionId ? (
-        <div className="glass-panel" style={{ padding: '28px', color: 'var(--text-muted)' }}>
-          No hay secciones disponibles para evaluar.
+        <div className="glass-panel" style={{ padding: '18px' }}>
+          <EmptyState
+                          compact
+            icon={<ClipboardCheck size={24} />}
+            title="Sin secciones disponibles"
+            description="No hay secciones activas para evaluar. Crea una sección en Estructura Académica para comenzar."
+          />
         </div>
       ) : (
         <>
@@ -371,17 +390,33 @@ export const EvaluationPage: React.FC = () => {
 
           {activeTab === 'evaluations' && canViewEvaluations && (
             <div className="glass-panel" style={{ padding: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px', flexWrap: 'wrap' }}>
-                <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Evaluaciones ({evaluations.length})</h2>
-                {canEditEvaluations && !actClosed && (
-                  <Button size="sm" onClick={() => openEvaluationModal()} leftIcon={<Plus size={15} />}>Nueva Evaluación</Button>
-                )}
-              </div>
+              <SectionHeader
+                compact
+                icon={<ClipboardList size={18} />}
+                eyebrow="Ponderación"
+                title={`Evaluaciones (${evaluations.length})`}
+                description={`Peso acumulado de la sección: ${totalWeight}%.`}
+                aside={
+                  canEditEvaluations && !actClosed ? (
+                    <Button size="sm" onClick={() => openEvaluationModal()} leftIcon={<Plus size={15} />}>
+                      Nueva Evaluación
+                    </Button>
+                  ) : undefined
+                }
+              />
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
           <div className="data-table-wrap">
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--evaluations">
+                  <colgroup>
+                    <col style={{ width: '30%' }} />
+                    <col style={{ width: '16%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '16%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '16%' }} />
+                  </colgroup>
                   <thead>
-                    <tr><th>Evaluación</th><th>Tipo</th><th>Peso</th><th>Fecha</th><th>Nota máxima</th><th>Acciones</th></tr>
+                    <tr><th>Evaluación</th><th>Tipo</th><th>Peso</th><th>Fecha</th><th>Nota máxima</th><th style={{ textAlign: 'center' }}>Acciones</th></tr>
                   </thead>
                   <tbody>
                     {evaluations.map((evaluation) => (
@@ -408,7 +443,16 @@ export const EvaluationPage: React.FC = () => {
                       </tr>
                     ))}
                     {evaluations.length === 0 && (
-                      <tr><td colSpan={6} style={{ color: 'var(--text-muted)' }}>No hay evaluaciones registradas.</td></tr>
+                      <tr>
+                        <td colSpan={6}>
+                          <EmptyState
+                          compact
+                            icon={<ClipboardList size={22} />}
+                            title="Sin evaluaciones registradas"
+                            description="Agrega la primera evaluación para comenzar a calcular notas y pesos."
+                          />
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
@@ -418,21 +462,40 @@ export const EvaluationPage: React.FC = () => {
 
           {activeTab === 'grades' && canViewGrades && (
             <div className="glass-panel" style={{ padding: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Notas</h2>
-                  <select style={{ ...academicInputStyle, width: 'auto' }} value={selectedEvaluationId || ''} onChange={(e) => setSelectedEvaluationId(Number(e.target.value))}>
-                    <option value="">— Evaluación —</option>
-                    {evaluations.map((evaluation) => <option key={evaluation.id} value={evaluation.id}>{evaluation.name} ({evaluation.weight}%)</option>)}
-                  </select>
-                </div>
-                {canEditGrades && selectedEvaluation && !actClosed && (
-                  <Button size="sm" onClick={handleSaveGrades} isLoading={saving}>Guardar notas</Button>
-                )}
-              </div>
+              <SectionHeader
+                compact
+                icon={<Pencil size={18} />}
+                eyebrow="Calificación"
+                title="Registro de notas"
+                description="Selecciona una evaluación y registra la nota de cada estudiante."
+                aside={
+                  <>
+                    <select
+                      aria-label="Evaluación"
+                      style={{ ...academicInputStyle, width: '220px', maxWidth: '100%' }}
+                      value={selectedEvaluationId || ''}
+                      onChange={(e) => setSelectedEvaluationId(Number(e.target.value))}
+                    >
+                      <option value="">— Evaluación —</option>
+                      {evaluations.map((evaluation) => (
+                        <option key={evaluation.id} value={evaluation.id}>{evaluation.name} ({evaluation.weight}%)</option>
+                      ))}
+                    </select>
+                    {canEditGrades && selectedEvaluation && !actClosed && (
+                      <Button size="sm" onClick={handleSaveGrades} isLoading={saving}>Guardar notas</Button>
+                    )}
+                  </>
+                }
+              />
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
           <div className="data-table-wrap">
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--grades">
+                  <colgroup>
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '30%' }} />
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: '34%' }} />
+                  </colgroup>
                   <thead><tr><th>Código</th><th>Estudiante</th><th>Nota (0–{selectedEvaluation?.maxScore ?? 20})</th><th>Observación</th></tr></thead>
                   <tbody>
                     {grades.map((grade) => (
@@ -465,7 +528,16 @@ export const EvaluationPage: React.FC = () => {
                       </tr>
                     ))}
                     {grades.length === 0 && (
-                      <tr><td colSpan={4} style={{ color: 'var(--text-muted)' }}>No hay estudiantes matriculados o no hay evaluación seleccionada.</td></tr>
+                      <tr>
+                        <td colSpan={4}>
+                          <EmptyState
+                          compact
+                            icon={<Pencil size={22} />}
+                            title="Sin notas para mostrar"
+                            description="Selecciona una evaluación y verifica que la sección tenga estudiantes matriculados."
+                          />
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
@@ -475,23 +547,35 @@ export const EvaluationPage: React.FC = () => {
 
           {activeTab === 'attendance' && canViewAttendance && (
             <div className="glass-panel" style={{ padding: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Asistencia</h2>
-                  <input
-                    style={{ ...academicInputStyle, width: 'auto' }}
-                    type="date"
-                    value={attendanceDate}
-                    onChange={(event) => setAttendanceDate(event.target.value)}
-                  />
-                </div>
-                {canEditAttendance && !actClosed && (
-                  <Button size="sm" onClick={handleSaveAttendance} isLoading={saving}>Guardar asistencia</Button>
-                )}
-              </div>
+              <SectionHeader
+                compact
+                icon={<UserCheck size={18} />}
+                eyebrow="Asistencia"
+                title="Control de asistencia"
+                description="Registra la asistencia de la sección para la fecha seleccionada."
+                aside={
+                  <>
+                    <DatePicker
+                      ariaLabel="Fecha de asistencia"
+                      style={{ ...academicInputStyle, width: 'auto' }}
+                      value={attendanceDate}
+                      onChange={setAttendanceDate}
+                    />
+                    {canEditAttendance && !actClosed && (
+                      <Button size="sm" onClick={handleSaveAttendance} isLoading={saving}>Guardar asistencia</Button>
+                    )}
+                  </>
+                }
+              />
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
           <div className="data-table-wrap">
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--grades">
+                  <colgroup>
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '30%' }} />
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: '34%' }} />
+                  </colgroup>
                   <thead><tr><th>Código</th><th>Estudiante</th><th>Estado</th><th>Observación</th></tr></thead>
                   <tbody>
                     {attendance.map((record) => (
@@ -519,7 +603,16 @@ export const EvaluationPage: React.FC = () => {
                       </tr>
                     ))}
                     {attendance.length === 0 && (
-                      <tr><td colSpan={4} style={{ color: 'var(--text-muted)' }}>No hay estudiantes matriculados.</td></tr>
+                      <tr>
+                        <td colSpan={4}>
+                          <EmptyState
+                          compact
+                            icon={<UserCheck size={22} />}
+                            title="Sin estudiantes matriculados"
+                            description="La sección todavía no tiene estudiantes para registrar asistencia."
+                          />
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
@@ -529,22 +622,35 @@ export const EvaluationPage: React.FC = () => {
 
           {activeTab === 'act' && canViewActa && (
             <div className="glass-panel" style={{ padding: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Acta de evaluación</h2>
-                  <Badge variant={actClosed ? 'success' : 'warning'} size="sm" dot>{acta?.status ?? 'ABIERTA'}</Badge>
-                </div>
-                {canCloseActa && !actClosed && (
-                  <Button size="sm" variant="danger" onClick={handleCloseActa} isLoading={saving}>Cerrar acta</Button>
-                )}
-              </div>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 0 }}>
-                Peso acumulado: <strong>{totalWeight}%</strong>. Para cerrar el acta debe ser exactamente 100%.
-                {actClosed && acta?.closedAt && <> Cerrada el {new Date(acta.closedAt).toLocaleString('es-PE')}.</>}
-              </p>
+              <SectionHeader
+                compact
+                icon={<CheckCircle2 size={18} />}
+                eyebrow="Cierre"
+                title="Acta de evaluación"
+                description={
+                  actClosed && acta?.closedAt
+                    ? `Peso acumulado: ${totalWeight}%. Cerrada el ${new Date(acta.closedAt).toLocaleString('es-PE')}.`
+                    : `Peso acumulado: ${totalWeight}%. Para cerrar el acta debe ser exactamente 100%.`
+                }
+                aside={
+                  <>
+                    <Badge variant={actClosed ? 'success' : 'warning'} size="sm" dot>{acta?.status ?? 'ABIERTA'}</Badge>
+                    {canCloseActa && !actClosed && (
+                      <Button size="sm" variant="danger" onClick={handleCloseActa} isLoading={saving}>Cerrar acta</Button>
+                    )}
+                  </>
+                }
+              />
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
           <div className="data-table-wrap">
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--acta">
+                  <colgroup>
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '32%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '26%' }} />
+                    <col style={{ width: '14%' }} />
+                  </colgroup>
                   <thead><tr><th>Código</th><th>Estudiante</th><th>Promedio</th><th>Estado</th><th>Créditos</th></tr></thead>
                   <tbody>
                     {(acta?.details ?? []).map((detail) => (
@@ -557,7 +663,16 @@ export const EvaluationPage: React.FC = () => {
                       </tr>
                     ))}
                     {(acta?.details ?? []).length === 0 && (
-                      <tr><td colSpan={5} style={{ color: 'var(--text-muted)' }}>El acta aún no ha sido cerrada.</td></tr>
+                      <tr>
+                        <td colSpan={5}>
+                          <EmptyState
+                          compact
+                            icon={<CheckCircle2 size={22} />}
+                            title="El acta aún no ha sido cerrada"
+                            description="Cuando el peso acumulado llegue al 100% podrás cerrar el acta y calcular los promedios finales."
+                          />
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
@@ -575,9 +690,9 @@ export const EvaluationPage: React.FC = () => {
           onClose={() => setEvaluationModal(false)}
         >
           <AcademicFormError message={formError} />
-          <form onSubmit={handleSaveEvaluation} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleSaveEvaluation} className="modal-form">
             <div className="form-section">Identificación de la evaluación</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid">
               <AcademicField label="Nombre" icon={<FileText size={13} />}>
                 <input style={academicInputStyle} required value={evaluationForm.name} onChange={(e) => setEvaluationForm({ ...evaluationForm, name: e.target.value })} placeholder="Ej. Examen parcial" />
               </AcademicField>
@@ -589,7 +704,7 @@ export const EvaluationPage: React.FC = () => {
             </div>
 
             <div className="form-section">Escala y ponderación</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
+            <div className="modal-field-grid">
               <AcademicField label="Peso (%)" icon={<Percent size={13} />} hint="La suma de pesos de la sección debe llegar a 100%.">
                 <input style={academicInputStyle} type="number" min={0} max={100} step={0.01} required value={evaluationForm.weight} onChange={(e) => setEvaluationForm({ ...evaluationForm, weight: Number(e.target.value) })} placeholder="Ej. 30" />
               </AcademicField>
@@ -600,9 +715,9 @@ export const EvaluationPage: React.FC = () => {
 
             <div className="form-section">Programación</div>
             <AcademicField label="Fecha" icon={<CalendarDays size={13} />}>
-              <input style={academicInputStyle} type="date" value={evaluationForm.date ?? ''} onChange={(e) => setEvaluationForm({ ...evaluationForm, date: e.target.value })} />
+              <DatePicker style={academicInputStyle} ariaLabel="Fecha de la evaluación" value={evaluationForm.date ?? ''} onChange={(next) => setEvaluationForm({ ...evaluationForm, date: next })} />
             </AcademicField>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+            <div className="modal-form-footer">
               <Button type="button" variant="secondary" onClick={() => setEvaluationModal(false)}>Cancelar</Button>
               <Button type="submit" variant="primary" isLoading={saving}>{evaluationForm.id ? 'Guardar cambios' : 'Registrar evaluación'}</Button>
             </div>

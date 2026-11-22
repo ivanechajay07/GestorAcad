@@ -4,6 +4,9 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { PageHeader } from '../components/ui/PageHeader';
+import { EmptyState } from '../components/ui/EmptyState';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { DatePicker } from '../components/ui/DatePicker';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
@@ -168,21 +171,24 @@ export const TeacherSectionPage: React.FC = () => {
 
       {tab === 'grades' && (
         <div className="glass-panel" style={{ padding: '18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Notas</h2>
-              <select style={{ ...academicInputStyle, width: 'auto' }} value={selectedEvaluationId || ''} onChange={(event) => setSelectedEvaluationId(Number(event.target.value))}>
-                <option value="">— Evaluación —</option>
-                {evaluations.map((evaluation) => <option key={evaluation.id} value={evaluation.id}>{evaluation.name} ({evaluation.weight}%)</option>)}
-              </select>
-            </div>
-            {selectedEvaluation && !closed && (
-              <Button size="sm" onClick={saveGrades} isLoading={saving}>Guardar notas</Button>
-            )}
-          </div>
-          {evaluations.length === 0 && (
-            <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-base)' }}>El administrador aún no registró evaluaciones para esta sección.</p>
-          )}
+          <SectionHeader
+            compact
+            icon={<Pencil size={18} />}
+            eyebrow="Calificación"
+            title="Notas de la sección"
+            description="Selecciona una evaluación y registra la nota de cada estudiante."
+            aside={
+              <>
+                <select style={{ ...academicInputStyle, width: 'auto' }} value={selectedEvaluationId || ''} onChange={(event) => setSelectedEvaluationId(Number(event.target.value))}>
+                  <option value="">— Evaluación —</option>
+                  {evaluations.map((evaluation) => <option key={evaluation.id} value={evaluation.id}>{evaluation.name} ({evaluation.weight}%)</option>)}
+                </select>
+                {selectedEvaluation && !closed && (
+                  <Button size="sm" onClick={saveGrades} isLoading={saving}>Guardar notas</Button>
+                )}
+              </>
+            }
+          />
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
               <thead><tr><th>Código</th><th>Estudiante</th><th>Nota (0–{selectedEvaluation?.maxScore ?? 20})</th><th>Observación</th></tr></thead>
@@ -205,7 +211,16 @@ export const TeacherSectionPage: React.FC = () => {
                     </td>
                   </tr>
                 ))}
-                {grades.length === 0 && <tr><td colSpan={4} style={{ color: 'var(--text-muted)' }}>No hay estudiantes o evaluación seleccionada.</td></tr>}
+                {grades.length === 0 && <tr>
+                  <td colSpan={4}>
+                    <EmptyState
+                      compact
+                      icon={<Pencil size={22} />}
+                      title="Sin notas para mostrar"
+                      description="Selecciona una evaluación y verifica que la sección tenga estudiantes matriculados."
+                    />
+                  </td>
+                </tr>}
               </tbody>
             </table>
           </div>
@@ -214,13 +229,19 @@ export const TeacherSectionPage: React.FC = () => {
 
       {tab === 'attendance' && (
         <div className="glass-panel" style={{ padding: '18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Asistencia</h2>
-              <input style={{ ...academicInputStyle, width: 'auto' }} type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} />
-            </div>
-            {!closed && <Button size="sm" onClick={saveAttendance} isLoading={saving}>Guardar asistencia</Button>}
-          </div>
+          <SectionHeader
+            compact
+            icon={<UserCheck size={18} />}
+            eyebrow="Asistencia"
+            title="Control de asistencia"
+            description="Registra la asistencia de la sección para la fecha seleccionada."
+            aside={
+              <>
+                <DatePicker style={{ ...academicInputStyle, width: 'auto' }} ariaLabel="Fecha de asistencia" value={attendanceDate} onChange={setAttendanceDate} />
+                {!closed && <Button size="sm" onClick={saveAttendance} isLoading={saving}>Guardar asistencia</Button>}
+              </>
+            }
+          />
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
               <thead><tr><th>Código</th><th>Estudiante</th><th>Estado</th></tr></thead>
@@ -237,7 +258,16 @@ export const TeacherSectionPage: React.FC = () => {
                     </td>
                   </tr>
                 ))}
-                {attendance.length === 0 && <tr><td colSpan={3} style={{ color: 'var(--text-muted)' }}>No hay estudiantes matriculados.</td></tr>}
+                {attendance.length === 0 && <tr>
+                  <td colSpan={3}>
+                    <EmptyState
+                      compact
+                      icon={<UserCheck size={22} />}
+                      title="Sin estudiantes matriculados"
+                      description="La sección todavía no tiene estudiantes para registrar asistencia."
+                    />
+                  </td>
+                </tr>}
               </tbody>
             </table>
           </div>
@@ -246,13 +276,19 @@ export const TeacherSectionPage: React.FC = () => {
 
       {tab === 'act' && (
         <div className="glass-panel" style={{ padding: '18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Acta</h2>
-              <Badge variant={closed ? 'success' : 'warning'} size="sm" dot>{acta?.status ?? 'ABIERTA'}</Badge>
-            </div>
-            {!closed && <Button size="sm" variant="danger" onClick={closeActa} isLoading={saving}>Cerrar acta</Button>}
-          </div>
+          <SectionHeader
+            compact
+            icon={<CheckCircle2 size={18} />}
+            eyebrow="Cierre"
+            title="Acta de evaluación"
+            description="Promedios finales y estado de cierre de la sección."
+            aside={
+              <>
+                <Badge variant={closed ? 'success' : 'warning'} size="sm" dot>{acta?.status ?? 'ABIERTA'}</Badge>
+                {!closed && <Button size="sm" variant="danger" onClick={closeActa} isLoading={saving}>Cerrar acta</Button>}
+              </>
+            }
+          />
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
               <thead><tr><th>Código</th><th>Estudiante</th><th>Promedio</th><th>Estado</th><th>Créditos</th></tr></thead>

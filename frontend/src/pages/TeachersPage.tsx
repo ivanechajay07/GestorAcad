@@ -11,6 +11,7 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 
 import { PageHeader } from '../components/ui/PageHeader';
+import { DatePicker } from '../components/ui/DatePicker';
 
 import { Pagination } from '../components/ui/Pagination';
 
@@ -29,6 +30,7 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { useToast } from '../contexts/ToastContext';
 
 import { teacherService } from '../services/teacherService';
+import { reportService } from '../services/reportService';
 
 import type {
 
@@ -71,6 +73,8 @@ import {
   Hash,
 
   Layers,
+
+  Download,
 
   Mail,
 
@@ -281,6 +285,20 @@ export const TeachersPage: React.FC = () => {
   const { confirm } = useConfirm();
 
   const toast = useToast();
+  const canExport = hasPermission('DOCENTE_EXPORT');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const filename = await reportService.exportTeachers();
+      toast.success(`Exportación generada: ${filename}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo generar la exportación');
+    } finally {
+      setExporting(false);
+    }
+  };
 
 
 
@@ -1160,6 +1178,18 @@ export const TeachersPage: React.FC = () => {
 
           <>
 
+            {canExport && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleExport}
+                isLoading={exporting}
+                leftIcon={<Download size={15} />}
+              >
+                Exportar padrón
+              </Button>
+            )}
+
             <ViewToggle value={viewMode} onChange={setViewMode} />
 
           </>
@@ -1274,7 +1304,6 @@ export const TeachersPage: React.FC = () => {
 
                       <div className="entity-row"><Layers size={15} /> {t.department || '—'}</div>
 
-                      <div className="entity-row"><Mail size={15} /> {t.email || 'Sin correo registrado'}</div>
 
                     </div>
 
@@ -1376,7 +1405,16 @@ export const TeachersPage: React.FC = () => {
 
               <div className="data-table-wrap">
 
-                <table className="data-table data-table--stack">
+                <table className="data-table data-table--stack table--teachers">
+                  <colgroup>
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '29%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '19%' }} />
+                    <col style={{ width: '8%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '12%' }} />
+                  </colgroup>
 
                   <thead>
 
@@ -1390,9 +1428,8 @@ export const TeachersPage: React.FC = () => {
 
                       <th>Facultad</th>
 
-                      <th>Correo</th>
 
-                      <th>Carga Horaria</th>
+                      <th>Horas</th>
 
                       <th>Estado</th>
 
@@ -1414,7 +1451,7 @@ export const TeachersPage: React.FC = () => {
                           <div className="table-person">
                             <span className="table-avatar" aria-hidden="true">{(t.firstName?.[0] ?? '') + (t.lastName?.[0] ?? '')}</span>
                             <div className="table-person__copy">
-                              <span>{t.firstName} {t.lastName}</span>
+                              <span title={`${t.firstName} ${t.lastName}`}>{t.firstName} {t.lastName}</span>
                               <small>{t.academicDegree || '—'}</small>
                             </div>
                           </div>
@@ -1422,11 +1459,10 @@ export const TeachersPage: React.FC = () => {
 
                         <td><Badge variant="outline" size="sm">{CATEGORY_LABEL(t.category)}</Badge></td>
 
-                        <td>{t.faculty || '—'}</td>
+                        <td title={t.faculty || undefined}>{t.faculty || '-'}</td>
 
-                        <td>{t.email || '—'}</td>
 
-                        <td style={{ fontWeight: 700, color: 'var(--accent-emerald)' }}>{t.weeklyLoad ?? 0}h / sem</td>
+                        <td style={{ fontWeight: 700, color: 'var(--accent-emerald)' }}>{t.weeklyLoad ?? 0} h</td>
 
                         <td>
 
@@ -1613,6 +1649,8 @@ export const TeachersPage: React.FC = () => {
 
                   <h4 className="modal-step-title"><UserRound size={15} /> Identidad y contacto</h4>
 
+                  <div className="modal-form-section">
+                    <h5 className="modal-form-section__title">Identificación</h5>
                   <div className="modal-field-grid">
 
                     <Field label="Código institucional" icon={<Hash size={13} />} error={fieldErrors.code}>
@@ -1639,6 +1677,11 @@ export const TeachersPage: React.FC = () => {
 
                     </Field>
 
+                  </div>
+                  </div>
+                  <div className="modal-form-section">
+                    <h5 className="modal-form-section__title">Contacto</h5>
+                    <div className="modal-field-grid">
                     <Field label="Correo institucional" icon={<Mail size={13} />} error={fieldErrors.email}>
 
                       <input style={inputStyle} type="email" maxLength={100} value={teacherForm.email ?? ''} onChange={(e) => setTeacherField('email', e.target.value)} placeholder="Ej. nombre@gestoracad.edu" autoComplete="email" />
@@ -1658,6 +1701,7 @@ export const TeachersPage: React.FC = () => {
                     <input style={inputStyle} maxLength={255} value={teacherForm.address ?? ''} onChange={(e) => setTeacherField('address', e.target.value)} placeholder="Ej. Av. Universitaria 1801, Lima" autoComplete="street-address" />
 
                   </Field>
+                  </div>
 
                 </>
 
@@ -1749,7 +1793,7 @@ export const TeachersPage: React.FC = () => {
 
                     <Field label="Fecha de ingreso" icon={<CalendarDays size={13} />} error={fieldErrors.hireDate}>
 
-                      <input style={inputStyle} type="date" value={teacherForm.hireDate ?? ''} onChange={(e) => setTeacherField('hireDate', e.target.value)} />
+                      <DatePicker style={inputStyle} ariaLabel="Fecha de contratación" max={new Date().toISOString().slice(0, 10)} value={teacherForm.hireDate ?? ''} onChange={(next) => setTeacherField('hireDate', next)} />
 
                     </Field>
 

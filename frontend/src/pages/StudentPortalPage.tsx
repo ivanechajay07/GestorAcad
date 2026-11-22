@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Badge } from '../components/ui/Badge';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
+import { EmptyState } from '../components/ui/EmptyState';
+import { SectionHeader } from '../components/ui/SectionHeader';
 import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
 import type { PortalCourseDto, StudentPortalDto } from '../services/portalService';
-import { BookOpen, ClipboardCheck, GraduationCap, History, UserCheck } from 'lucide-react';
+import { BookOpen, ClipboardCheck, GraduationCap, History } from 'lucide-react';
 
 const formatDate = (value?: string | null): string => {
   if (!value) return '—';
@@ -73,10 +76,13 @@ export const StudentPortalPage: React.FC = () => {
       />
 
       <div className="glass-panel" style={{ padding: '18px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '14px' }}>
-          <BookOpen size={19} color="var(--primary)" />
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Cursos y evaluaciones</h2>
-        </div>
+        <SectionHeader
+          compact
+          icon={<BookOpen size={18} />}
+          eyebrow="Matrícula vigente"
+          title="Cursos y evaluaciones"
+          description="Cursos matriculados, asistencia y estado del acta del periodo actual."
+        />
 
         <p className="table-scroll-hint">Desliza para ver más columnas →</p>
         <div className="data-table-wrap">
@@ -121,7 +127,16 @@ export const StudentPortalPage: React.FC = () => {
                 </tr>
               ))}
               {data.courses.length === 0 && (
-                <tr><td colSpan={8} style={{ color: 'var(--text-muted)' }}>No tienes cursos matriculados.</td></tr>
+                <tr>
+                  <td colSpan={8}>
+                    <EmptyState
+                      compact
+                      icon={<BookOpen size={22} />}
+                      title="Sin cursos matriculados"
+                      description="Cuando tengas una matrícula activa, aquí verás tus cursos, asistencia y promedio."
+                    />
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -129,18 +144,14 @@ export const StudentPortalPage: React.FC = () => {
       </div>
 
       <div className="glass-panel" style={{ padding: '18px' }}>
-        <div className="history-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-            <History size={19} color="var(--primary)" />
-            <div>
-              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Historial académico</h2>
-              <p style={{ margin: '2px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                Matrículas de todos los periodos, incluidas las retiradas.
-              </p>
-            </div>
-          </div>
-          <Badge variant="outline" size="sm">{history.length} {history.length === 1 ? 'registro' : 'registros'}</Badge>
-        </div>
+        <SectionHeader
+          compact
+          icon={<History size={18} />}
+          eyebrow="Trayectoria"
+          title="Historial académico"
+          description="Matrículas de todos los periodos, incluidas las retiradas."
+          aside={<Badge variant="outline" size="sm">{history.length} {history.length === 1 ? 'registro' : 'registros'}</Badge>}
+        />
 
         {historyLoading ? (
           <LoadingSpinner message="Consultando historial académico..." />
@@ -212,51 +223,49 @@ export const StudentPortalPage: React.FC = () => {
       </div>
 
       {selected && (
-        <div
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '20px' }}
-          onClick={() => setSelected(null)}
-          role="presentation"
+        <Modal
+          title={selected.courseName}
+          subtitle={`${selected.periodCode} · Sección ${selected.sectionCode}`}
+          icon={<ClipboardCheck size={20} />}
+          maxWidth="720px"
+          onClose={() => setSelected(null)}
         >
-          <div
-            className="glass-panel modal-card animate-fade-in"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Notas de ${selected.courseName}`}
-            style={{ width: '100%', maxWidth: '680px', padding: '24px', backgroundColor: 'var(--bg-surface)' }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                <UserCheck size={20} color="var(--primary)" />
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>{selected.courseName}</h3>
-                  <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{selected.periodCode} · Sección {selected.sectionCode}</p>
-                </div>
-              </div>
-              <button type="button" onClick={() => setSelected(null)} aria-label="Cerrar" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
-            </div>
-            <p className="table-scroll-hint">Desliza para ver más columnas →</p>
           <div className="data-table-wrap">
-              <table className="data-table data-table--stack">
-                <thead><tr><th>Evaluación</th><th>Tipo</th><th>Peso</th><th>Nota</th><th>Máximo</th></tr></thead>
-                <tbody>
-                  {selected.grades.map((grade, index) => (
-                    <tr key={`${grade.evaluationName}-${index}`}>
-                      <td>{grade.evaluationName}</td>
-                      <td>{grade.type}</td>
-                      <td>{grade.weight}%</td>
-                      <td>{grade.score ?? '—'}</td>
-                      <td>{grade.maxScore}</td>
-                    </tr>
-                  ))}
-                  {selected.grades.length === 0 && (
-                    <tr><td colSpan={5} style={{ color: 'var(--text-muted)' }}>Aún no hay evaluaciones registradas.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <table className="data-table data-table--stack table--portal-grades">
+              <colgroup>
+                <col style={{ width: '32%' }} />
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '20%' }} />
+              </colgroup>
+              <thead><tr><th>Evaluación</th><th>Tipo</th><th>Peso</th><th>Nota</th><th>Máximo</th></tr></thead>
+              <tbody>
+                {selected.grades.map((grade, index) => (
+                  <tr key={`${grade.evaluationName}-${index}`}>
+                    <td>{grade.evaluationName}</td>
+                    <td>{grade.type}</td>
+                    <td>{grade.weight}%</td>
+                    <td>{grade.score ?? '—'}</td>
+                    <td>{grade.maxScore}</td>
+                  </tr>
+                ))}
+                {selected.grades.length === 0 && (
+                  <tr>
+                    <td colSpan={5}>
+                      <EmptyState
+                        compact
+                        icon={<ClipboardCheck size={22} />}
+                        title="Sin evaluaciones registradas"
+                        description="El docente todavía no publicó evaluaciones para esta sección."
+                      />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

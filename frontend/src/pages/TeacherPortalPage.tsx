@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { PageHeader } from '../components/ui/PageHeader';
+import { SectionHeader } from '../components/ui/SectionHeader';
 import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
 import type { TeacherPortalDto } from '../services/portalService';
-import { BookOpen, GraduationCap, LayoutGrid, Pencil, Users } from 'lucide-react';
+import { BookOpen, LayoutGrid, Pencil, Users } from 'lucide-react';
 
 export const TeacherPortalPage: React.FC = () => {
   const toast = useToast();
@@ -53,21 +55,34 @@ export const TeacherPortalPage: React.FC = () => {
       />
 
       <div className="glass-panel" style={{ padding: '18px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '14px' }}>
-          <BookOpen size={19} color="var(--primary)" />
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>Secciones asignadas</h2>
-        </div>
+        <SectionHeader
+          compact
+          icon={<BookOpen size={18} />}
+          eyebrow="Carga lectiva"
+          title="Secciones asignadas"
+          description="Cursos, horarios y estado del acta por sección."
+        />
 
         <p className="table-scroll-hint">Desliza para ver más columnas →</p>
         <div className="data-table-wrap">
-          <table className="data-table data-table--stack">
+          <table className="data-table data-table--stack table--teacher-sections">
+            <colgroup>
+              <col style={{ width: '9%' }} />
+              <col style={{ width: '24%' }} />
+              <col style={{ width: '7%' }} />
+              <col style={{ width: '9%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '21%' }} />
+              <col style={{ width: '9%' }} />
+              <col style={{ width: '13%' }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>Periodo</th>
                 <th>Curso</th>
                 <th>Sección</th>
                 <th>Estudiantes</th>
-                <th>Evaluaciones</th>
+                <th title="Evaluaciones registradas">Eval.</th>
                 <th>Horario</th>
                 <th>Acta</th>
                 <th style={{ textAlign: 'center' }}>Acciones</th>
@@ -81,16 +96,30 @@ export const TeacherPortalPage: React.FC = () => {
                   <td>{section.sectionCode}</td>
                   <td><Users size={13} style={{ verticalAlign: '-2px', marginRight: '4px' }} />{section.students}</td>
                   <td>{section.evaluations}</td>
-                  <td>{section.schedule || '—'}</td>
+                  <td title={section.schedule || undefined}>
+                    <div className="schedule-list">
+                      {(section.schedule || '—').split('·').map((part, index) => (
+                        <span key={index}>{part.trim()}</span>
+                      ))}
+                    </div>
+                  </td>
                   <td>
                     <Badge variant={section.actaStatus === 'CERRADA' ? 'success' : 'warning'} size="sm" dot>
                       {section.actaStatus}
                     </Badge>
                   </td>
                   <td style={{ textAlign: 'center' }}>
-                    <button type="button" className="action-btn primary" title="Gestionar" aria-label={`Gestionar ${section.courseCode}-${section.sectionCode}`} onClick={() => navigate(`/my-sections/${section.id}`)}>
-                      <Pencil size={15} />
-                    </button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      leftIcon={<Pencil size={14} />}
+                      title="Gestionar"
+                      aria-label={`Gestionar ${section.courseCode}-${section.sectionCode}`}
+                      onClick={() => navigate(`/my-sections/${section.id}`)}
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      Gestionar
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -101,10 +130,7 @@ export const TeacherPortalPage: React.FC = () => {
           </table>
         </div>
 
-        <p style={{ margin: '14px 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-          <GraduationCap size={14} style={{ verticalAlign: '-2px', marginRight: '4px' }} />
-          Usa <strong>Gestionar</strong> para registrar notas, asistencia y cerrar el acta de cada sección.
-        </p>
+
       </div>
     </div>
   );
