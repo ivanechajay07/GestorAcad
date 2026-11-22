@@ -165,7 +165,7 @@ export const AuditPage: React.FC = () => {
         title="Bitácora de Auditoría Transaccional"
         subtitle="Trazabilidad de accesos y cambios, con la hora exacta de Lima y el dispositivo de origen."
         icon={<FileText size={26} />}
-        accent="var(--accent-emerald)"
+        accent="var(--primary)"
         breadcrumbs={[{ label: 'Administración y seguridad' }, { label: 'Bitácora de Auditoría' }]}
         actions={
           <>

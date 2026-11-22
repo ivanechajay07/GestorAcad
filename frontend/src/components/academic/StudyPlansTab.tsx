@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { EmptyState } from '../ui/EmptyState';
 import { SectionHeader } from '../ui/SectionHeader';
+import { FormSummary } from '../ui/FormSummary';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -299,6 +300,17 @@ export const StudyPlansTab: React.FC = () => {
         >
           <AcademicFormError message={formError} />
           <form onSubmit={handleSavePlan} className="modal-form">
+            <FormSummary
+              icon={<ClipboardList size={18} />}
+              title={planForm.name.trim() || 'Nuevo plan'}
+              subtitle={planForm.code.trim() || 'Código por definir'}
+              meta={[
+                careers.find((career) => career.id === planForm.careerId)?.name || 'Carrera por definir',
+                planForm.year ? `Año ${planForm.year}` : 'Año por definir',
+              ]}
+              progress={Math.round(([planForm.code, planForm.name, planForm.careerId, planForm.year].filter((value) => String(value ?? '').trim() && value !== 0).length / 4) * 100)}
+              progressLabel="4 campos clave"
+            />
             <div className="form-section">Identificación del plan</div>
             <div className="modal-field-grid">
               <AcademicField label="Código" icon={<Hash size={13} />} hint="Formato recomendado: PLAN-IS-2026.">

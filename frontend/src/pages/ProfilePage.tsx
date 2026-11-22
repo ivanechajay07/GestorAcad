@@ -118,7 +118,7 @@ export const ProfilePage: React.FC = () => {
         title="Mi Perfil"
         subtitle="Información de la cuenta autenticada y gestión de credenciales."
         icon={<User size={26} />}
-        accent="var(--accent-cyan)"
+        accent="var(--primary)"
         breadcrumbs={[{ label: 'Mi Perfil' }]}
         badges={<Badge variant="role">{user?.username ?? 'Sesión'}</Badge>}
       />

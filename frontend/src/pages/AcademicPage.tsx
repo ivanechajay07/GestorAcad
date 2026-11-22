@@ -10,6 +10,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { DatePicker } from '../components/ui/DatePicker';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { EmptyState } from '../components/ui/EmptyState';
+import { FormSummary } from '../components/ui/FormSummary';
 
 import { useAuth } from '../contexts/AuthContext';
 
@@ -1054,6 +1055,18 @@ export const AcademicPage: React.FC = () => {
 
           <form onSubmit={handleSavePeriod} className="modal-form">
 
+            <FormSummary
+              icon={<CalendarDays size={18} />}
+              title={periodForm.name.trim() || 'Nuevo periodo'}
+              subtitle={periodForm.code.trim() || 'Código por definir'}
+              meta={[
+                periodForm.startDate ? `Inicio: ${periodForm.startDate}` : 'Inicio por definir',
+                periodForm.endDate ? `Fin: ${periodForm.endDate}` : 'Fin por definir',
+              ]}
+              progress={Math.round(([periodForm.code, periodForm.name, periodForm.startDate, periodForm.endDate].filter((value) => String(value ?? '').trim()).length / 4) * 100)}
+              progressLabel="4 campos clave"
+            />
+
             <div className="form-section">Identificación del periodo</div>
 
             <div className="modal-field-grid">
@@ -1151,6 +1164,19 @@ export const AcademicPage: React.FC = () => {
           <AcademicFormError message={formError} />
 
           <form onSubmit={handleSaveCourse} className="modal-form">
+
+            <FormSummary
+              icon={<BookOpen size={18} />}
+              title={courseForm.name.trim() || 'Nuevo curso'}
+              subtitle={courseForm.code.trim() || 'Código por definir'}
+              meta={[
+                `${courseForm.credits || 0} créditos`,
+                `${(courseForm.theoryHours || 0) + (courseForm.practiceHours || 0)} horas`,
+                COURSE_TYPES.find((type) => type.value === courseForm.type)?.label ?? courseForm.type,
+              ]}
+              progress={Math.round(([courseForm.code, courseForm.name, courseForm.credits, courseForm.type].filter((value) => String(value ?? '').trim() && value !== 0).length / 4) * 100)}
+              progressLabel="4 campos clave"
+            />
 
             <div className="form-section">Identificación del curso</div>
 

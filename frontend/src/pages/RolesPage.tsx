@@ -8,6 +8,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
+import { FormSummary } from '../components/ui/FormSummary';
 import { Pagination } from '../components/ui/Pagination';
 import { RoleDetailPanel } from '../components/roles/RoleDetailPanel';
 import { PermissionPicker } from '../components/roles/PermissionPicker';
@@ -30,8 +31,8 @@ import {
   Copy,
 } from 'lucide-react';
 import {
-  buildRoleCode,
   formatModuleName,
+  formatPermissionAction,
   formatPermissionName,
   formatRoleName,
   groupPermissionsByModule,
@@ -51,6 +52,17 @@ const ROLE_FORM_STEPS = [
   { title: 'Identidad', description: 'Nombre y descripción' },
   { title: 'Permisos', description: 'Selección por módulo' },
   { title: 'Confirmación', description: 'Resumen del rol' },
+];
+
+const PERMISSION_ACTIONS = [
+  { value: 'VIEW', label: 'Consultar' },
+  { value: 'CREATE', label: 'Registrar' },
+  { value: 'EDIT', label: 'Editar' },
+  { value: 'DELETE', label: 'Eliminar' },
+  { value: 'EXPORT', label: 'Exportar' },
+  { value: 'IMPORT', label: 'Importar' },
+  { value: 'ASSIGN', label: 'Asignar' },
+  { value: 'CLOSE', label: 'Cerrar' },
 ];
 
 const errMsg = (err: unknown, fallback: string): string => getApiErrorMessage(err, fallback);
@@ -97,7 +109,7 @@ export const RolesPage: React.FC = () => {
 
   const [permModalOpen, setPermModalOpen] = useState(false);
   const [editingPermission, setEditingPermission] = useState<PermissionData | null>(null);
-  const [permForm, setPermForm] = useState({ name: '', module: '', description: '' });
+  const [permForm, setPermForm] = useState({ name: '', module: '', action: 'VIEW', description: '' });
   const [permFormError, setPermFormError] = useState<string | null>(null);
   const [permSubmitting, setPermSubmitting] = useState(false);
 
@@ -377,16 +389,24 @@ export const RolesPage: React.FC = () => {
   /* --------------------------- Permisos --------------------------- */
   const openCreatePerm = () => {
     setEditingPermission(null);
-    setPermForm({ name: '', module: '', description: '' });
+    setPermForm({
+      name: '',
+      module: modules[0]?.module ?? 'SISTEMA',
+      action: 'VIEW',
+      description: '',
+    });
     setPermFormError(null);
     setPermModalOpen(true);
   };
 
   const openEditPerm = (permission: PermissionData) => {
+    const separator = permission.name.lastIndexOf('_');
+    const action = separator > 0 ? permission.name.slice(separator + 1) : 'VIEW';
     setEditingPermission(permission);
     setPermForm({
       name: permission.name,
       module: permission.module,
+      action,
       description: permission.description,
     });
     setPermFormError(null);
@@ -397,13 +417,18 @@ export const RolesPage: React.FC = () => {
     event.preventDefault();
     setPermSubmitting(true);
     setPermFormError(null);
+    const payload = {
+      name: `${permForm.module}_${permForm.action}`,
+      module: permForm.module,
+      description: permForm.description,
+    };
     try {
       if (editingPermission) {
-        await roleService.updatePermission(editingPermission.id, permForm);
-        toast.success(`Se actualizó el permiso «${formatPermissionName(permForm.name)}».`);
+        await roleService.updatePermission(editingPermission.id, payload);
+        toast.success(`Se actualizó el permiso «${formatPermissionName(payload.name)}».`);
       } else {
-        await roleService.createPermission(permForm);
-        toast.success(`Se creó el permiso «${formatPermissionName(permForm.name)}».`);
+        await roleService.createPermission(payload);
+        toast.success(`Se creó el permiso «${formatPermissionName(payload.name)}».`);
       }
       setPermModalOpen(false);
       await fetchData();
@@ -441,7 +466,7 @@ export const RolesPage: React.FC = () => {
         title="Roles y permisos"
         subtitle="Define qué puede hacer cada tipo de usuario y revisa los accesos vigentes."
         icon={<ShieldCheck size={26} />}
-        accent="var(--accent-violet)"
+        accent="var(--primary)"
         breadcrumbs={[{ label: 'Administración y seguridad' }, { label: 'Roles y permisos' }]}
         actions={
           <>
@@ -498,7 +523,7 @@ export const RolesPage: React.FC = () => {
               <input
                 value={roleQuery}
                 onChange={(event) => setRoleQuery(event.target.value)}
-                placeholder="Buscar por nombre, código o descripción"
+                placeholder="Buscar por nombre o descripción"
                 aria-label="Buscar roles"
               />
               {roleQuery && (
@@ -576,7 +601,6 @@ export const RolesPage: React.FC = () => {
                               <span className="table-avatar" aria-hidden="true">{roleInitials(role.name)}</span>
                               <div className="table-person__copy">
                                 <span>{formatRoleName(role.name)}</span>
-                                <small className="cell-mono">{role.name}</small>
                               </div>
                             </div>
                           </td>
@@ -703,7 +727,6 @@ export const RolesPage: React.FC = () => {
                         <td>
                           <div className="roles-permission">
                             <span className="cell-strong">{formatPermissionName(permission.name)}</span>
-                            <code className="roles-permission__code">{permission.name}</code>
                           </div>
                         </td>
                         <td>
@@ -822,7 +845,16 @@ export const RolesPage: React.FC = () => {
                 {formError}
               </div>
             )}
-            <div className="institution-stepper modal-form-stepper" aria-label="Pasos del formulario de rol">
+            <FormSummary
+            icon={<ShieldCheck size={18} />}
+            title={form.name.trim() ? formatRoleName(form.name) : 'Nuevo rol'}
+            subtitle={form.description || 'Describe el alcance del rol'}
+            meta={[`${selectedPermIds.size} de ${permissions.length} permisos seleccionados`]}
+            progress={Math.round(([form.name, form.description].filter((value) => String(value ?? '').trim()).length / 2) * 100)}
+            progressLabel="Nombre y descripción"
+          />
+
+          <div className="institution-stepper modal-form-stepper" aria-label="Pasos del formulario de rol">
               {ROLE_FORM_STEPS.map((step, index) => (
                 <button
                   key={step.title}
@@ -838,6 +870,10 @@ export const RolesPage: React.FC = () => {
                   </span>
                 </button>
               ))}
+            </div>
+
+            <div className="role-wizard-progress" aria-hidden="true">
+              <span style={{ width: `${((roleStep + 1) / ROLE_FORM_STEPS.length) * 100}%` }} />
             </div>
 
             <div
@@ -877,7 +913,7 @@ export const RolesPage: React.FC = () => {
                       />
                       {formFieldErrors.name && <span className="field-error" role="alert">{formFieldErrors.name}</span>}
                       <span className="roles-form__hint">
-                        Código interno: <code>{buildRoleCode(form.name)}</code>
+                        El identificador interno se genera automáticamente a partir del nombre.
                       </span>
                     </div>
                     <div>
@@ -929,7 +965,7 @@ export const RolesPage: React.FC = () => {
                     />
                   </div>
                   <p className="field-hint">
-                    Busca por nombre o código, o avanza módulo por módulo. Puedes continuar sin permisos
+                    Busca por nombre o descripción, o avanza módulo por módulo. Puedes continuar sin permisos
                     y asignarlos después.
                   </p>
                 </>
@@ -938,8 +974,7 @@ export const RolesPage: React.FC = () => {
               {roleStep === 2 && (
                 <>
                   <div className="form-review" aria-label="Resumen del rol">
-                    <div><span>Nombre</span><strong>{form.name.trim() ? formatRoleName(`ROLE_${form.name.trim()}`) : '—'}</strong></div>
-                    <div><span>Código interno</span><strong>{buildRoleCode(form.name) || '—'}</strong></div>
+                    <div><span>Nombre</span><strong>{form.name.trim() ? formatRoleName(`ROLE_${form.name.trim()}`) : '-'}</strong></div>
                     <div><span>Descripción</span><strong>{form.description.trim() || '—'}</strong></div>
                     <div><span>Permisos</span><strong>{selectedPermIds.size} de {permissions.length}</strong></div>
                   </div>
@@ -1008,31 +1043,43 @@ export const RolesPage: React.FC = () => {
 
             <div className="roles-form__row">
               <div>
-                <label htmlFor="permission-name" className="field-label">Código del permiso</label>
-                <input
-                  id="permission-name"
-                  className="roles-input"
-                  required
-                  autoFocus
-                  value={permForm.name}
-                  onChange={(event) => setPermForm((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="CURSO_CREATE"
-                />
-                <span className="roles-form__hint">
-                  Formato MÓDULO_ACCIÓN. Se mostrará como «{formatPermissionName(permForm.name)}».
-                </span>
-              </div>
-              <div>
                 <label htmlFor="permission-module" className="field-label">Módulo</label>
-                <input
+                <select
                   id="permission-module"
                   className="roles-input"
                   required
+                  autoFocus
                   value={permForm.module}
                   onChange={(event) => setPermForm((current) => ({ ...current, module: event.target.value }))}
-                  placeholder="CURSO"
-                />
-                <span className="roles-form__hint">Agrupa el permiso en el catálogo.</span>
+                >
+                  {modules.map((module) => (
+                    <option key={module.module} value={module.module}>{module.label}</option>
+                  ))}
+                  {!modules.some((module) => module.module === permForm.module) && permForm.module && (
+                    <option value={permForm.module}>{formatModuleName(permForm.module)}</option>
+                  )}
+                </select>
+                <span className="roles-form__hint">Agrupa el permiso dentro del catálogo.</span>
+              </div>
+              <div>
+                <label htmlFor="permission-action" className="field-label">Acción</label>
+                <select
+                  id="permission-action"
+                  className="roles-input"
+                  required
+                  value={permForm.action}
+                  onChange={(event) => setPermForm((current) => ({ ...current, action: event.target.value }))}
+                >
+                  {PERMISSION_ACTIONS.map((action) => (
+                    <option key={action.value} value={action.value}>{action.label}</option>
+                  ))}
+                  {!PERMISSION_ACTIONS.some((action) => action.value === permForm.action) && (
+                    <option value={permForm.action}>{formatPermissionAction(`${permForm.module}_${permForm.action}`)}</option>
+                  )}
+                </select>
+                <span className="roles-form__hint">
+                  Se mostrará como «{formatPermissionName(`${permForm.module}_${permForm.action}`)}».
+                </span>
               </div>
             </div>
 

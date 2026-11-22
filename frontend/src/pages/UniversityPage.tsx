@@ -8,6 +8,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { DatePicker } from '../components/ui/DatePicker';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { EmptyState } from '../components/ui/EmptyState';
+import { FormSummary } from '../components/ui/FormSummary';
 import { formControlStyle, formLabelStyle } from '../components/ui/formStyles';
 import { getApiErrorMessage } from '../utils/apiErrors';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +37,7 @@ import {
   FileText,
   FlaskConical,
   GraduationCap,
+  Globe,
   Hash,
   Key,
   Layers,
@@ -517,6 +519,24 @@ export const UniversityPage: React.FC = () => {
   const campusProgress = Math.round((campusProgressFields / 5) * 100);
   const campusTypeLabel = CAMPUS_TYPES.find((type) => type.value === campusForm.campusType)?.label ?? 'Campus';
 
+  const universityProgressFields = [
+    university?.name,
+    university?.shortName,
+    university?.taxId,
+    university?.licensingStatus,
+    university?.address,
+    university?.phone,
+    university?.email,
+    university?.website,
+  ].filter((value) => String(value ?? '').trim() !== '').length;
+  const universityProgress = Math.round((universityProgressFields / 8) * 100);
+  const universityTypeLabel = university?.institutionType === 'PUBLICA'
+    ? 'Pública'
+    : university?.institutionType === 'ASOCIATIVA'
+      ? 'Asociativa'
+      : 'Privada';
+  const licensingLabel = university?.licensingStatus ? humanize(university.licensingStatus) : 'Sin estado';
+
   const tabButton = (key: TabKey, label: string, icon: React.ReactNode) => (
     <button
       key={key}
@@ -589,13 +609,19 @@ export const UniversityPage: React.FC = () => {
                   }
                 />
 
-                <div className="institution-form">
+                <div className="institution-layout">
+                  <div className="institution-form">
                   <section className="institution-form__section" aria-labelledby="university-identity">
                     <h4 id="university-identity" className="institution-section__title">
                       <Building2 size={14} aria-hidden="true" /> Identidad institucional
+                      <span className={`form-section__status${university?.name?.trim() && university?.shortName?.trim() ? ' is-done' : ''}`}>
+                        {university?.name?.trim() && university?.shortName?.trim()
+                          ? <><Check size={12} aria-hidden="true" /> Listo</>
+                          : 'Pendiente'}
+                      </span>
                     </h4>
                     <div className="institution-grid">
-                      <Field label="Nombre oficial">
+                      <Field label="Nombre oficial" className="field--span-2">
                         <input style={inputStyle} disabled={!canEditUniversity} value={university?.name ?? ''} onChange={(e) => setUniField('name', e.target.value)} required placeholder="Ej. Universidad Tecnológica del Perú" />
                       </Field>
                       <Field label="Nombre corto / Sigla">
@@ -608,7 +634,7 @@ export const UniversityPage: React.FC = () => {
                           <option value="ASOCIATIVA">Asociativa</option>
                         </select>
                       </Field>
-                      <Field label="Lema institucional">
+                      <Field label="Lema institucional" className="field--span-2">
                         <input style={inputStyle} disabled={!canEditUniversity} value={university?.motto ?? ''} onChange={(e) => setUniField('motto', e.target.value)} placeholder="Ej. Ciencia, Veritas et Progressus" />
                       </Field>
                     </div>
@@ -617,22 +643,41 @@ export const UniversityPage: React.FC = () => {
                   <section className="institution-form__section" aria-labelledby="university-licensing">
                     <h4 id="university-licensing" className="institution-section__title">
                       <ShieldCheck size={14} aria-hidden="true" /> Licenciamiento y acreditación
+                      <span className={`form-section__status${university?.taxId?.trim() && university?.licensingStatus?.trim() ? ' is-done' : ''}`}>
+                        {university?.taxId?.trim() && university?.licensingStatus?.trim()
+                          ? <><Check size={12} aria-hidden="true" /> Listo</>
+                          : 'Pendiente'}
+                      </span>
                     </h4>
                     <div className="institution-grid">
-                      <Field label="RUC">
-                        <input style={inputStyle} disabled={!canEditUniversity} value={university?.taxId ?? ''} onChange={(e) => setUniField('taxId', e.target.value)} placeholder="Ej. 20462509236" inputMode="numeric" />
+                      <Field label="RUC" hint="Identificación tributaria de la institución.">
+                        <input style={inputStyle} disabled={!canEditUniversity} maxLength={20} value={university?.taxId ?? ''} onChange={(e) => setUniField('taxId', e.target.value)} placeholder="Ej. 20462509236" inputMode="numeric" />
                       </Field>
                       <Field label="Resolución de licenciamiento">
-                        <input style={inputStyle} disabled={!canEditUniversity} value={university?.licensingResolution ?? ''} onChange={(e) => setUniField('licensingResolution', e.target.value)} placeholder="Ej. Res. CD N° 048-2022-SUNEDU" />
+                        <input style={inputStyle} disabled={!canEditUniversity} maxLength={255} value={university?.licensingResolution ?? ''} onChange={(e) => setUniField('licensingResolution', e.target.value)} placeholder="Ej. Res. CD N° 048-2022-SUNEDU" />
                       </Field>
                       <Field label="Estado de licenciamiento">
-                        <input style={inputStyle} disabled={!canEditUniversity} value={university?.licensingStatus ?? ''} onChange={(e) => setUniField('licensingStatus', e.target.value)} placeholder="Ej. LICENCIADA" />
+                        <select style={inputStyle} disabled={!canEditUniversity} value={university?.licensingStatus ?? 'EN_PROCESO'} onChange={(e) => setUniField('licensingStatus', e.target.value)}>
+                          <option value="LICENCIADA">Licenciada</option>
+                          <option value="EN_PROCESO">En proceso</option>
+                          <option value="NO_LICENCIADA">No licenciada</option>
+                          <option value="SUSPENDIDA">Suspendida</option>
+                        </select>
                       </Field>
                       <Field label="Vigencia de acreditación">
                         <DatePicker style={inputStyle} ariaLabel="Vigencia de la acreditación" disabled={!canEditUniversity} value={university?.accreditationValidity ?? ''} onChange={(next) => setUniField('accreditationValidity', next)} />
                       </Field>
-                      <Field label="Fecha de fundación" className="field--span-2">
+                      <Field label="Fecha de fundación">
                         <DatePicker style={inputStyle} ariaLabel="Fecha de fundación" disabled={!canEditUniversity} value={university?.foundationDate ?? ''} onChange={(next) => setUniField('foundationDate', next)} />
+                      </Field>
+                      <Field label="Última actualización">
+                        <input
+                          style={inputStyle}
+                          readOnly
+                          value={university?.updatedAt
+                            ? new Date(university.updatedAt).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+                            : '—'}
+                        />
                       </Field>
                     </div>
                   </section>
@@ -640,9 +685,14 @@ export const UniversityPage: React.FC = () => {
                   <section className="institution-form__section" aria-labelledby="university-contact">
                     <h4 id="university-contact" className="institution-section__title">
                       <MapPin size={14} aria-hidden="true" /> Contacto y ubicación
+                      <span className={`form-section__status${university?.address?.trim() && (university?.phone?.trim() || university?.email?.trim()) ? ' is-done' : ''}`}>
+                        {university?.address?.trim() && (university?.phone?.trim() || university?.email?.trim())
+                          ? <><Check size={12} aria-hidden="true" /> Listo</>
+                          : 'Pendiente'}
+                      </span>
                     </h4>
                     <div className="institution-grid">
-                      <Field label="Dirección">
+                      <Field label="Dirección" className="field--span-2">
                         <input style={inputStyle} disabled={!canEditUniversity} value={university?.address ?? ''} onChange={(e) => setUniField('address', e.target.value)} placeholder="Ej. Av. Universitaria 1801, Lima" autoComplete="street-address" />
                       </Field>
                       <Field label="Teléfono">
@@ -651,11 +701,77 @@ export const UniversityPage: React.FC = () => {
                       <Field label="Correo institucional">
                         <input style={inputStyle} type="email" disabled={!canEditUniversity} value={university?.email ?? ''} onChange={(e) => setUniField('email', e.target.value)} placeholder="Ej. informes@universidad.edu.pe" autoComplete="email" />
                       </Field>
-                      <Field label="Sitio web">
+                      <Field label="Sitio web" className="field--span-2">
                         <input style={inputStyle} type="url" disabled={!canEditUniversity} value={university?.website ?? ''} onChange={(e) => setUniField('website', e.target.value)} placeholder="Ej. https://www.universidad.edu.pe" />
                       </Field>
                     </div>
                   </section>
+                </div>
+
+                  <aside className="institution-preview" aria-label="Resumen institucional">
+                    <div className="institution-preview__head">
+                      <span className="institution-preview__eyebrow">Resumen institucional</span>
+                      <Badge variant={university?.licensingStatus === 'LICENCIADA' ? 'success' : 'outline'} size="sm" dot>
+                        {licensingLabel}
+                      </Badge>
+                    </div>
+                    <div className="institution-preview__identity">
+                      <span className="institution-preview__logo" aria-hidden="true"><Building2 size={20} /></span>
+                      <div>
+                        <strong>{university?.name?.trim() || 'Institución sin nombre'}</strong>
+                        <span>{university?.shortName?.trim() || 'Sigla por definir'} · {universityTypeLabel}</span>
+                      </div>
+                    </div>
+                    <p className="institution-preview__line">
+                      <MapPin size={14} aria-hidden="true" />
+                      {university?.address?.trim() || 'Dirección por definir'}
+                    </p>
+                    {university?.phone && (
+                      <p className="institution-preview__line">
+                        <Phone size={14} aria-hidden="true" />
+                        {university.phone}
+                      </p>
+                    )}
+                    {university?.email && (
+                      <p className="institution-preview__line">
+                        <Mail size={14} aria-hidden="true" />
+                        {university.email}
+                      </p>
+                    )}
+                    {university?.website && (
+                      <p className="institution-preview__line">
+                        <Globe size={14} aria-hidden="true" />
+                        {university.website}
+                      </p>
+                    )}
+                    <div className="institution-preview__checklist">
+                      <span className={university?.name?.trim() && university?.shortName?.trim() ? 'is-done' : ''}>
+                        <Check size={12} aria-hidden="true" /> Identidad
+                      </span>
+                      <span className={university?.taxId?.trim() && university?.licensingStatus?.trim() ? 'is-done' : ''}>
+                        <Check size={12} aria-hidden="true" /> Licenciamiento
+                      </span>
+                      <span className={university?.address?.trim() && (university?.phone?.trim() || university?.email?.trim()) ? 'is-done' : ''}>
+                        <Check size={12} aria-hidden="true" /> Contacto
+                      </span>
+                    </div>
+                    <div className="institution-preview__progress">
+                      <div>
+                        <span>Datos completos</span>
+                        <strong>{universityProgress}%</strong>
+                      </div>
+                      <span className="institution-preview__track" aria-hidden="true">
+                        <span style={{ width: `${universityProgress}%` }} />
+                      </span>
+                      <small>{universityProgressFields} de 8 campos clave</small>
+                    </div>
+                    <p className="institution-preview__updated">
+                      <Calendar size={13} aria-hidden="true" />
+                      {university?.updatedAt
+                        ? `Actualizado ${new Date(university.updatedAt).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}`
+                        : 'Sin actualizaciones registradas'}
+                    </p>
+                  </aside>
                 </div>
 
                 <div className="institution-form__footer">
@@ -1256,6 +1372,19 @@ export const UniversityPage: React.FC = () => {
         >
           <FormError message={formError} />
           <form onSubmit={handleSaveAuthority} className="modal-form">
+            <FormSummary
+              icon={<GraduationCap size={18} />}
+              title={`${authorityForm.firstName} ${authorityForm.lastName}`.trim() || 'Nueva autoridad'}
+              subtitle={authorityForm.position?.trim() || 'Cargo por definir'}
+              meta={[
+                authorityForm.email?.trim() || 'Sin correo',
+                authorityForm.periodStart && authorityForm.periodEnd
+                  ? `${authorityForm.periodStart} → ${authorityForm.periodEnd}`
+                  : 'Periodo por definir',
+              ]}
+              progress={Math.round(([authorityForm.position, authorityForm.firstName, authorityForm.lastName, authorityForm.email, authorityForm.periodStart].filter((value) => String(value ?? '').trim()).length / 5) * 100)}
+              progressLabel="5 campos clave"
+            />
             <div className="form-section">Cargo y datos personales</div>
             <Field label="Cargo" icon={<Briefcase size={13} />}>
               <input style={inputStyle} required value={authorityForm.position} onChange={(e) => setAuthorityForm({ ...authorityForm, position: e.target.value })} placeholder="Ej. Rector(a)" />
@@ -1316,6 +1445,18 @@ export const UniversityPage: React.FC = () => {
         >
           <FormError message={formError} />
           <form onSubmit={handleSaveParameter} className="modal-form">
+            <FormSummary
+              icon={<Settings2 size={18} />}
+              title={parameterForm.key.trim() || 'NUEVA_CLAVE'}
+              subtitle={parameterForm.description?.trim() || 'Sin descripción'}
+              meta={[
+                `Valor: ${parameterForm.value?.trim() || '—'}`,
+                VALUE_TYPE_LABELS[parameterForm.valueType] ?? parameterForm.valueType,
+                parameterForm.module?.trim() || 'SIN MÓDULO',
+              ]}
+              progress={Math.round(([parameterForm.key, parameterForm.value, parameterForm.module, parameterForm.description].filter((value) => String(value ?? '').trim()).length / 4) * 100)}
+              progressLabel="4 campos clave"
+            />
             <div className="form-section">Definición del parámetro</div>
             <div className="institution-grid">
               <Field label="Clave" icon={<Key size={13} />} hint="Usa mayúsculas y guiones bajos. Ej. NOTA_MINIMA_APROBATORIA.">
@@ -1359,6 +1500,13 @@ export const UniversityPage: React.FC = () => {
         >
           <FormError message={formError} />
           <form onSubmit={handleSaveFaculty} className="modal-form">
+            <FormSummary
+              icon={<School size={18} />}
+              title={facultyForm.name.trim() || 'Nueva facultad'}
+              subtitle={facultyForm.description?.trim() || 'Sin descripción'}
+              progress={Math.round(([facultyForm.name, facultyForm.description].filter((value) => String(value ?? '').trim()).length / 2) * 100)}
+              progressLabel="Nombre y descripción"
+            />
             <div className="form-section">Datos de la facultad</div>
             <Field label="Nombre de la facultad" icon={<School size={13} />}>
               <input
@@ -1403,6 +1551,13 @@ export const UniversityPage: React.FC = () => {
         >
           <FormError message={formError} />
           <form onSubmit={handleSaveCareer} className="modal-form">
+            <FormSummary
+              icon={<BookOpen size={18} />}
+              title={careerForm.name.trim() || 'Nueva carrera'}
+              subtitle={faculties.find((faculty) => faculty.id === careerForm.facultyId)?.name || 'Facultad por definir'}
+              progress={Math.round(([careerForm.name, careerForm.facultyId, careerForm.description].filter((value) => String(value ?? '').trim() && value !== 0).length / 3) * 100)}
+              progressLabel="Nombre, facultad y descripción"
+            />
             <div className="form-section">Datos de la carrera</div>
             <Field label="Nombre de la carrera" icon={<BookOpen size={13} />}>
               <input

@@ -11,6 +11,7 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 
 import { PageHeader } from '../components/ui/PageHeader';
+import { FormSummary } from '../components/ui/FormSummary';
 import { DatePicker } from '../components/ui/DatePicker';
 
 import { Pagination } from '../components/ui/Pagination';
@@ -1120,7 +1121,7 @@ export const TeachersPage: React.FC = () => {
 
         icon={<GraduationCap size={28} />}
 
-        accent="var(--accent-violet)"
+        accent="var(--primary)"
 
         breadcrumbs={[{ label: 'Gestión Académica' }, { label: 'Claustro Docente' }]}
 
@@ -1593,6 +1594,18 @@ export const TeachersPage: React.FC = () => {
             className="modal-step-form"
 
           >
+
+            <FormSummary
+              icon={<GraduationCap size={18} />}
+              title={`${teacherForm.firstName} ${teacherForm.lastName}`.trim() || 'Nuevo docente'}
+              subtitle={teacherForm.code || 'Ficha docente'}
+              meta={[
+                teacherForm.code || teacherForm.firstName ? teacherForm.category || 'Categoría por definir' : 'Categoría por definir',
+                teacherForm.faculty || 'Facultad por definir',
+              ]}
+              progress={Math.round(([teacherForm.code, teacherForm.firstName, teacherForm.lastName, teacherForm.faculty].filter((value) => String(value ?? '').trim()).length / 4) * 100)}
+              progressLabel="4 campos clave"
+            />
 
             <div className="institution-stepper modal-form-stepper" aria-label="Pasos del formulario de docente">
 

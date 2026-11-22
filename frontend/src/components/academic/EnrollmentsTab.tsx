@@ -4,6 +4,8 @@ import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { EmptyState } from '../ui/EmptyState';
 import { SectionHeader } from '../ui/SectionHeader';
+import { FormSummary } from '../ui/FormSummary';
+import { TableFilterMobile, TableFilterRow, matchesFilter } from '../ui/TableFilters';
 import { SearchableSelect } from '../ui/SearchableSelect';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
@@ -27,6 +29,24 @@ const emptyEnrollment = (): EnrollmentDto => ({
   observation: '',
 });
 
+const ENROLLMENT_FILTERS = [
+  { key: 'student', label: 'Estudiante', placeholder: 'Nombre o código' },
+  { key: 'course', label: 'Curso', placeholder: 'Código o nombre' },
+  { key: 'section', label: 'Sección', placeholder: 'Código' },
+  { key: 'period', label: 'Periodo', placeholder: 'Periodo' },
+  { key: 'date', label: 'Fecha', placeholder: 'Fecha' },
+  { key: 'credits', label: 'Créditos', placeholder: 'Créditos' },
+  {
+    key: 'status',
+    label: 'Estado',
+    type: 'select' as const,
+    options: [
+      { value: 'MATRICULADO', label: 'Matriculado' },
+      { value: 'RETIRADO', label: 'Retirado' },
+    ],
+  },
+];
+
 export const EnrollmentsTab: React.FC = () => {
   const { hasPermission } = useAuth();
   const { confirm } = useConfirm();
@@ -46,6 +66,15 @@ export const EnrollmentsTab: React.FC = () => {
   const [periodFilter, setPeriodFilter] = useState<number>(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({
+    student: '',
+    course: '',
+    section: '',
+    period: '',
+    date: '',
+    credits: '',
+    status: 'ALL',
+  });
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -163,6 +192,33 @@ export const EnrollmentsTab: React.FC = () => {
     }
   };
 
+  const filteredEnrollments = useMemo(() => {
+    return enrollments.filter((enrollment) => {
+      const status = enrollment.active === false || enrollment.status === 'RETIRADO' ? 'RETIRADO' : 'MATRICULADO';
+      return matchesFilter(`${enrollment.studentName} ${enrollment.studentCode}`, columnFilters.student)
+        && matchesFilter(`${enrollment.courseCode} ${enrollment.courseName}`, columnFilters.course)
+        && matchesFilter(enrollment.sectionCode, columnFilters.section)
+        && matchesFilter(enrollment.periodCode, columnFilters.period)
+        && matchesFilter(enrollment.enrollmentDate, columnFilters.date)
+        && matchesFilter(enrollment.credits, columnFilters.credits)
+        && (columnFilters.status === 'ALL' || status === columnFilters.status);
+    });
+  }, [enrollments, columnFilters]);
+
+  const hasColumnFilters = Object.entries(columnFilters).some(([key, value]) => (
+    key === 'status' ? value !== 'ALL' : value.trim() !== ''
+  ));
+
+  const resetColumnFilters = () => setColumnFilters({
+    student: '',
+    course: '',
+    section: '',
+    period: '',
+    date: '',
+    credits: '',
+    status: 'ALL',
+  });
+
   if (loading) {
     return <LoadingSpinner message="Consultando matrículas..." />;
   }
@@ -179,10 +235,19 @@ export const EnrollmentsTab: React.FC = () => {
         description="Estudiantes inscritos por sección y periodo."
         aside={
           <>
+            {hasColumnFilters && (
+              <Button variant="ghost" size="sm" onClick={resetColumnFilters}>Limpiar filtros</Button>
+            )}
             <Button variant="secondary" size="sm" onClick={reload} leftIcon={<RefreshCw size={15} />}>Actualizar</Button>
             {canCreate && <Button size="sm" onClick={openModal} leftIcon={<Plus size={15} />}>Nueva Matrícula</Button>}
           </>
         }
+      />
+
+      <TableFilterMobile
+        filters={ENROLLMENT_FILTERS}
+        values={columnFilters}
+        onChange={(key, value) => setColumnFilters((current) => ({ ...current, [key]: value }))}
       />
 
       <div className="data-table-wrap">
@@ -208,9 +273,15 @@ export const EnrollmentsTab: React.FC = () => {
               <th>Estado</th>
               <th style={{ textAlign: 'center' }}>Acciones</th>
             </tr>
+            <TableFilterRow
+              filters={ENROLLMENT_FILTERS}
+              values={columnFilters}
+              onChange={(key, value) => setColumnFilters((current) => ({ ...current, [key]: value }))}
+              trailing={1}
+            />
           </thead>
           <tbody>
-            {enrollments.map((enrollment) => (
+            {filteredEnrollments.map((enrollment) => (
               <tr key={enrollment.id}>
                 <td>{enrollment.studentName} <span className="cell-mono">({enrollment.studentCode})</span></td>
                 <td><span className="cell-mono">{enrollment.courseCode}</span> · {enrollment.courseName}</td>
@@ -243,14 +314,19 @@ export const EnrollmentsTab: React.FC = () => {
                 </td>
               </tr>
             ))}
-            {enrollments.length === 0 && (
+            {filteredEnrollments.length === 0 && (
               <tr>
               <td colSpan={8}>
                 <EmptyState
                           compact
                   icon={<UserCheck size={22} />}
-                  title="Sin matrículas registradas"
-                  description="Registra la primera matrícula para vincular estudiantes con secciones y periodos."
+                  title={enrollments.length === 0 ? 'Sin matrículas registradas' : 'Sin resultados con esos filtros'}
+                  description={enrollments.length === 0
+                    ? 'Registra la primera matrícula para vincular estudiantes con secciones y periodos.'
+                    : 'Ajusta o limpia los filtros para ver otras matrículas.'}
+                  action={hasColumnFilters ? (
+                    <Button variant="secondary" size="sm" onClick={resetColumnFilters}>Limpiar filtros</Button>
+                  ) : undefined}
                 />
               </td>
             </tr>
@@ -269,6 +345,17 @@ export const EnrollmentsTab: React.FC = () => {
         >
           {formError && <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-down-bg)', color: 'var(--status-down)', fontSize: 'var(--text-sm)', marginBottom: '12px' }}>{formError}</div>}
           <form onSubmit={handleSave} className="modal-form">
+            <FormSummary
+              icon={<UserCheck size={18} />}
+              title={selectedSection?.courseName || 'Nueva matrícula'}
+              subtitle={selectedSection ? `${selectedSection.periodCode} · Sección ${selectedSection.code}` : 'Selecciona periodo, sección y estudiante'}
+              meta={[
+                selectedSection?.teacherName || 'Docente sin asignar',
+                selectedSection ? `Cupo ${selectedSection.available ?? 0}/${selectedSection.capacity}` : 'Cupo por validar',
+              ]}
+              progress={Math.round(([form.sectionId, form.studentId].filter((value) => Number(value) > 0).length / 2) * 100)}
+              progressLabel="Sección y estudiante"
+            />
             <div className="modal-field-grid">
               <AcademicField label="Periodo">
                 <select

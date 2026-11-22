@@ -82,7 +82,7 @@ export const PermissionPicker: React.FC<PermissionPickerProps> = ({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar permiso por nombre, código o descripción"
+            placeholder="Buscar permiso por nombre o descripción"
             aria-label="Buscar permiso"
           />
           {query && (
@@ -184,7 +184,6 @@ export const PermissionPicker: React.FC<PermissionPickerProps> = ({
                         />
                         <span className="permission-item__text">
                           <strong>{formatPermissionName(permission.name)}</strong>
-                          <code>{permission.name}</code>
                         </span>
                       </label>
                     );

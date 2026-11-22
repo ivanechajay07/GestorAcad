@@ -61,7 +61,7 @@ export const RoleDetailPanel: React.FC<RoleDetailPanelProps> = ({
             <span className="role-detail__eyebrow">
               {isProtectedRole(role.name) ? 'Rol base' : 'Rol personalizado'}
             </span>
-            <code>{role.name}</code>
+            {role.description && <span className="role-detail__description">{role.description}</span>}
           </div>
           <div className="role-detail__stats">
             <span title="Permisos asignados">
@@ -102,7 +102,6 @@ export const RoleDetailPanel: React.FC<RoleDetailPanelProps> = ({
                     <li key={permission.id}>
                       <div className="role-detail__permission">
                         <strong>{formatPermissionName(permission.name)}</strong>
-                        <code>{permission.name}</code>
                       </div>
                       <p>{permission.description}</p>
                     </li>

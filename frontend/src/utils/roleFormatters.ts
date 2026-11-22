@@ -74,6 +74,7 @@ const ACTION_LABELS: Record<string, string> = {
   IMPORT: 'Importar',
   MANAGE: 'Administrar',
   ASSIGN: 'Asignar',
+  CLOSE: 'Cerrar',
 };
 
 const CONNECTORS = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'e']);

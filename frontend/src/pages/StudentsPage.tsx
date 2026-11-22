@@ -11,6 +11,7 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 
 import { PageHeader } from '../components/ui/PageHeader';
+import { FormSummary } from '../components/ui/FormSummary';
 import { DatePicker } from '../components/ui/DatePicker';
 
 import { Pagination } from '../components/ui/Pagination';
@@ -1120,7 +1121,7 @@ export const StudentsPage: React.FC = () => {
 
         icon={<Users size={28} />}
 
-        accent="var(--accent-emerald)"
+        accent="var(--primary)"
 
         breadcrumbs={[{ label: 'Gestión Académica' }, { label: 'Padrón Estudiantil' }]}
 
@@ -1611,6 +1612,20 @@ export const StudentsPage: React.FC = () => {
             className="modal-step-form"
 
           >
+
+            <FormSummary
+              icon={<Users size={18} />}
+              title={`${studentForm.firstName} ${studentForm.lastName}`.trim() || 'Nuevo estudiante'}
+              subtitle={studentForm.code || 'Expediente académico'}
+              meta={[
+                studentForm.career || 'Carrera por definir',
+                studentForm.code || studentForm.firstName
+                  ? `Ciclo ${studentForm.currentCycle ?? 1}`
+                  : 'Ciclo por definir',
+              ]}
+              progress={Math.round(([studentForm.code, studentForm.firstName, studentForm.lastName, studentForm.career].filter((value) => String(value ?? '').trim()).length / 4) * 100)}
+              progressLabel="4 campos clave"
+            />
 
             <div className="institution-stepper modal-form-stepper" aria-label="Pasos del formulario de estudiante">
 

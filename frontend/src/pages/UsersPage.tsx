@@ -12,6 +12,7 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { SectionHeader } from '../components/ui/SectionHeader';
+import { FormSummary } from '../components/ui/FormSummary';
 import { Pagination } from '../components/ui/Pagination';
 import { ViewToggle } from '../components/ui/ViewToggle';
 import { formControlStyle, formLabelStyle } from '../components/ui/formStyles';
@@ -577,7 +578,15 @@ export const UsersPage: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleCreateUser} className="modal-form">
+              <FormSummary
+                icon={<Users size={18} />}
+                title={`${formData.firstName} ${formData.lastName}`.trim() || 'Nuevo usuario'}
+                subtitle={formData.username ? `@${formData.username} · ${formData.email || 'Sin correo'}` : 'Cuenta institucional'}
+                meta={[roleLabel(formData.roles[0] ?? 'ROLE_DOCENTE'), formData.department || 'Sin departamento']}
+                progress={Math.round(([formData.firstName, formData.lastName, formData.username, formData.email, formData.password].filter((value) => String(value ?? '').trim()).length / 5) * 100)}
+                progressLabel="5 campos clave"
+              />
               {/* Foto de perfil */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 {createAvatarPreview ? (
@@ -664,7 +673,15 @@ export const UsersPage: React.FC = () => {
               <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--status-down-bg)', color: 'var(--status-down)', fontSize: 'var(--text-sm)', marginBottom: '14px' }}>{editError}</div>
             )}
 
-            <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleSaveEdit} className="modal-form">
+              <FormSummary
+                icon={<Users size={18} />}
+                title={`${editForm.firstName} ${editForm.lastName}`.trim() || editingUser.fullName}
+                subtitle={`@${editForm.username} · ${editForm.email || 'Sin correo'}`}
+                meta={[roleLabel(editForm.roles[0] ?? 'ROLE_DOCENTE'), editForm.department || 'Sin departamento']}
+                progress={Math.round(([editForm.firstName, editForm.lastName, editForm.username, editForm.email].filter((value) => String(value ?? '').trim()).length / 4) * 100)}
+                progressLabel="4 campos clave"
+              />
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="avatar" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-light)' }} />

@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { EmptyState } from '../ui/EmptyState';
 import { SectionHeader } from '../ui/SectionHeader';
+import { FormSummary } from '../ui/FormSummary';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -243,6 +244,19 @@ export const SectionsTab: React.FC = () => {
         >
           <AcademicFormError message={formError} />
           <form onSubmit={handleSave} className="modal-form">
+            <FormSummary
+              icon={<Grid3X3 size={18} />}
+              title={courses.find((course) => course.id === form.courseId)?.name || 'Nueva sección'}
+              subtitle={`Sección ${form.code.trim() || '—'} · ${periods.find((period) => period.id === form.periodId)?.code || 'Periodo por definir'}`}
+              meta={[
+                teachers.find((teacher) => teacher.id === form.teacherId)?.firstName
+                  ? `${teachers.find((teacher) => teacher.id === form.teacherId)?.firstName} ${teachers.find((teacher) => teacher.id === form.teacherId)?.lastName}`
+                  : 'Docente sin asignar',
+                form.capacity ? `Cupo ${form.capacity}` : 'Cupo por definir',
+              ]}
+              progress={Math.round(([form.periodId, form.courseId, form.code, form.capacity].filter((value) => String(value ?? '').trim() && value !== 0).length / 4) * 100)}
+              progressLabel="4 campos clave"
+            />
             <div className="form-section">Oferta académica</div>
             <div className="modal-field-grid">
               <AcademicField label="Periodo" icon={<CalendarDays size={13} />}>

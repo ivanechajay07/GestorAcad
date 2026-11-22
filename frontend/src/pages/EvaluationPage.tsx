@@ -5,6 +5,9 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { PageHeader } from '../components/ui/PageHeader';
 import { DatePicker } from '../components/ui/DatePicker';
 import { SectionHeader } from '../components/ui/SectionHeader';
+import { FormSummary } from '../components/ui/FormSummary';
+import { TableFilterMobile, TableFilterRow, matchesFilter } from '../components/ui/TableFilters';
+import type { TableFilterDef } from '../components/ui/TableFilters';
 import { EmptyState } from '../components/ui/EmptyState';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
@@ -62,6 +65,47 @@ const ATTENDANCE_STATUS = [
   { value: 'JUSTIFICADO', label: 'Justificado' },
 ];
 
+const createFilters = (filters: TableFilterDef[]): Record<string, string> =>
+  Object.fromEntries(filters.map((filter) => [filter.key, filter.type === 'select' ? 'ALL' : '']));
+
+const EVALUATION_FILTERS: TableFilterDef[] = [
+  { key: 'name', label: 'Evaluación', placeholder: 'Nombre' },
+  { key: 'type', label: 'Tipo', type: 'select', options: EVALUATION_TYPES },
+  { key: 'weight', label: 'Peso', placeholder: 'Peso' },
+  { key: 'date', label: 'Fecha', placeholder: 'Fecha' },
+  { key: 'maxScore', label: 'Nota máxima', placeholder: 'Nota' },
+];
+
+const GRADE_FILTERS: TableFilterDef[] = [
+  { key: 'code', label: 'Código', placeholder: 'Código' },
+  { key: 'student', label: 'Estudiante', placeholder: 'Nombre' },
+  { key: 'score', label: 'Nota', placeholder: 'Nota' },
+  { key: 'observation', label: 'Observación', placeholder: 'Observación' },
+];
+
+const ATTENDANCE_FILTERS: TableFilterDef[] = [
+  { key: 'code', label: 'Código', placeholder: 'Código' },
+  { key: 'student', label: 'Estudiante', placeholder: 'Nombre' },
+  { key: 'status', label: 'Estado', type: 'select', options: ATTENDANCE_STATUS },
+  { key: 'observation', label: 'Observación', placeholder: 'Observación' },
+];
+
+const ACTA_FILTERS: TableFilterDef[] = [
+  { key: 'code', label: 'Código', placeholder: 'Código' },
+  { key: 'student', label: 'Estudiante', placeholder: 'Nombre' },
+  { key: 'average', label: 'Promedio', placeholder: 'Promedio' },
+  {
+    key: 'status',
+    label: 'Estado',
+    type: 'select',
+    options: [
+      { value: 'APROBADO', label: 'Aprobado' },
+      { value: 'DESAPROBADO', label: 'Desaprobado' },
+    ],
+  },
+  { key: 'credits', label: 'Créditos', placeholder: 'Créditos' },
+];
+
 const emptyEvaluation = (): EvaluationDto => ({
   sectionId: 0,
   name: '',
@@ -111,6 +155,10 @@ export const EvaluationPage: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [exportingActa, setExportingActa] = useState(false);
+  const [evaluationFilters, setEvaluationFilters] = useState(() => createFilters(EVALUATION_FILTERS));
+  const [gradeFilters, setGradeFilters] = useState(() => createFilters(GRADE_FILTERS));
+  const [attendanceFilters, setAttendanceFilters] = useState(() => createFilters(ATTENDANCE_FILTERS));
+  const [actaFilters, setActaFilters] = useState(() => createFilters(ACTA_FILTERS));
 
   const selectedSection = useMemo(
     () => sections.find((s) => s.id === selectedSectionId),
@@ -125,6 +173,37 @@ export const EvaluationPage: React.FC = () => {
     [evaluations]
   );
   const actClosed = acta?.status === 'CERRADA';
+
+  const filteredEvaluations = useMemo(() => evaluations.filter((evaluation) => (
+    matchesFilter(evaluation.name, evaluationFilters.name)
+    && (evaluationFilters.type === 'ALL' || evaluation.type === evaluationFilters.type)
+    && matchesFilter(evaluation.weight, evaluationFilters.weight)
+    && matchesFilter(evaluation.date, evaluationFilters.date)
+    && matchesFilter(evaluation.maxScore, evaluationFilters.maxScore)
+  )), [evaluations, evaluationFilters]);
+
+  const filteredGrades = useMemo(() => grades.filter((grade) => (
+    matchesFilter(grade.studentCode, gradeFilters.code)
+    && matchesFilter(grade.studentName, gradeFilters.student)
+    && matchesFilter(grade.score, gradeFilters.score)
+    && matchesFilter(grade.observation, gradeFilters.observation)
+  )), [grades, gradeFilters]);
+
+  const filteredAttendance = useMemo(() => attendance.filter((record) => (
+    matchesFilter(record.studentCode, attendanceFilters.code)
+    && matchesFilter(record.studentName, attendanceFilters.student)
+    && (attendanceFilters.status === 'ALL' || record.status === attendanceFilters.status)
+    && matchesFilter(record.observation, attendanceFilters.observation)
+  )), [attendance, attendanceFilters]);
+
+  const filteredActaDetails = useMemo(() => (acta?.details ?? []).filter((detail) => (
+    matchesFilter(detail.studentCode, actaFilters.code)
+    && matchesFilter(detail.studentName, actaFilters.student)
+    && matchesFilter(detail.average, actaFilters.average)
+    && (actaFilters.status === 'ALL'
+      || (detail.approved ? 'APROBADO' : 'DESAPROBADO') === actaFilters.status)
+    && matchesFilter(detail.credits, actaFilters.credits)
+  )), [acta, actaFilters]);
 
   const loadSections = useCallback(async () => {
     setLoadingSections(true);
@@ -421,6 +500,11 @@ export const EvaluationPage: React.FC = () => {
                 }
               />
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
+              <TableFilterMobile
+                filters={EVALUATION_FILTERS}
+                values={evaluationFilters}
+                onChange={(key, value) => setEvaluationFilters((current) => ({ ...current, [key]: value }))}
+              />
           <div className="data-table-wrap">
                 <table className="data-table data-table--stack table--evaluations">
                   <colgroup>
@@ -433,9 +517,15 @@ export const EvaluationPage: React.FC = () => {
                   </colgroup>
                   <thead>
                     <tr><th>Evaluación</th><th>Tipo</th><th>Peso</th><th>Fecha</th><th>Nota máxima</th><th style={{ textAlign: 'center' }}>Acciones</th></tr>
+                    <TableFilterRow
+                      filters={EVALUATION_FILTERS}
+                      values={evaluationFilters}
+                      onChange={(key, value) => setEvaluationFilters((current) => ({ ...current, [key]: value }))}
+                      trailing={1}
+                    />
                   </thead>
                   <tbody>
-                    {evaluations.map((evaluation) => (
+                    {filteredEvaluations.map((evaluation) => (
                       <tr key={evaluation.id}>
                         <td className="cell-strong">{evaluation.name}</td>
                         <td>{EVALUATION_TYPES.find((t) => t.value === evaluation.type)?.label ?? evaluation.type}</td>
@@ -458,14 +548,16 @@ export const EvaluationPage: React.FC = () => {
                         </td>
                       </tr>
                     ))}
-                    {evaluations.length === 0 && (
+                    {filteredEvaluations.length === 0 && (
                       <tr>
                         <td colSpan={6}>
                           <EmptyState
                           compact
                             icon={<ClipboardList size={22} />}
-                            title="Sin evaluaciones registradas"
-                            description="Agrega la primera evaluación para comenzar a calcular notas y pesos."
+                            title={evaluations.length === 0 ? 'Sin evaluaciones registradas' : 'Sin resultados con esos filtros'}
+                            description={evaluations.length === 0
+                              ? 'Agrega la primera evaluación para comenzar a calcular notas y pesos.'
+                              : 'Ajusta los filtros de la cabecera para ver otras evaluaciones.'}
                           />
                         </td>
                       </tr>
@@ -504,6 +596,11 @@ export const EvaluationPage: React.FC = () => {
                 }
               />
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
+              <TableFilterMobile
+                filters={GRADE_FILTERS}
+                values={gradeFilters}
+                onChange={(key, value) => setGradeFilters((current) => ({ ...current, [key]: value }))}
+              />
           <div className="data-table-wrap">
                 <table className="data-table data-table--stack table--grades">
                   <colgroup>
@@ -512,9 +609,17 @@ export const EvaluationPage: React.FC = () => {
                     <col style={{ width: '22%' }} />
                     <col style={{ width: '34%' }} />
                   </colgroup>
-                  <thead><tr><th>Código</th><th>Estudiante</th><th>Nota (0–{selectedEvaluation?.maxScore ?? 20})</th><th>Observación</th></tr></thead>
+                  <thead>
+                    <tr><th>Código</th><th>Estudiante</th><th>Nota (0–{selectedEvaluation?.maxScore ?? 20})</th><th>Observación</th></tr>
+                    <TableFilterRow
+                      filters={GRADE_FILTERS}
+                      values={gradeFilters}
+                      onChange={(key, value) => setGradeFilters((current) => ({ ...current, [key]: value }))}
+                      trailing={0}
+                    />
+                  </thead>
                   <tbody>
-                    {grades.map((grade) => (
+                    {filteredGrades.map((grade) => (
                       <tr key={grade.studentId}>
                         <td className="cell-mono">{grade.studentCode}</td>
                         <td>{grade.studentName}</td>
@@ -543,14 +648,16 @@ export const EvaluationPage: React.FC = () => {
                         </td>
                       </tr>
                     ))}
-                    {grades.length === 0 && (
+                    {filteredGrades.length === 0 && (
                       <tr>
                         <td colSpan={4}>
                           <EmptyState
                           compact
                             icon={<Pencil size={22} />}
-                            title="Sin notas para mostrar"
-                            description="Selecciona una evaluación y verifica que la sección tenga estudiantes matriculados."
+                            title={grades.length === 0 ? 'Sin notas para mostrar' : 'Sin resultados con esos filtros'}
+                            description={grades.length === 0
+                              ? 'Selecciona una evaluación y verifica que la sección tenga estudiantes matriculados.'
+                              : 'Ajusta los filtros de la cabecera para ver otras notas.'}
                           />
                         </td>
                       </tr>
@@ -584,6 +691,11 @@ export const EvaluationPage: React.FC = () => {
                 }
               />
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
+              <TableFilterMobile
+                filters={ATTENDANCE_FILTERS}
+                values={attendanceFilters}
+                onChange={(key, value) => setAttendanceFilters((current) => ({ ...current, [key]: value }))}
+              />
           <div className="data-table-wrap">
                 <table className="data-table data-table--stack table--grades">
                   <colgroup>
@@ -592,9 +704,17 @@ export const EvaluationPage: React.FC = () => {
                     <col style={{ width: '22%' }} />
                     <col style={{ width: '34%' }} />
                   </colgroup>
-                  <thead><tr><th>Código</th><th>Estudiante</th><th>Estado</th><th>Observación</th></tr></thead>
+                  <thead>
+                    <tr><th>Código</th><th>Estudiante</th><th>Estado</th><th>Observación</th></tr>
+                    <TableFilterRow
+                      filters={ATTENDANCE_FILTERS}
+                      values={attendanceFilters}
+                      onChange={(key, value) => setAttendanceFilters((current) => ({ ...current, [key]: value }))}
+                      trailing={0}
+                    />
+                  </thead>
                   <tbody>
-                    {attendance.map((record) => (
+                    {filteredAttendance.map((record) => (
                       <tr key={record.studentId}>
                         <td className="cell-mono">{record.studentCode}</td>
                         <td>{record.studentName}</td>
@@ -618,14 +738,16 @@ export const EvaluationPage: React.FC = () => {
                         </td>
                       </tr>
                     ))}
-                    {attendance.length === 0 && (
+                    {filteredAttendance.length === 0 && (
                       <tr>
                         <td colSpan={4}>
                           <EmptyState
                           compact
                             icon={<UserCheck size={22} />}
-                            title="Sin estudiantes matriculados"
-                            description="La sección todavía no tiene estudiantes para registrar asistencia."
+                            title={attendance.length === 0 ? 'Sin estudiantes matriculados' : 'Sin resultados con esos filtros'}
+                            description={attendance.length === 0
+                              ? 'La sección todavía no tiene estudiantes para registrar asistencia.'
+                              : 'Ajusta los filtros de la cabecera para ver otros registros.'}
                           />
                         </td>
                       </tr>
@@ -667,6 +789,11 @@ export const EvaluationPage: React.FC = () => {
                 }
               />
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
+              <TableFilterMobile
+                filters={ACTA_FILTERS}
+                values={actaFilters}
+                onChange={(key, value) => setActaFilters((current) => ({ ...current, [key]: value }))}
+              />
           <div className="data-table-wrap">
                 <table className="data-table data-table--stack table--acta">
                   <colgroup>
@@ -676,9 +803,17 @@ export const EvaluationPage: React.FC = () => {
                     <col style={{ width: '26%' }} />
                     <col style={{ width: '14%' }} />
                   </colgroup>
-                  <thead><tr><th>Código</th><th>Estudiante</th><th>Promedio</th><th>Estado</th><th>Créditos</th></tr></thead>
+                  <thead>
+                    <tr><th>Código</th><th>Estudiante</th><th>Promedio</th><th>Estado</th><th>Créditos</th></tr>
+                    <TableFilterRow
+                      filters={ACTA_FILTERS}
+                      values={actaFilters}
+                      onChange={(key, value) => setActaFilters((current) => ({ ...current, [key]: value }))}
+                      trailing={0}
+                    />
+                  </thead>
                   <tbody>
-                    {(acta?.details ?? []).map((detail) => (
+                    {filteredActaDetails.map((detail) => (
                       <tr key={detail.studentId}>
                         <td className="cell-mono">{detail.studentCode}</td>
                         <td>{detail.studentName}</td>
@@ -687,14 +822,16 @@ export const EvaluationPage: React.FC = () => {
                         <td>{detail.credits}</td>
                       </tr>
                     ))}
-                    {(acta?.details ?? []).length === 0 && (
+                    {filteredActaDetails.length === 0 && (
                       <tr>
                         <td colSpan={5}>
                           <EmptyState
                           compact
                             icon={<CheckCircle2 size={22} />}
-                            title="El acta aún no ha sido cerrada"
-                            description="Cuando el peso acumulado llegue al 100% podrás cerrar el acta y calcular los promedios finales."
+                            title={(acta?.details ?? []).length === 0 ? 'El acta aún no ha sido cerrada' : 'Sin resultados con esos filtros'}
+                            description={(acta?.details ?? []).length === 0
+                              ? 'Cuando el peso acumulado llegue al 100% podrás cerrar el acta y calcular los promedios finales.'
+                              : 'Ajusta los filtros de la cabecera para ver otros estudiantes.'}
                           />
                         </td>
                       </tr>
@@ -716,6 +853,18 @@ export const EvaluationPage: React.FC = () => {
         >
           <AcademicFormError message={formError} />
           <form onSubmit={handleSaveEvaluation} className="modal-form">
+            <FormSummary
+              icon={<ClipboardList size={18} />}
+              title={evaluationForm.name.trim() || 'Nueva evaluación'}
+              subtitle={EVALUATION_TYPES.find((type) => type.value === evaluationForm.type)?.label ?? evaluationForm.type}
+              meta={[
+                `${evaluationForm.weight || 0}% de peso`,
+                `Nota máxima ${evaluationForm.maxScore || 0}`,
+                evaluationForm.date || 'Fecha por definir',
+              ]}
+              progress={Math.round(([evaluationForm.name, evaluationForm.weight, evaluationForm.maxScore, evaluationForm.date].filter((value) => String(value ?? '').trim() && value !== 0).length / 4) * 100)}
+              progressLabel="4 campos clave"
+            />
             <div className="form-section">Identificación de la evaluación</div>
             <div className="modal-field-grid">
               <AcademicField label="Nombre" icon={<FileText size={13} />}>
