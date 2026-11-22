@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { tokenStorage } from '../services/tokenStorage';
+import { authService } from '../services/authService';
+import { getApiErrorMessage } from '../utils/apiErrors';
 import { resolveLoginError } from '../utils/loginErrors';
 import { Button } from '../components/ui/Button';
 import {
@@ -75,6 +77,7 @@ export const LoginPage: React.FC = () => {
   const [phase, setPhase] = useState<Phase>('idle');
   const [forgotOpen, setForgotOpen] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoverySending, setRecoverySending] = useState(false);
 
   const [now, setNow] = useState<Date>(() => new Date());
   useEffect(() => {
@@ -119,13 +122,22 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleRecovery = (e: React.FormEvent) => {
+  const handleRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
-    setForgotOpen(false);
-    setRecoveryEmail('');
-    toast.info('Si el correo está registrado, el administrador enviará las instrucciones de restablecimiento.', {
-      title: 'Solicitud registrada',
-    });
+    if (recoverySending) return;
+    setRecoverySending(true);
+    try {
+      await authService.requestPasswordReset(recoveryEmail.trim());
+      setForgotOpen(false);
+      setRecoveryEmail('');
+      toast.info('Si el correo está registrado, el administrador enviará las instrucciones de restablecimiento.', {
+        title: 'Solicitud registrada',
+      });
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo registrar la solicitud de recuperación.'));
+    } finally {
+      setRecoverySending(false);
+    }
   };
 
   const updateCapsLock = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -432,10 +444,10 @@ export const LoginPage: React.FC = () => {
                 </div>
               </div>
               <div className="login-modal-actions">
-                <Button type="button" variant="secondary" onClick={() => setForgotOpen(false)}>
+                <Button type="button" variant="secondary" onClick={() => setForgotOpen(false)} disabled={recoverySending}>
                   Cancelar
                 </Button>
-                <Button type="submit" variant="primary" leftIcon={<Mail size={16} />}>
+                <Button type="submit" variant="primary" leftIcon={<Mail size={16} />} isLoading={recoverySending}>
                   Enviar solicitud
                 </Button>
               </div>

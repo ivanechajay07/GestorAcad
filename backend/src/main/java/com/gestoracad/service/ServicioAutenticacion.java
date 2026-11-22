@@ -26,4 +26,7 @@ public interface ServicioAutenticacion {
 
     /** Actualiza la marca de última conexión (presencia) del usuario. */
     void heartbeat(String username);
+
+    /** Registra una solicitud de restablecimiento de contraseña sin revelar si el correo existe. */
+    void requestPasswordReset(String email, String clientIp, String userAgent);
 }

@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
@@ -78,13 +79,28 @@ public class ServicioAutenticacionImpl implements ServicioAutenticacion {
         }
 
         if (isLocked(user)) {
+            long minutes = remainingLockMinutes(user);
+            String message = minutes > 0
+                    ? "Cuenta bloqueada temporalmente por " + user.getFailedAttempts()
+                        + " intentos fallidos. Intenta nuevamente en " + minutes
+                        + (minutes == 1 ? " minuto." : " minutos.")
+                    : "Cuenta bloqueada. Contacte al administrador.";
             auditService.log(user.getUsername(), AccionAuditoria.LOGIN, "SEGURIDAD", "Intento de login a cuenta bloqueada por intentos fallidos: " + user.getUsername(), "/api/v1/auth/login", "POST", clientIp, "FAILURE", userAgent, "tb_usuarios", user.getId());
-            throw new ExcepcionApi("Cuenta bloqueada por múltiples intentos fallidos. Contacte al administrador.", HttpStatus.FORBIDDEN);
+            throw new ExcepcionApi(message, HttpStatus.LOCKED);
         }
 
         if (!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPasswordHash())) {
-            registerFailedAttempt(user, clientIp, userAgent);
-            throw new ExcepcionApi("Credenciales inválidas", HttpStatus.UNAUTHORIZED);
+            int attempts = registerFailedAttempt(user, clientIp, userAgent);
+            if (attempts >= MAX_FAILED_ATTEMPTS) {
+                throw new ExcepcionApi(
+                        "Cuenta bloqueada temporalmente por " + MAX_FAILED_ATTEMPTS
+                                + " intentos fallidos. Intenta nuevamente en 15 minutos.",
+                        HttpStatus.LOCKED);
+            }
+            throw new ExcepcionApi(
+                    "Credenciales inválidas. Intento " + attempts + " de " + MAX_FAILED_ATTEMPTS
+                            + ". Te quedan " + (MAX_FAILED_ATTEMPTS - attempts) + " intento(s).",
+                    HttpStatus.UNAUTHORIZED);
         }
 
         String accessToken = jwtTokenProvider.generateToken(user.getUsername());
@@ -195,14 +211,46 @@ public class ServicioAutenticacionImpl implements ServicioAutenticacion {
         return user;
     }
 
-    private boolean isLocked(Usuario user) {
-        if (user.isAccountLocked()) {
-            return true;
+    @Override
+    @Transactional
+    public void requestPasswordReset(String email, String clientIp, String userAgent) {
+        String normalized = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+        Optional<Usuario> user = normalized.isEmpty() ? Optional.empty() : userRepository.findByEmail(normalized);
+        if (user.isPresent()) {
+            auditService.log(user.get().getUsername(), AccionAuditoria.LOGIN, "SEGURIDAD",
+                    "Solicitud de restablecimiento de contraseña registrada para: " + normalized,
+                    "/api/v1/auth/forgot-password", "POST", clientIp, "SUCCESS", userAgent,
+                    "tb_usuarios", user.get().getId());
+        } else {
+            auditService.log(normalized, AccionAuditoria.LOGIN, "SEGURIDAD",
+                    "Solicitud de restablecimiento para correo no registrado: " + normalized,
+                    "/api/v1/auth/forgot-password", "POST", clientIp, "FAILURE", userAgent,
+                    "tb_usuarios", null);
         }
-        return user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now());
     }
 
-    private void registerFailedAttempt(Usuario user, String clientIp, String userAgent) {
+    private boolean isLocked(Usuario user) {
+        LocalDateTime now = LocalDateTime.now();
+        if (user.getLockedUntil() != null && !user.getLockedUntil().isAfter(now)) {
+            user.setAccountLocked(false);
+            user.setFailedAttempts(0);
+            user.setLockedUntil(null);
+            userRepository.save(user);
+            return false;
+        }
+        return user.isAccountLocked()
+                || (user.getLockedUntil() != null && user.getLockedUntil().isAfter(now));
+    }
+
+    private long remainingLockMinutes(Usuario user) {
+        if (user.getLockedUntil() == null) {
+            return 0;
+        }
+        long seconds = Duration.between(LocalDateTime.now(), user.getLockedUntil()).getSeconds();
+        return seconds <= 0 ? 0 : Math.max(1, (seconds + 59) / 60);
+    }
+
+    private int registerFailedAttempt(Usuario user, String clientIp, String userAgent) {
         int attempts = user.getFailedAttempts() + 1;
         user.setFailedAttempts(attempts);
 
@@ -218,5 +266,6 @@ public class ServicioAutenticacionImpl implements ServicioAutenticacion {
                 : "Intento de login fallido (" + attempts + "/" + MAX_FAILED_ATTEMPTS + ") para: " + user.getUsername();
 
         auditService.log(user.getUsername(), AccionAuditoria.LOGIN, "SEGURIDAD", description, "/api/v1/auth/login", "POST", clientIp, "FAILURE", userAgent, "tb_usuarios", user.getId());
+        return attempts;
     }
 }

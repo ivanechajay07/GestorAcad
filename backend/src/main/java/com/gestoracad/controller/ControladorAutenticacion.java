@@ -3,6 +3,7 @@ package com.gestoracad.controller;
 import com.gestoracad.dto.DtoRespuestaApi;
 import com.gestoracad.dto.DtoCambiarContrasena;
 import com.gestoracad.dto.DtoSolicitudLogin;
+import com.gestoracad.dto.DtoSolicitudRecuperacion;
 import com.gestoracad.dto.DtoRespuestaLogin;
 import com.gestoracad.dto.DtoSolicitudRefreshToken;
 import com.gestoracad.dto.DtoActualizarPerfil;
@@ -54,6 +55,16 @@ public class ControladorAutenticacion {
             HttpServletRequest request) {
         DtoRespuestaLogin response = authService.login(loginRequestDto, request.getRemoteAddr(), request.getHeader(HttpHeaders.USER_AGENT));
         return ResponseEntity.ok(DtoRespuestaApi.ok(response, "Inicio de sesión exitoso"));
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Solicitar recuperación de contraseña", description = "Registra una solicitud de restablecimiento para que el administrador la valide")
+    public ResponseEntity<DtoRespuestaApi<Void>> forgotPassword(
+            @Valid @RequestBody DtoSolicitudRecuperacion recoveryRequest,
+            HttpServletRequest request) {
+        authService.requestPasswordReset(recoveryRequest.getEmail(), request.getRemoteAddr(), request.getHeader(HttpHeaders.USER_AGENT));
+        return ResponseEntity.ok(DtoRespuestaApi.ok(null,
+                "Si el correo está registrado, el administrador recibirá la solicitud y enviará las instrucciones."));
     }
 
     @PostMapping("/refresh")

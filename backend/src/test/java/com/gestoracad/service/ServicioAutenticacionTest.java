@@ -28,6 +28,8 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -137,16 +139,52 @@ class ServicioAutenticacionTest {
     }
 
     @Test
-    @DisplayName("Cuenta bloqueada: rechaza el acceso con 403 sin verificar la contraseña")
+    @DisplayName("Cuenta bloqueada: rechaza el acceso con 423 y muestra los minutos restantes")
     void cuentaBloqueadaRechazaAcceso() {
         usuario.setAccountLocked(true);
+        usuario.setFailedAttempts(5);
+        usuario.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(12));
         when(userRepository.findByUsername("admin.rectoria")).thenReturn(Optional.of(usuario));
 
         ExcepcionApi excepcion = assertThrows(ExcepcionApi.class,
                 () -> authService.login(solicitud("admin.rectoria", PASSWORD), "127.0.0.1", "JUnit"));
 
-        assertEquals(HttpStatus.FORBIDDEN, excepcion.getStatus());
+        assertEquals(HttpStatus.LOCKED, excepcion.getStatus());
+        assertTrue(excepcion.getMessage().contains("12 minutos"));
         verify(passwordEncoder, never()).matches(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("El bloqueo temporal se libera automáticamente al cumplirse los 15 minutos")
+    void bloqueoTemporalSeLiberaAutomaticamente() {
+        usuario.setAccountLocked(true);
+        usuario.setFailedAttempts(5);
+        usuario.setLockedUntil(java.time.LocalDateTime.now().minusMinutes(1));
+        when(userRepository.findByUsername("admin.rectoria")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(true);
+        when(jwtTokenProvider.generateToken("admin.rectoria")).thenReturn("jwt-de-acceso");
+        when(jwtTokenProvider.generateRefreshToken("admin.rectoria")).thenReturn("jwt-de-refresco");
+        when(jwtTokenProvider.getJwtExpirationMs()).thenReturn(3_600_000L);
+        when(jwtTokenProvider.getRefreshExpirationMs()).thenReturn(604_800_000L);
+        when(userMapper.toDto(usuario)).thenReturn(new DtoRespuestaUsuario());
+
+        DtoRespuestaLogin respuesta = authService.login(solicitud("admin.rectoria", PASSWORD), "127.0.0.1", "JUnit");
+
+        assertNotNull(respuesta);
+        assertFalse(usuario.isAccountLocked());
+        assertEquals(0, usuario.getFailedAttempts());
+        assertNull(usuario.getLockedUntil());
+    }
+
+    @Test
+    @DisplayName("Solicitud de recuperación: siempre responde de forma genérica y audita el intento")
+    void solicitudRecuperacionRegistraAuditoria() {
+        when(userRepository.findByEmail("admin@gestoracad.edu")).thenReturn(Optional.of(usuario));
+
+        authService.requestPasswordReset("admin@gestoracad.edu", "127.0.0.1", "JUnit");
+
+        verify(auditService).log(anyString(), any(), anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString(), any(), any(), any());
     }
 
     @Test

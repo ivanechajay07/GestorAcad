@@ -57,6 +57,11 @@ export const authService = {
     return response.data;
   },
 
+  async requestPasswordReset(email: string): Promise<ApiResponse<null>> {
+    const response = await api.post<ApiResponse<null>>('/v1/auth/forgot-password', { email });
+    return response.data;
+  },
+
   async getProfile(): Promise<ApiResponse<AuthUser>> {
     const response = await api.get<ApiResponse<AuthUser>>('/v1/auth/me');
     return response.data;

@@ -140,7 +140,7 @@ class ControladorAutenticacionTest {
     @Test
     @DisplayName("Debe bloquear la cuenta tras 5 intentos de login fallidos")
     void testAccountLockoutAfterFailedAttempts() throws Exception {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             DtoSolicitudLogin attempt = new DtoSolicitudLogin();
             attempt.setUsernameOrEmail("auth.test");
             attempt.setPassword("ContrasegnaErronea" + i);
@@ -151,6 +151,17 @@ class ControladorAutenticacionTest {
                     .andExpect(status().isUnauthorized());
         }
 
+        DtoSolicitudLogin fifthAttempt = new DtoSolicitudLogin();
+        fifthAttempt.setUsernameOrEmail("auth.test");
+        fifthAttempt.setPassword("ContrasegnaErroneaFinal");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fifthAttempt)))
+                .andExpect(status().isLocked())
+                .andExpect(jsonPath("$.status").value(423))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("15 minutos")));
+
         DtoSolicitudLogin blockedAttempt = new DtoSolicitudLogin();
         blockedAttempt.setUsernameOrEmail("auth.test");
         blockedAttempt.setPassword("ClaveSegura2026!");
@@ -158,8 +169,19 @@ class ControladorAutenticacionTest {
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(blockedAttempt)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(403));
+                .andExpect(status().isLocked())
+                .andExpect(jsonPath("$.status").value(423))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("minutos")));
+    }
+
+    @Test
+    @DisplayName("Debe registrar la solicitud de recuperación sin revelar si el correo existe")
+    void testForgotPassword() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"correo.existente@gestoracad.edu\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
