@@ -423,6 +423,28 @@ export const StudentsPage: React.FC = () => {
 
   const [admissionForm, setAdmissionForm] = useState<StudentAdmissionDto | null>(null);
 
+  const admissionFormRef = useRef<HTMLFormElement>(null);
+
+  const admissionFormOpen = admissionForm !== null;
+
+  useEffect(() => {
+
+    if (!admissionFormOpen) return;
+
+    const timer = window.setTimeout(() => {
+
+      const panel = admissionFormRef.current;
+
+      panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      panel?.querySelector<HTMLElement>('input:not([type="hidden"]), select, textarea')?.focus({ preventScroll: true });
+
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+
+  }, [admissionFormOpen, admissionForm?.id]);
+
   const [manageError, setManageError] = useState<string | null>(null);
 
   const [manageLoading, setManageLoading] = useState(false);
@@ -2124,7 +2146,7 @@ export const StudentsPage: React.FC = () => {
 
                   {admissionForm ? (
 
-                    <form onSubmit={handleSaveAdmission} className="form-panel">
+                    <form onSubmit={handleSaveAdmission} className="form-panel" ref={admissionFormRef}>
 
                       <div className="form-section">Datos del ingreso</div>
 
