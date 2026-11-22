@@ -48,7 +48,7 @@ public class ServicioAdmisionEstudianteImpl implements ServicioAdmisionEstudiant
     @Override
     @Transactional(readOnly = true)
     public List<DtoAdmisionEstudiante> getAdmissionsByStudent(Long studentId) {
-        return admissionRepository.findByStudentIdOrderByPeriodDescAdmissionDateDesc(studentId)
+        return admissionRepository.findByStudentIdAndActiveTrueOrderByPeriodDescAdmissionDateDesc(studentId)
                 .stream()
                 .map(admissionMapper::toDto)
                 .collect(Collectors.toList());
@@ -57,7 +57,7 @@ public class ServicioAdmisionEstudianteImpl implements ServicioAdmisionEstudiant
     @Override
     @Transactional(readOnly = true)
     public DtoAdmisionEstudiante getAdmissionById(Long id) {
-        return admissionRepository.findById(id)
+        return admissionRepository.findByIdAndActiveTrue(id)
                 .map(admissionMapper::toDto)
                 .orElseThrow(() -> new ExcepcionRecursoNoEncontrado("Admisión", "id", id));
     }
@@ -69,7 +69,7 @@ public class ServicioAdmisionEstudianteImpl implements ServicioAdmisionEstudiant
                 .orElseThrow(() -> new ExcepcionRecursoNoEncontrado("Estudiante", "id", studentId));
 
         String period = dto.getPeriod().trim();
-        if (admissionRepository.existsByStudentIdAndPeriod(studentId, period)) {
+        if (admissionRepository.existsByStudentIdAndPeriodAndActiveTrue(studentId, period)) {
             auditService.log(UtilidadesSeguridad.getCurrentUsername(), AccionAuditoria.CREATE, MODULE,
                     "Intento fallido de registrar admisión duplicada en el periodo: " + period,
                     BASE_ENDPOINT, "POST", clientIp, "FAILURE", userAgent, "tb_estudiante_admisiones", null);
@@ -95,13 +95,13 @@ public class ServicioAdmisionEstudianteImpl implements ServicioAdmisionEstudiant
     @Override
     @Transactional
     public DtoAdmisionEstudiante updateAdmission(Long id, DtoAdmisionEstudiante dto, String clientIp, String userAgent) {
-        AdmisionEstudiante entity = admissionRepository.findById(id)
+        AdmisionEstudiante entity = admissionRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ExcepcionRecursoNoEncontrado("Admisión", "id", id));
 
         String newPeriod = dto.getPeriod().trim();
         Long studentId = entity.getStudent().getId();
         if (!newPeriod.equals(entity.getPeriod())
-                && admissionRepository.existsByStudentIdAndPeriod(studentId, newPeriod)) {
+                && admissionRepository.existsByStudentIdAndPeriodAndActiveTrue(studentId, newPeriod)) {
             auditService.log(UtilidadesSeguridad.getCurrentUsername(), AccionAuditoria.UPDATE, MODULE,
                     "Intento fallido de actualizar admisión duplicada en el periodo: " + newPeriod,
                     BASE_ENDPOINT + "/" + id, "PUT", clientIp, "FAILURE", userAgent, "tb_estudiante_admisiones", id);
@@ -123,7 +123,7 @@ public class ServicioAdmisionEstudianteImpl implements ServicioAdmisionEstudiant
     @Override
     @Transactional
     public void deleteAdmission(Long id, String clientIp, String userAgent) {
-        AdmisionEstudiante entity = admissionRepository.findById(id)
+        AdmisionEstudiante entity = admissionRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ExcepcionRecursoNoEncontrado("Admisión", "id", id));
 
         entity.setActive(false);

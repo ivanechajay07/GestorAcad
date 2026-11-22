@@ -15,11 +15,13 @@ import java.util.Optional;
 @Repository
 public interface RepositorioAdmisionEstudiante extends JpaRepository<AdmisionEstudiante, Long> {
 
-    List<AdmisionEstudiante> findByStudentIdOrderByPeriodDescAdmissionDateDesc(Long studentId);
+    List<AdmisionEstudiante> findByStudentIdAndActiveTrueOrderByPeriodDescAdmissionDateDesc(Long studentId);
 
     Optional<AdmisionEstudiante> findFirstByStudentIdAndActiveTrueOrderByPeriodAscAdmissionDateAsc(Long studentId);
 
-    boolean existsByStudentIdAndPeriod(Long studentId, String period);
+    boolean existsByStudentIdAndPeriodAndActiveTrue(Long studentId, String period);
 
     long countByStudentIdAndActiveTrue(Long studentId);
+
+    Optional<AdmisionEstudiante> findByIdAndActiveTrue(Long id);
 }

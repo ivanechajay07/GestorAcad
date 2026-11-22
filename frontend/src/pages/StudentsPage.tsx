@@ -189,6 +189,20 @@ const CONDITION_LABEL = (value?: string) =>
 
 
 
+const formatAdmissionDate = (value?: string): string => {
+
+  if (!value) return '';
+
+  const [year, month, day] = value.split('-');
+
+  if (!year || !month || !day) return value;
+
+  return `${day}/${month}/${year}`;
+
+};
+
+
+
 const conditionVariant = (value?: string): 'success' | 'danger' | 'primary' | 'outline' => {
 
   if (value === 'TERCIO_SUPERIOR' || value === 'DECIMO_SUPERIOR') return 'success';
@@ -2216,11 +2230,11 @@ export const StudentsPage: React.FC = () => {
 
                           {ADMISSION_STATUS.find((s) => s.value === a.status)?.label ?? a.status}
 
-                          {a.score != null ? ` · Puntaje ${a.score}` : ''}
+                          {a.score != null ? ` · Puntaje ${Number(a.score).toFixed(2)}` : ''}
 
                           {a.highSchool ? ` · ${a.highSchool}` : ''}
 
-                          {a.admissionDate ? ` · ${a.admissionDate}` : ''}
+                          {a.admissionDate ? ` · ${formatAdmissionDate(a.admissionDate)}` : ''}
 
                         </div>
 

@@ -279,7 +279,7 @@ public class ServicioEstudianteImpl implements ServicioEstudiante {
         }
         String period = dto.getEntryPeriod().trim();
         List<AdmisionEstudiante> admissions = admissionRepository
-                .findByStudentIdOrderByPeriodDescAdmissionDateDesc(student.getId());
+                .findByStudentIdAndActiveTrueOrderByPeriodDescAdmissionDateDesc(student.getId());
         Optional<AdmisionEstudiante> existing = admissions.stream()
                 .filter(AdmisionEstudiante::isActive)
                 .filter(admission -> period.equalsIgnoreCase(admission.getPeriod()))

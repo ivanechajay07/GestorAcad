@@ -1,5 +1,6 @@
 package com.gestoracad.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gestoracad.dto.DtoAdmisionEstudiante;
 import com.gestoracad.dto.DtoEstudiante;
@@ -164,6 +165,50 @@ class ControladorModuloEstudianteTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser(username = "rector.test", authorities = {"ADMISION_CREATE", "ADMISION_VIEW", "ADMISION_DELETE"})
+    @DisplayName("Debe ocultar la admisión eliminada y permitir recrear el mismo periodo")
+    void testDeletedAdmissionIsHiddenAndPeriodCanBeRecreated() throws Exception {
+        DtoAdmisionEstudiante dto = new DtoAdmisionEstudiante();
+        dto.setModality("ORDINARIO");
+        dto.setPeriod("2028-I");
+        dto.setHighSchool("I.E. Colegio Nacional");
+        dto.setScore(new BigDecimal("15.75"));
+        dto.setStatus("ADMITIDO");
+
+        String createdBody = mockMvc.perform(post("/api/v1/student-admissions/student/" + studentId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        long admissionId = objectMapper.readTree(createdBody).path("data").path("id").asLong();
+
+        mockMvc.perform(delete("/api/v1/student-admissions/" + admissionId))
+                .andExpect(status().isOk());
+
+        String listBody = mockMvc.perform(get("/api/v1/student-admissions/student/" + studentId()))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        boolean stillVisible = false;
+        for (JsonNode admission : objectMapper.readTree(listBody).path("data")) {
+            if ("2028-I".equals(admission.path("period").asText())) {
+                stillVisible = true;
+                break;
+            }
+        }
+        assertThat(stillVisible).isFalse();
+
+        mockMvc.perform(post("/api/v1/student-admissions/student/" + studentId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.period").value("2028-I"));
     }
 
     @Test
