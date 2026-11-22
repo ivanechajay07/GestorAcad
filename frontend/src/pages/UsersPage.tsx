@@ -496,7 +496,11 @@ export const UsersPage: React.FC = () => {
                         <tr key={u.id}>
                           <td className="cell-strong">
                             <div className="table-person">
-                              <span className="table-avatar" aria-hidden="true">{(u.firstName?.[0] ?? u.username?.[0] ?? '')}</span>
+                              <span className="table-avatar" aria-hidden="true">
+                                {u.avatar
+                                  ? <img src={u.avatar} alt="" />
+                                  : (u.firstName?.[0] ?? u.username?.[0] ?? '')}
+                              </span>
                               <div className="table-person__copy">
                                 <span title={u.fullName}>{u.fullName}</span>
                                 <small className="cell-mono">@{u.username}</small>
