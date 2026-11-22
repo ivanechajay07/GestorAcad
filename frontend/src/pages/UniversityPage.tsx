@@ -781,7 +781,7 @@ export const UniversityPage: React.FC = () => {
                   <Card key={c.id} interactive className="card-fill">
                     <div className="entity-card-v2">
                       <div className="entity-head">
-                        <span className="entity-avatar" style={{ background: 'linear-gradient(135deg, #4f46e5, #06b6d4)' }}>
+                        <span className="entity-avatar">
                           <Building2 size={20} />
                         </span>
                         <div className="entity-id">
@@ -855,7 +855,7 @@ export const UniversityPage: React.FC = () => {
                   <Card key={f.id} interactive className="card-fill">
                     <div className="entity-card-v2">
                       <div className="entity-head">
-                        <span className="entity-avatar" style={{ background: 'linear-gradient(135deg, #0ea5e9, #6366f1)' }}>
+                        <span className="entity-avatar">
                           <School size={20} />
                         </span>
                         <div className="entity-id">
@@ -1040,7 +1040,7 @@ export const UniversityPage: React.FC = () => {
                   <Card key={a.id} interactive className="card-fill">
                     <div className="entity-card-v2">
                       <div className="entity-head">
-                        <span className="entity-avatar" style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
+                        <span className="entity-avatar">
                           <GraduationCap size={20} />
                         </span>
                         <div className="entity-id">

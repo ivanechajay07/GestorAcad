@@ -16111,3 +16111,15 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   border-color: rgba(255, 255, 255, 0.26);
   background: rgba(255, 255, 255, 0.18);
 }
+
+
+/* Iconos de entidad con el degradado azul del proyecto */
+.entity-avatar {
+  color: #ffffff;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    color-mix(in srgb, var(--primary) 45%, var(--accent-cyan))
+  );
+  box-shadow: 0 10px 22px -14px var(--primary-glow);
+}

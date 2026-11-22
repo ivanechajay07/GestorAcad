@@ -1271,7 +1271,7 @@ export const StudentsPage: React.FC = () => {
 
                     <div className="entity-head">
 
-                      <span className="entity-avatar" style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}>
+                      <span className="entity-avatar">
 
                         {s.firstName?.[0]?.toUpperCase() || 'E'}
 

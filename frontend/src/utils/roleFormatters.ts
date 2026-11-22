@@ -168,11 +168,11 @@ export const roleInitials = (name: string): string => {
 };
 
 const ROLE_GRADIENTS = [
-  'linear-gradient(135deg, #7c3aed, #4f46e5)',
+  'linear-gradient(135deg, #2563eb, #06b6d4)',
+  'linear-gradient(135deg, #1d4ed8, #3b82f6)',
   'linear-gradient(135deg, #0ea5e9, #2563eb)',
-  'linear-gradient(135deg, #10b981, #0d9488)',
-  'linear-gradient(135deg, #f59e0b, #d97706)',
-  'linear-gradient(135deg, #ec4899, #db2777)',
+  'linear-gradient(135deg, #4f46e5, #2563eb)',
+  'linear-gradient(135deg, #0284c7, #4f46e5)',
 ];
 
 /** Gradiente estable por rol para reconocerlo de un vistazo. */
