@@ -29,7 +29,6 @@ import {
   Calendar,
   GraduationCap,
   Layers,
-  LayoutDashboard,
   MapPin,
   RefreshCw,
   ShieldCheck,
@@ -295,6 +294,17 @@ export const DashboardPage: React.FC = () => {
   }
 
   const firstName = user?.fullName?.split(' ')[0] ?? user?.username ?? 'usuario';
+  const userInitials = (
+    `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.trim()
+    || (user?.fullName ?? '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+    || user?.username?.slice(0, 2)
+    || 'GA'
+  ).toUpperCase();
   const greeting = greetingFor(new Date(now).getHours());
   const hasStudentsDistribution = availableBreakdownModes.length > 0;
   const hasTeacherDistribution = teacherViews.length > 0;
@@ -335,7 +345,12 @@ export const DashboardPage: React.FC = () => {
       <PageHeader
         title={`${greeting}, ${firstName}`}
         subtitle={subtitle}
-        icon={<LayoutDashboard size={25} />}
+        icon={
+          user?.avatar
+            ? <img src={user.avatar} alt="" className="page-header__avatar" />
+            : <span className="page-header__avatar-initials">{userInitials}</span>
+        }
+        iconVariant="avatar"
         accent="var(--primary)"
         eyebrow={
           <>

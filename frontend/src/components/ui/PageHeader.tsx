@@ -11,6 +11,7 @@ interface PageHeaderProps {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
+  iconVariant?: 'default' | 'avatar';
   accent?: string;
   eyebrow?: React.ReactNode;
   badges?: React.ReactNode;
@@ -23,6 +24,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
   icon,
+  iconVariant = 'default',
   accent = 'var(--primary)',
   eyebrow,
   badges,
@@ -49,7 +51,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <span className="page-header__orb page-header__orb--a" />
         <span className="page-header__orb page-header__orb--b" />
         <span className="page-header__grid" />
-        {icon && <span className="page-header__watermark">{icon}</span>}
+        {icon && iconVariant !== 'avatar' && <span className="page-header__watermark">{icon}</span>}
       </span>
 
       <div className="page-header__content">
@@ -69,7 +71,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <div className="page-header__main">
           <div className="page-header__lead">
             {icon && (
-              <span className="page-header__icon" aria-hidden="true">
+              <span
+                className={`page-header__icon${iconVariant === 'avatar' ? ' page-header__icon--avatar' : ''}`}
+                aria-hidden="true"
+              >
                 {icon}
               </span>
             )}
