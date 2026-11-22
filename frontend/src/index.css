@@ -14645,3 +14645,81 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
     overflow-wrap: anywhere;
   }
 }
+
+/* Auditoria alineada al sistema visual del proyecto */
+.audit-panel__eyebrow {
+  color: var(--primary);
+}
+
+.audit-range__btn[aria-pressed='true'] {
+  color: var(--primary-contrast);
+  background: var(--primary);
+  box-shadow: 0 8px 18px -12px var(--primary-glow);
+}
+
+.audit-kpi {
+  padding: 14px 16px;
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  box-shadow: none;
+}
+
+.audit-kpi::before {
+  display: none;
+}
+
+.audit-kpi:hover {
+  border-color: color-mix(in srgb, var(--primary) 24%, var(--bg-card-border));
+  box-shadow: 0 12px 26px -24px var(--primary-glow);
+}
+
+.audit-kpi__icon {
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--audit-accent);
+  border: 1px solid color-mix(in srgb, var(--audit-accent) 26%, transparent);
+  background: color-mix(in srgb, var(--audit-accent) 14%, transparent);
+}
+
+.audit-chart,
+.audit-actions {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-elevated);
+}
+
+.audit-bar__fill {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--primary) 70%, #0b2a66),
+    var(--primary)
+  );
+}
+
+.audit-bar[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+/* Tabla de auditoria: columnas alineadas a la izquierda */
+.audit-table th,
+.audit-table td {
+  text-align: left;
+}
+
+.audit-table td > * {
+  justify-self: start;
+  max-width: 100%;
+}
+
+.audit-table .audit-date {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.audit-table tbody td {
+  vertical-align: middle;
+}
