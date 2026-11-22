@@ -10,10 +10,11 @@ import { DatePicker } from '../components/ui/DatePicker';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
+import { reportService } from '../services/reportService';
 import type { TeacherSectionDetailDto } from '../services/portalService';
 import { academicInputStyle } from '../components/academic/AcademicUi';
 import type { ActaDto, AttendanceDto, EvaluationDto, GradeDto } from '../services/evaluationService';
-import { ArrowLeft, CheckCircle2, ClipboardList, Pencil, UserCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ClipboardList, Download, Pencil, UserCheck } from 'lucide-react';
 
 type TabKey = 'grades' | 'attendance' | 'act';
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -36,6 +37,7 @@ export const TeacherSectionPage: React.FC = () => {
   const [tab, setTab] = useState<TabKey>('grades');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exportingActa, setExportingActa] = useState(false);
 
   const load = useCallback(async () => {
     if (!sectionId) return;
@@ -132,6 +134,18 @@ export const TeacherSectionPage: React.FC = () => {
       toast.error('No se pudo cerrar el acta. Verifica que los pesos sumen 100%.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const exportActaPdf = async () => {
+    setExportingActa(true);
+    try {
+      const filename = await reportService.exportActa(sectionId);
+      toast.success(`Acta generada: ${filename}`);
+    } catch {
+      toast.error('No se pudo generar el acta en PDF.');
+    } finally {
+      setExportingActa(false);
     }
   };
 
@@ -284,6 +298,15 @@ export const TeacherSectionPage: React.FC = () => {
             description="Promedios finales y estado de cierre de la sección."
             aside={
               <>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={exportActaPdf}
+                  isLoading={exportingActa}
+                  leftIcon={<Download size={15} />}
+                >
+                  PDF
+                </Button>
                 <Badge variant={closed ? 'success' : 'warning'} size="sm" dot>{acta?.status ?? 'ABIERTA'}</Badge>
                 {!closed && <Button size="sm" variant="danger" onClick={closeActa} isLoading={saving}>Cerrar acta</Button>}
               </>

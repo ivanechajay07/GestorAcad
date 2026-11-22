@@ -44,6 +44,14 @@ class ControladorReportesTest {
     }
 
     @Test
+    @WithMockUser(username = "consulta.test", authorities = {"ESTUDIANTE_VIEW"})
+    @DisplayName("Debe rechazar el acta PDF sin permiso ACTA_VIEW")
+    void actaPdfRequiresActaPermission() throws Exception {
+        mockMvc.perform(get("/api/v1/reports/sections/3/acta.pdf"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(username = "rector.test", authorities = {"ESTUDIANTE_EXPORT"})
     @DisplayName("Debe exportar el padrón estudiantil como CSV UTF-8")
     void exportStudentsCsv() throws Exception {

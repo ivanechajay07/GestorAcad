@@ -26,10 +26,10 @@ const saveBlob = (blob: Blob, filename: string): void => {
   window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 };
 
-const downloadReport = async (path: string, fallback: string): Promise<string> => {
+const downloadReport = async (path: string, fallback: string, accept = 'text/csv'): Promise<string> => {
   const response = await api.get<Blob>(path, {
     responseType: 'blob',
-    headers: { Accept: 'text/csv' },
+    headers: { Accept: accept },
   });
   const filename = filenameFrom(response.headers['content-disposition'], fallback);
   saveBlob(response.data, filename);
@@ -40,4 +40,6 @@ export const reportService = {
   exportStudents: (): Promise<string> => downloadReport('/v1/reports/students', 'estudiantes.csv'),
   exportTeachers: (): Promise<string> => downloadReport('/v1/reports/teachers', 'docentes.csv'),
   exportUsers: (): Promise<string> => downloadReport('/v1/reports/users', 'usuarios.csv'),
+  exportActa: (sectionId: number): Promise<string> =>
+    downloadReport(`/v1/reports/sections/${sectionId}/acta.pdf`, 'acta.pdf', 'application/pdf'),
 };

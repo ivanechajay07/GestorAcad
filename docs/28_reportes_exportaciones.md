@@ -12,8 +12,20 @@
 | `GET` | `/api/v1/reports/students` | `ESTUDIANTE_EXPORT` | Padrón estudiantil |
 | `GET` | `/api/v1/reports/teachers` | `DOCENTE_EXPORT` | Padrón docente y carga horaria |
 | `GET` | `/api/v1/reports/users` | `USUARIO_EXPORT` | Directorio de usuarios y roles |
+| `GET` | `/api/v1/reports/sections/{id}/acta.pdf` | `ACTA_VIEW` | Acta de evaluación en PDF |
 
-Todos devuelven `text/csv; charset=UTF-8` con `Content-Disposition: attachment` y un nombre fechado, por ejemplo `estudiantes_20261122.csv`.
+Los tres primeros devuelven `text/csv; charset=UTF-8` con `Content-Disposition: attachment` y un nombre fechado, por ejemplo `estudiantes_20261122.csv`. El acta devuelve `application/pdf` con el nombre `acta_MAT-101-A_20261122.pdf`.
+
+## 2. Acta de evaluación en PDF
+
+El documento incluye:
+
+- Cabecera con nombre institucional, RUC y leyenda del sistema.
+- Título, sección, curso y estado del acta.
+- Fecha de cierre, usuario que cerró y cantidad de estudiantes.
+- Tabla de resultados: código, estudiante, promedio, condición y créditos.
+- Nota normativa y espacio para firmas de docente, coordinación y dirección de escuela.
+- Pie con fecha y hora de generación.
 
 ## 2. Formato
 
@@ -43,6 +55,8 @@ La exportación puede verificarse desde **Bitácora de Auditoría** o con `GET /
 - **Padrón Estudiantil:** botón `Exportar padrón` en la barra de filtros.
 - **Claustro Docente:** botón `Exportar padrón` en la barra de filtros.
 - **Usuarios del Sistema:** botón `Exportar` junto al selector Tarjetas/Tabla.
+- **Evaluación Académica → Acta:** botón `PDF`.
+- **Portal docente → Acta:** botón `PDF`.
 
 Los botones solo aparecen cuando el usuario tiene el permiso de exportación correspondiente. Al finalizar se muestra un toast con el nombre del archivo generado.
 
@@ -55,7 +69,7 @@ Los botones solo aparecen cuando el usuario tiene el permiso de exportación cor
 
 ## 6. Siguientes pasos
 
-1. Reportes PDF con plantilla institucional (matrícula, actas, carga docente).
+1. Reportes PDF de matrícula, carga docente y expediente curricular.
 2. Exportación de auditoría y de catálogos (roles, sedes, autoridades).
 3. Exportaciones asíncronas para volúmenes altos.
 4. Filtros de exportación equivalentes a los filtros de pantalla.

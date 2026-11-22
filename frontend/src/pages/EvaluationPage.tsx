@@ -12,6 +12,7 @@ import { useToast } from '../contexts/ToastContext';
 import { academicService } from '../services/academicService';
 import type { SectionDto } from '../services/academicService';
 import { evaluationService } from '../services/evaluationService';
+import { reportService } from '../services/reportService';
 import type {
   ActaDto,
   AttendanceDto,
@@ -33,6 +34,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   ClipboardList,
+  Download,
   FileText,
   Layers,
   Pencil,
@@ -108,6 +110,7 @@ export const EvaluationPage: React.FC = () => {
   const [evaluationForm, setEvaluationForm] = useState<EvaluationDto>(emptyEvaluation());
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [exportingActa, setExportingActa] = useState(false);
 
   const selectedSection = useMemo(
     () => sections.find((s) => s.id === selectedSectionId),
@@ -294,6 +297,19 @@ export const EvaluationPage: React.FC = () => {
       toast.error(academicErrMsg(err, 'No se pudo cerrar el acta'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleExportActa = async () => {
+    if (!selectedSectionId) return;
+    setExportingActa(true);
+    try {
+      const filename = await reportService.exportActa(selectedSectionId);
+      toast.success(`Acta generada: ${filename}`);
+    } catch (err) {
+      toast.error(academicErrMsg(err, 'No se pudo generar el acta en PDF'));
+    } finally {
+      setExportingActa(false);
     }
   };
 
@@ -634,6 +650,15 @@ export const EvaluationPage: React.FC = () => {
                 }
                 aside={
                   <>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleExportActa}
+                      isLoading={exportingActa}
+                      leftIcon={<Download size={15} />}
+                    >
+                      PDF
+                    </Button>
                     <Badge variant={actClosed ? 'success' : 'warning'} size="sm" dot>{acta?.status ?? 'ABIERTA'}</Badge>
                     {canCloseActa && !actClosed && (
                       <Button size="sm" variant="danger" onClick={handleCloseActa} isLoading={saving}>Cerrar acta</Button>
