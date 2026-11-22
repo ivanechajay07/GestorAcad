@@ -201,8 +201,14 @@ export const LoginPage: React.FC = () => {
       <div className="login-layout">
         {/* Panel de marca y propuesta de valor (sin métricas ficticias) */}
         <section className="login-showcase" aria-labelledby="login-hero-title">
-          <div className="login-logo-lg">
-            <GraduationCap size={30} color="#ffffff" aria-hidden="true" />
+          <div className="login-brand">
+            <div className="login-logo-lg">
+              <GraduationCap size={28} color="#ffffff" aria-hidden="true" />
+            </div>
+            <div className="login-brand-copy">
+              <strong>GESTOR ACADÉMICO <span>VIRTUAL</span></strong>
+              <small>Universidad Tecnológica del Perú</small>
+            </div>
           </div>
 
           <span className="login-eyebrow">
@@ -251,6 +257,10 @@ export const LoginPage: React.FC = () => {
         <main className="login-center" aria-labelledby="login-title">
           <div className="login-card-center">
             <div className="login-card-head">
+              <span className="login-card-kicker">
+                <ShieldCheck size={13} aria-hidden="true" />
+                Acceso seguro
+              </span>
               <h2 id="login-title">Iniciar sesión</h2>
               <p>Usa tus credenciales institucionales para continuar.</p>
             </div>
@@ -372,6 +382,10 @@ export const LoginPage: React.FC = () => {
               >
                 Ingresar a la plataforma
               </Button>
+              <p className="login-role-note">
+                <Users size={13} aria-hidden="true" />
+                Docentes y estudiantes ingresan con la cuenta institucional asignada a su ficha.
+              </p>
             </form>
 
             <div className="login-trust">
