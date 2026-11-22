@@ -27,7 +27,7 @@ export const Badge: React.FC<BadgeProps> = ({
       case 'info':
         return { bg: 'color-mix(in srgb, var(--accent-cyan) 14%, transparent)', text: 'var(--accent-cyan-text)', dot: 'var(--accent-cyan)', border: 'color-mix(in srgb, var(--accent-cyan) 32%, transparent)' };
       case 'role':
-        return { bg: 'color-mix(in srgb, var(--accent-violet) 16%, transparent)', text: 'var(--accent-violet-text)', dot: 'var(--accent-violet)', border: 'color-mix(in srgb, var(--accent-violet) 32%, transparent)' };
+        return { bg: 'color-mix(in srgb, var(--primary) 12%, transparent)', text: 'var(--primary-hover)', dot: 'var(--primary)', border: 'color-mix(in srgb, var(--primary) 30%, transparent)' };
       case 'outline':
         return { bg: 'transparent', text: 'var(--text-secondary)', dot: 'var(--text-secondary)', border: 'var(--border-light)' };
       case 'primary':

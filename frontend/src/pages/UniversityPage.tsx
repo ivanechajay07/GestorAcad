@@ -1180,9 +1180,23 @@ export const UniversityPage: React.FC = () => {
         >
           <FormError message={formError} />
           <form onSubmit={handleSaveCampus} className="modal-form campus-form">
-            <div className="campus-form__layout">
-              <div className="campus-form__main">
-                <div className="form-section">
+            <FormSummary
+              icon={<Building2 size={18} />}
+              title={campusForm.name.trim() || 'Nueva sede'}
+              subtitle={campusForm.address?.trim() || 'Dirección por definir'}
+              meta={[
+                [campusForm.district, campusForm.city, campusForm.region]
+                  .filter((value) => value?.trim())
+                  .join(' · ') || 'Ubicación por definir',
+                `Aforo: ${campusForm.capacity != null ? campusForm.capacity.toLocaleString('es-PE') : '—'}`,
+                `Pabellones: ${campusForm.pavilions ?? '—'}`,
+                `Laboratorios: ${campusForm.laboratories ?? '—'}`,
+              ]}
+              badge={<Badge variant="outline" size="sm">{campusTypeLabel}</Badge>}
+              progress={campusProgress}
+              progressLabel={`${campusProgressFields} de 5 campos clave`}
+            />
+            <div className="form-section">
                   <span>Identificación de la sede</span>
                   <span className={`form-section__status${campusForm.name.trim() && campusForm.code.trim() ? ' is-done' : ''}`}>
                     {campusForm.name.trim() && campusForm.code.trim()
@@ -1263,57 +1277,6 @@ export const UniversityPage: React.FC = () => {
                     <input style={inputStyle} type="number" min={0} value={campusForm.laboratories ?? ''} onChange={(e) => setCampusForm({ ...campusForm, laboratories: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ej. 12" />
                   </Field>
                 </div>
-              </div>
-
-              <aside className="campus-preview" aria-label="Vista previa de la sede">
-                <div className="campus-preview__head">
-                  <span className="campus-preview__eyebrow">Vista previa</span>
-                  <Badge variant="outline" size="sm">{campusTypeLabel}</Badge>
-                </div>
-                <div className="campus-preview__identity">
-                  <span className="campus-preview__logo" aria-hidden="true"><Building2 size={20} /></span>
-                  <div>
-                    <strong>{campusForm.name.trim() || 'Nueva sede'}</strong>
-                    <span>{campusForm.code.trim() || 'SEDE-XXX'}</span>
-                  </div>
-                </div>
-                <p className="campus-preview__line">
-                  <MapPin size={14} aria-hidden="true" />
-                  {[campusForm.district, campusForm.city, campusForm.region].filter((value) => value?.trim()).join(' · ') || 'Ubicación por definir'}
-                </p>
-                <p className="campus-preview__line">
-                  <Navigation size={14} aria-hidden="true" />
-                  {campusForm.address?.trim() || 'Dirección por definir'}
-                </p>
-                <div className="campus-preview__stats">
-                  <div>
-                    <Users size={14} aria-hidden="true" />
-                    <strong>{campusForm.capacity != null ? campusForm.capacity.toLocaleString('es-PE') : '—'}</strong>
-                    <small>Aforo</small>
-                  </div>
-                  <div>
-                    <LayoutGrid size={14} aria-hidden="true" />
-                    <strong>{campusForm.pavilions ?? '—'}</strong>
-                    <small>Pabellones</small>
-                  </div>
-                  <div>
-                    <FlaskConical size={14} aria-hidden="true" />
-                    <strong>{campusForm.laboratories ?? '—'}</strong>
-                    <small>Laboratorios</small>
-                  </div>
-                </div>
-                <div className="campus-preview__progress">
-                  <div>
-                    <span>Datos completos</span>
-                    <strong>{campusProgress}%</strong>
-                  </div>
-                  <span className="campus-preview__track" aria-hidden="true">
-                    <span style={{ width: `${campusProgress}%` }} />
-                  </span>
-                  <small>{campusProgressFields} de 5 campos clave</small>
-                </div>
-              </aside>
-            </div>
 
             <div className="modal-form-footer">
               <span className="campus-form__note">Los cambios se reflejan en la oferta académica y la auditoría institucional.</span>

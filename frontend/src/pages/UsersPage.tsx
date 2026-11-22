@@ -587,6 +587,7 @@ export const UsersPage: React.FC = () => {
                 progress={Math.round(([formData.firstName, formData.lastName, formData.username, formData.email, formData.password].filter((value) => String(value ?? '').trim()).length / 5) * 100)}
                 progressLabel="5 campos clave"
               />
+              <div className="form-section">Datos personales</div>
               {/* Foto de perfil */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 {createAvatarPreview ? (
@@ -614,42 +615,46 @@ export const UsersPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
                 <div>
-                  <label style={labelStyle}>Nombre</label>
-                  <input style={inputStyle} required value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} />
+                  <label className="field-label" style={labelStyle} htmlFor="create-user-first-name">Nombre</label>
+                  <input id="create-user-first-name" style={inputStyle} required value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Apellido</label>
-                  <input style={inputStyle} required value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} />
+                  <label className="field-label" style={labelStyle} htmlFor="create-user-last-name">Apellido</label>
+                  <input id="create-user-last-name" style={inputStyle} required value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Nombre de usuario</label>
-                  <input style={inputStyle} required placeholder="ej. maria.gonzalez" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} />
+                  <label className="field-label" style={labelStyle} htmlFor="create-user-department">Departamento / Facultad</label>
+                  <input id="create-user-department" style={inputStyle} placeholder="ej. Facultad de Ciencias" value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="form-section">Acceso y seguridad</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
+                <div>
+                  <label className="field-label" style={labelStyle} htmlFor="create-user-username">Nombre de usuario</label>
+                  <input id="create-user-username" style={inputStyle} required placeholder="ej. maria.gonzalez" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Correo institucional</label>
-                  <input style={inputStyle} type="email" required placeholder="ej. maria.gonzalez@gestoracad.edu" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                  <label className="field-label" style={labelStyle} htmlFor="create-user-email">Correo institucional</label>
+                  <input id="create-user-email" style={inputStyle} type="email" required placeholder="ej. maria.gonzalez@gestoracad.edu" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Contraseña (mínimo 8 caracteres)</label>
-                  <input style={inputStyle} type="password" required minLength={8} maxLength={PASSWORD_MAX_LENGTH} placeholder="••••••••" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+                  <label className="field-label" style={labelStyle} htmlFor="create-user-password">Contraseña (mínimo 8 caracteres)</label>
+                  <input id="create-user-password" style={inputStyle} type="password" required minLength={8} maxLength={PASSWORD_MAX_LENGTH} placeholder="••••••••" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
                   <PasswordRules value={formData.password} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Rol institucional</label>
-                  <select style={inputStyle} value={formData.roles[0]} onChange={(e) => setFormData({ ...formData, roles: [e.target.value] })}>
+                  <label className="field-label" style={labelStyle} htmlFor="create-user-role">Rol institucional</label>
+                  <select id="create-user-role" style={inputStyle} value={formData.roles[0]} onChange={(e) => setFormData({ ...formData, roles: [e.target.value] })}>
                     <option value="ROLE_UNIVERSIDAD">UNIVERSIDAD (Administración Central)</option>
                     <option value="ROLE_DOCENTE">DOCENTE (Cuerpo Académico)</option>
                     <option value="ROLE_ESTUDIANTE">ESTUDIANTE (Comunidad Universitaria)</option>
                   </select>
                 </div>
-                <div>
-                  <label style={labelStyle}>Departamento / Facultad</label>
-                  <input style={inputStyle} placeholder="ej. Facultad de Ciencias" value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} />
-                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+              <div className="modal-form-footer">
                 <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
                   Cancelar
                 </Button>
@@ -682,6 +687,7 @@ export const UsersPage: React.FC = () => {
                 progress={Math.round(([editForm.firstName, editForm.lastName, editForm.username, editForm.email].filter((value) => String(value ?? '').trim()).length / 4) * 100)}
                 progressLabel="4 campos clave"
               />
+              <div className="form-section">Datos personales</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="avatar" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-light)' }} />
@@ -708,41 +714,42 @@ export const UsersPage: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label style={labelStyle}>Nombre de usuario</label>
-                <input style={inputStyle} required value={editForm.username} onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
+                <div>
+                  <label className="field-label" style={labelStyle} htmlFor="edit-user-first-name">Nombre</label>
+                  <input id="edit-user-first-name" style={inputStyle} required value={editForm.firstName} onChange={(e) => setEditForm((f) => ({ ...f, firstName: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="field-label" style={labelStyle} htmlFor="edit-user-last-name">Apellido</label>
+                  <input id="edit-user-last-name" style={inputStyle} required value={editForm.lastName} onChange={(e) => setEditForm((f) => ({ ...f, lastName: e.target.value }))} />
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
                 <div>
-                  <label style={labelStyle}>Nombre</label>
-                  <input style={inputStyle} required value={editForm.firstName} onChange={(e) => setEditForm((f) => ({ ...f, firstName: e.target.value }))} />
+                  <label className="field-label" style={labelStyle} htmlFor="edit-user-phone">Teléfono</label>
+                  <input id="edit-user-phone" style={inputStyle} value={editForm.phone ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Apellido</label>
-                  <input style={inputStyle} required value={editForm.lastName} onChange={(e) => setEditForm((f) => ({ ...f, lastName: e.target.value }))} />
+                  <label className="field-label" style={labelStyle} htmlFor="edit-user-department">Departamento / Facultad</label>
+                  <input id="edit-user-department" style={inputStyle} value={editForm.department ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, department: e.target.value }))} />
                 </div>
+              </div>
+
+              <div className="form-section">Acceso y seguridad</div>
+              <div>
+                <label className="field-label" style={labelStyle} htmlFor="edit-user-username">Nombre de usuario</label>
+                <input id="edit-user-username" style={inputStyle} required value={editForm.username} onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))} />
               </div>
 
               <div>
-                <label style={labelStyle}>Correo institucional</label>
-                <input style={inputStyle} type="email" required value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: '12px' }}>
-                <div>
-                  <label style={labelStyle}>Teléfono</label>
-                  <input style={inputStyle} value={editForm.phone ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Departamento / Facultad</label>
-                  <input style={inputStyle} value={editForm.department ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, department: e.target.value }))} />
-                </div>
+                <label className="field-label" style={labelStyle} htmlFor="edit-user-email">Correo institucional</label>
+                <input id="edit-user-email" style={inputStyle} type="email" required value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} />
               </div>
 
               <div>
-                <label style={labelStyle}>Rol institucional</label>
-                <select style={inputStyle} value={editForm.roles[0]} onChange={(e) => setEditForm((f) => ({ ...f, roles: [e.target.value] }))}>
+                <label className="field-label" style={labelStyle} htmlFor="edit-user-role">Rol institucional</label>
+                <select id="edit-user-role" style={inputStyle} value={editForm.roles[0]} onChange={(e) => setEditForm((f) => ({ ...f, roles: [e.target.value] }))}>
                   <option value="ROLE_UNIVERSIDAD">UNIVERSIDAD (Administración Central)</option>
                   <option value="ROLE_DOCENTE">DOCENTE (Cuerpo Académico)</option>
                   <option value="ROLE_ESTUDIANTE">ESTUDIANTE (Comunidad Universitaria)</option>
@@ -750,12 +757,12 @@ export const UsersPage: React.FC = () => {
               </div>
 
               <div>
-                <label style={labelStyle}>Nueva contraseña (opcional)</label>
-                <input style={inputStyle} type="password" minLength={8} maxLength={PASSWORD_MAX_LENGTH} placeholder="Dejar vacío para no cambiar" value={editForm.newPassword ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, newPassword: e.target.value }))} />
+                <label className="field-label" style={labelStyle} htmlFor="edit-user-new-password">Nueva contraseña (opcional)</label>
+                <input id="edit-user-new-password" style={inputStyle} type="password" minLength={8} maxLength={PASSWORD_MAX_LENGTH} placeholder="Dejar vacío para no cambiar" value={editForm.newPassword ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, newPassword: e.target.value }))} />
                 {editForm.newPassword ? <PasswordRules value={editForm.newPassword} /> : null}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+              <div className="modal-form-footer">
                 <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>Cancelar</Button>
                 <Button type="submit" variant="primary" isLoading={editSubmitting}>Guardar cambios</Button>
               </div>

@@ -13,7 +13,6 @@ interface TableFiltersProps {
   filters: TableFilterDef[];
   values: Record<string, string>;
   onChange: (key: string, value: string) => void;
-  trailing?: number;
 }
 
 const control = (
@@ -50,20 +49,6 @@ const control = (
     </span>
   );
 };
-
-/** Fila de filtros alineada bajo las cabeceras de una tabla de escritorio. */
-export const TableFilterRow: React.FC<TableFiltersProps> = ({ filters, values, onChange, trailing = 1 }) => (
-  <tr className="table-filter-row">
-    {filters.map((filter) => (
-      <th key={filter.key} scope="col">
-        {control(filter, values, onChange)}
-      </th>
-    ))}
-    {Array.from({ length: trailing }).map((_, index) => (
-      <th key={`empty-${index}`} scope="col" aria-hidden="true" />
-    ))}
-  </tr>
-);
 
 /** Panel plegable de filtros para tablas apiladas en móvil. */
 export const TableFilterMobile: React.FC<TableFiltersProps> = ({ filters, values, onChange }) => (
