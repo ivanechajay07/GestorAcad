@@ -734,6 +734,7 @@ h1, h2, h3, h4 {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  color: var(--primary);
   background: none;
   border: none;
   cursor: pointer;
@@ -745,6 +746,7 @@ h1, h2, h3, h4 {
 }
 
 .link-action:hover {
+  color: var(--primary-hover);
   background: var(--bg-surface-elevated);
 }
 
@@ -16275,6 +16277,93 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   .page-header--hero .page-header__icon--avatar {
     width: 48px;
     height: 48px;
+  }
+}
+
+/* Carga de foto para estudiantes y docentes */
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  background: var(--bg-surface-elevated);
+}
+
+.avatar-upload__preview {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 800;
+  border: 2px solid color-mix(in srgb, var(--bg-surface) 84%, transparent);
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    color-mix(in srgb, var(--primary) 52%, var(--accent-cyan))
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent),
+    0 10px 20px -14px var(--primary-glow);
+}
+
+.avatar-upload__preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.avatar-upload__copy strong {
+  color: var(--text-main);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.avatar-upload__copy small {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.avatar-upload__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.entity-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+@media (max-width: 420px) {
+  .avatar-upload {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .avatar-upload__preview {
+    width: 56px;
+    height: 56px;
   }
 }
 

@@ -51,6 +51,8 @@ public class DtoEstudiante {
     @Size(max = 255, message = "La dirección no puede exceder 255 caracteres")
     private String address;
 
+    private String avatar;
+
     @Size(max = 200, message = "La carrera no puede exceder 200 caracteres")
     private String career;
 
@@ -172,6 +174,14 @@ public class DtoEstudiante {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public String getCareer() {

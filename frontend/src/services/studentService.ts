@@ -12,6 +12,7 @@ export interface StudentDto {
   birthDate?: string;
   gender?: string;
   address?: string;
+  avatar?: string;
   career?: string;
   faculty?: string;
   currentCycle?: number;

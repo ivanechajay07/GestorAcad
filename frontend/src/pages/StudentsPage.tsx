@@ -49,6 +49,8 @@ import { getApiErrorMessage, getApiFieldErrors } from '../utils/apiErrors';
 
 import { defaultListViewMode } from '../utils/viewMode';
 
+import { readImageAsDataUrl } from '../utils/imageUpload';
+
 import {
 
   Users,
@@ -66,6 +68,8 @@ import {
   RefreshCw,
 
   FileText,
+
+  ImagePlus,
 
   Power,
 
@@ -338,6 +342,8 @@ const emptyStudent = (): StudentDto => ({
   approvedCredits: 0,
 
   weightedAverage: 0,
+
+  avatar: '',
 
 });
 
@@ -743,6 +749,12 @@ export const StudentsPage: React.FC = () => {
 
 
 
+    if (step === 2 && canLinkAccounts && !studentForm.userId) {
+
+      errors.userId = 'Selecciona la cuenta de usuario del estudiante.';
+
+    }
+
     return errors;
 
   };
@@ -1147,6 +1159,32 @@ export const StudentsPage: React.FC = () => {
 
 
 
+  const handleStudentAvatarFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    try {
+
+      const dataUrl = await readImageAsDataUrl(file);
+
+      setStudentField('avatar', dataUrl);
+
+    } catch (err) {
+
+      setFieldErrors((prev) => ({ ...prev, avatar: errMsg(err, 'No se pudo cargar la imagen') }));
+
+    } finally {
+
+      event.target.value = '';
+
+    }
+
+  };
+
+
+
   return (
 
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -1309,7 +1347,11 @@ export const StudentsPage: React.FC = () => {
 
                       <span className="entity-avatar">
 
-                        {s.firstName?.[0]?.toUpperCase() || 'E'}
+                        {s.avatar
+
+                          ? <img src={s.avatar} alt="" />
+
+                          : (s.firstName?.[0]?.toUpperCase() || 'E')}
 
                       </span>
 
@@ -1491,7 +1533,15 @@ export const StudentsPage: React.FC = () => {
 
                         <td className="cell-strong">
                           <div className="table-person">
-                            <span className="table-avatar" aria-hidden="true">{(s.firstName?.[0] ?? '') + (s.lastName?.[0] ?? '')}</span>
+                            <span className="table-avatar" aria-hidden="true">
+
+                              {s.avatar
+
+                                ? <img src={s.avatar} alt="" />
+
+                                : (s.firstName?.[0] ?? '') + (s.lastName?.[0] ?? '')}
+
+                            </span>
                             <div className="table-person__copy">
                               <span title={`${s.firstName} ${s.lastName}`}>{s.firstName} {s.lastName}</span>
                               <small>DNI: {s.documentId || '—'}</small>
@@ -1717,6 +1767,31 @@ export const StudentsPage: React.FC = () => {
                 <>
 
                   <h4 className="modal-step-title"><Users size={15} /> Datos personales</h4>
+
+                  <div className="avatar-upload">
+                    <span className="avatar-upload__preview">
+                      {studentForm.avatar
+                        ? <img src={studentForm.avatar} alt="Vista previa del avatar del estudiante" />
+                        : <span>{(studentForm.firstName?.[0] ?? '') + (studentForm.lastName?.[0] ?? '') || 'E'}</span>}
+                    </span>
+                    <div className="avatar-upload__copy">
+                      <strong>Foto del estudiante</strong>
+                      <small>Se mostrará en su ficha, tarjeta y registro académico.</small>
+                      <div className="avatar-upload__actions">
+                        <label className="ghost-btn">
+                          <ImagePlus size={15} />
+                          {studentForm.avatar ? 'Cambiar foto' : 'Adjuntar foto'}
+                          <input type="file" accept="image/*" onChange={handleStudentAvatarFile} style={{ display: 'none' }} />
+                        </label>
+                        {studentForm.avatar && (
+                          <button type="button" className="link-action" onClick={() => setStudentField('avatar', '')}>
+                            Quitar foto
+                          </button>
+                        )}
+                      </div>
+                      {fieldErrors.avatar && <span className="field-error">{fieldErrors.avatar}</span>}
+                    </div>
+                  </div>
 
                   <div className="modal-form-section">
                     <h5 className="modal-form-section__title">Identificación</h5>
@@ -1954,7 +2029,7 @@ export const StudentsPage: React.FC = () => {
 
                     <Field
 
-                      label="Cuenta de acceso"
+                      label="Cuenta de acceso (obligatoria)"
 
                       icon={<UserRound size={13} />}
 
@@ -1964,7 +2039,7 @@ export const StudentsPage: React.FC = () => {
 
                         linkableUsers.length === 0
 
-                          ? 'No hay cuentas activas con rol ESTUDIANTE disponibles.'
+                          ? 'No hay cuentas activas con rol ESTUDIANTE disponibles. Crea una en Usuarios y vuelve a intentarlo.'
 
                           : 'Permite que el estudiante consulte su avance y su historial en el portal.'
 
@@ -1982,7 +2057,7 @@ export const StudentsPage: React.FC = () => {
 
                       >
 
-                        <option value="">Sin cuenta vinculada</option>
+                        <option value="">Selecciona una cuenta</option>
 
                         {linkableUsers
 

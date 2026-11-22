@@ -610,7 +610,7 @@ export const UsersPage: React.FC = () => {
                     <button
                       type="button"
                       className="link-action"
-                      style={{ color: 'var(--status-down)' }}
+                      style={{ color: 'var(--status-down-text)' }}
                       onClick={() => { setCreateAvatarPreview(''); setFormData((f) => ({ ...f, avatar: '' })); }}
                     >
                       Quitar imagen
@@ -709,7 +709,7 @@ export const UsersPage: React.FC = () => {
                     <button
                       type="button"
                       className="link-action"
-                      style={{ color: 'var(--status-down)' }}
+                      style={{ color: 'var(--status-down-text)' }}
                       onClick={() => { setAvatarPreview(''); setEditForm((f) => ({ ...f, avatar: '' })); }}
                     >
                       Quitar imagen

@@ -19,6 +19,7 @@ export interface TeacherDto {
   birthDate?: string;
   hireDate?: string;
   address?: string;
+  avatar?: string;
   fullName?: string;
   userId?: number | null;
   specialtyCount?: number;

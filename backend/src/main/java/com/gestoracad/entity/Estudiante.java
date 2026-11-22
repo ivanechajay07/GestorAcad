@@ -53,6 +53,9 @@ public class Estudiante extends EntidadBase {
     @Column(name = "direccion", length = 255)
     private String address;
 
+    @Column(name = "avatar", columnDefinition = "TEXT")
+    private String avatar;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "carrera_id")
     private Carrera career;
@@ -160,6 +163,14 @@ public class Estudiante extends EntidadBase {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public Carrera getCareer() {

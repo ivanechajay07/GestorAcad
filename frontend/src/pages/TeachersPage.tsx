@@ -55,6 +55,8 @@ import { getApiErrorMessage, getApiFieldErrors } from '../utils/apiErrors';
 
 import { defaultListViewMode } from '../utils/viewMode';
 
+import { readImageAsDataUrl } from '../utils/imageUpload';
+
 import {
 
   BookOpen,
@@ -72,6 +74,8 @@ import {
   GraduationCap as DegreeIcon,
 
   Hash,
+
+  ImagePlus,
 
   Layers,
 
@@ -274,6 +278,8 @@ const emptyTeacher = (): TeacherDto => ({
   category: 'CONTRATADO',
 
   dedication: 'TIEMPO_COMPLETO',
+
+  avatar: '',
 
 });
 
@@ -636,6 +642,12 @@ export const TeachersPage: React.FC = () => {
     }
 
 
+
+    if (step === 2 && canLinkAccounts && !teacherForm.userId) {
+
+      errors.userId = 'Selecciona la cuenta de usuario del docente.';
+
+    }
 
     return errors;
 
@@ -1083,6 +1095,32 @@ export const TeachersPage: React.FC = () => {
 
 
 
+  const handleTeacherAvatarFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    try {
+
+      const dataUrl = await readImageAsDataUrl(file);
+
+      setTeacherField('avatar', dataUrl);
+
+    } catch (err) {
+
+      setFieldErrors((prev) => ({ ...prev, avatar: errMsg(err, 'No se pudo cargar la imagen') }));
+
+    } finally {
+
+      event.target.value = '';
+
+    }
+
+  };
+
+
+
   const manageTabButton = (key: 'specialties' | 'assignments', label: string) => (
 
     <button
@@ -1271,7 +1309,11 @@ export const TeachersPage: React.FC = () => {
 
                     <div className="entity-head">
 
-                      <span className="entity-avatar">{t.firstName?.[0]?.toUpperCase() || 'D'}</span>
+                      <span className="entity-avatar">
+                        {t.avatar
+                          ? <img src={t.avatar} alt="" />
+                          : (t.firstName?.[0]?.toUpperCase() || 'D')}
+                      </span>
 
                       <div className="entity-id">
 
@@ -1450,7 +1492,11 @@ export const TeachersPage: React.FC = () => {
 
                         <td className="cell-strong">
                           <div className="table-person">
-                            <span className="table-avatar" aria-hidden="true">{(t.firstName?.[0] ?? '') + (t.lastName?.[0] ?? '')}</span>
+                            <span className="table-avatar" aria-hidden="true">
+                              {t.avatar
+                                ? <img src={t.avatar} alt="" />
+                                : (t.firstName?.[0] ?? '') + (t.lastName?.[0] ?? '')}
+                            </span>
                             <div className="table-person__copy">
                               <span title={`${t.firstName} ${t.lastName}`}>{t.firstName} {t.lastName}</span>
                               <small>{t.academicDegree || '—'}</small>
@@ -1662,6 +1708,31 @@ export const TeachersPage: React.FC = () => {
 
                   <h4 className="modal-step-title"><UserRound size={15} /> Identidad y contacto</h4>
 
+                  <div className="avatar-upload">
+                    <span className="avatar-upload__preview">
+                      {teacherForm.avatar
+                        ? <img src={teacherForm.avatar} alt="Vista previa del avatar del docente" />
+                        : <span>{(teacherForm.firstName?.[0] ?? '') + (teacherForm.lastName?.[0] ?? '') || 'D'}</span>}
+                    </span>
+                    <div className="avatar-upload__copy">
+                      <strong>Foto del docente</strong>
+                      <small>Se mostrará en su ficha, tarjeta y registro académico.</small>
+                      <div className="avatar-upload__actions">
+                        <label className="ghost-btn">
+                          <ImagePlus size={15} />
+                          {teacherForm.avatar ? 'Cambiar foto' : 'Adjuntar foto'}
+                          <input type="file" accept="image/*" onChange={handleTeacherAvatarFile} style={{ display: 'none' }} />
+                        </label>
+                        {teacherForm.avatar && (
+                          <button type="button" className="link-action" onClick={() => setTeacherField('avatar', '')}>
+                            Quitar foto
+                          </button>
+                        )}
+                      </div>
+                      {fieldErrors.avatar && <span className="field-error">{fieldErrors.avatar}</span>}
+                    </div>
+                  </div>
+
                   <div className="modal-form-section">
                     <h5 className="modal-form-section__title">Identificación</h5>
                   <div className="modal-field-grid">
@@ -1830,7 +1901,7 @@ export const TeachersPage: React.FC = () => {
 
                     <Field
 
-                      label="Cuenta de acceso"
+                      label="Cuenta de acceso (obligatoria)"
 
                       icon={<UserRound size={13} />}
 
@@ -1840,7 +1911,7 @@ export const TeachersPage: React.FC = () => {
 
                         linkableUsers.length === 0
 
-                          ? 'No hay cuentas activas con rol DOCENTE disponibles.'
+                          ? 'No hay cuentas activas con rol DOCENTE disponibles. Crea una en Usuarios y vuelve a intentarlo.'
 
                           : 'Permite que el docente acceda a sus secciones, notas y actas en el portal.'
 
@@ -1858,7 +1929,7 @@ export const TeachersPage: React.FC = () => {
 
                       >
 
-                        <option value="">Sin cuenta vinculada</option>
+                        <option value="">Selecciona una cuenta</option>
 
                         {linkableUsers
 

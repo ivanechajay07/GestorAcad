@@ -65,6 +65,8 @@ public class DtoDocente {
     @Size(max = 255, message = "La dirección no puede exceder 255 caracteres")
     private String address;
 
+    private String avatar;
+
     private String fullName;
     private Long userId;
     private long specialtyCount;
@@ -212,6 +214,14 @@ public class DtoDocente {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public String getFullName() {

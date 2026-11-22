@@ -29,6 +29,7 @@ public class MapeadorEstudiante {
         dto.setBirthDate(entity.getBirthDate());
         dto.setGender(entity.getGender());
         dto.setAddress(entity.getAddress());
+        dto.setAvatar(entity.getAvatar());
         dto.setCareer(entity.getCareer() == null ? null : entity.getCareer().getName());
         if (entity.getFaculty() != null) {
             dto.setFaculty(entity.getFaculty().getName());
@@ -59,6 +60,9 @@ public class MapeadorEstudiante {
         entity.setBirthDate(dto.getBirthDate());
         entity.setGender(dto.getGender());
         entity.setAddress(dto.getAddress());
+        if (dto.getAvatar() != null) {
+            entity.setAvatar(dto.getAvatar().isEmpty() ? null : dto.getAvatar());
+        }
         entity.setCurrentCycle(dto.getCurrentCycle());
         entity.setApprovedCredits(dto.getApprovedCredits());
         entity.setWeightedAverage(dto.getWeightedAverage());

@@ -34,6 +34,7 @@ public class MapeadorDocente {
         dto.setBirthDate(entity.getBirthDate());
         dto.setHireDate(entity.getHireDate());
         dto.setAddress(entity.getAddress());
+        dto.setAvatar(entity.getAvatar());
         dto.setFullName(buildFullName(entity));
         dto.setUserId(entity.getUserId());
         dto.setActive(entity.isActive());
@@ -57,6 +58,9 @@ public class MapeadorDocente {
         entity.setBirthDate(dto.getBirthDate());
         entity.setHireDate(dto.getHireDate());
         entity.setAddress(dto.getAddress());
+        if (dto.getAvatar() != null) {
+            entity.setAvatar(dto.getAvatar().isEmpty() ? null : dto.getAvatar());
+        }
     }
 
     private String buildFullName(Docente entity) {

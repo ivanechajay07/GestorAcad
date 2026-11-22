@@ -152,7 +152,7 @@ export const ProfilePage: React.FC = () => {
                 <input type="file" accept="image/*" onChange={handleAvatarFile} style={{ display: 'none' }} />
               </label>
               {avatarPreview && (
-                <button type="button" className="link-action" style={{ color: 'var(--status-down)' }} onClick={() => persistAvatar('')}>
+                <button type="button" className="link-action" style={{ color: 'var(--status-down-text)' }} onClick={() => persistAvatar('')}>
                   Quitar foto
                 </button>
               )}
