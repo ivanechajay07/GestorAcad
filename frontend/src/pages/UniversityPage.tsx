@@ -558,20 +558,19 @@ export const UniversityPage: React.FC = () => {
           {/* ---------------------- Información General ---------------------- */}
           {activeTab === 'general' && (
             <form onSubmit={handleSaveUniversity} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              <Card
-                title={
-                  <span className="institution-card-title">
-                    <span className="institution-card-icon" aria-hidden="true"><Building2 size={17} /></span>
-                    Datos institucionales y licenciamiento
-                  </span>
-                }
-                subtitle="Información oficial, vigencia normativa y canales de contacto de la institución."
-                extra={
-                  <Badge variant={canEditUniversity ? 'info' : 'outline'} dot>
-                    {canEditUniversity ? 'Editable' : 'Solo lectura'}
-                  </Badge>
-                }
-              >
+              <Card>
+                <SectionHeader
+                  compact
+                  icon={<Building2 size={18} />}
+                  eyebrow="Institución"
+                  title="Datos institucionales y licenciamiento"
+                  description="Información oficial, vigencia normativa y canales de contacto de la institución."
+                  aside={
+                    <Badge variant={canEditUniversity ? 'info' : 'outline'} dot>
+                      {canEditUniversity ? 'Editable' : 'Solo lectura'}
+                    </Badge>
+                  }
+                />
 
                 <div className="institution-form">
                   <section className="institution-form__section" aria-labelledby="university-identity">
@@ -857,6 +856,13 @@ export const UniversityPage: React.FC = () => {
 
               <div className="data-table-wrap">
                 <table className="data-table data-table--stack">
+                  <colgroup>
+                  <col style={{ width: '30%' }} />
+                  <col style={{ width: '38%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '12%' }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Carrera</th>

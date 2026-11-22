@@ -14455,3 +14455,193 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   overflow-wrap: normal;
   word-break: normal;
 }
+
+/* =========================================================================
+   Auditoria v2: tarjetas semanticas y controles de periodo
+   ========================================================================= */
+.audit-range {
+  border-radius: 12px;
+  padding: 4px;
+  background: color-mix(in srgb, var(--bg-surface-elevated) 70%, transparent);
+}
+
+.audit-range__btn {
+  border-radius: 9px;
+  color: var(--text-secondary);
+}
+
+.audit-range__btn:hover {
+  color: var(--text-main);
+}
+
+.audit-range__btn[aria-pressed='true'] {
+  color: #022c22;
+  background: var(--accent-emerald);
+  box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--accent-emerald) 65%, transparent);
+}
+
+.audit-kpi {
+  --audit-accent: var(--primary);
+  padding: 14px 16px;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 40%, transparent), transparent),
+    var(--bg-surface-elevated);
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.audit-kpi::before {
+  inset: 0 0 auto;
+  width: auto;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+  background: var(--audit-accent);
+  opacity: 0.9;
+}
+
+.audit-kpi:hover {
+  border-color: color-mix(in srgb, var(--audit-accent) 24%, var(--border-light));
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px -22px color-mix(in srgb, var(--audit-accent) 60%, transparent);
+}
+
+.audit-kpi__icon {
+  top: 11px;
+  right: 11px;
+  left: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--audit-accent);
+  background: color-mix(in srgb, var(--audit-accent) 10%, transparent);
+}
+
+.audit-kpi__label {
+  padding-right: 34px;
+  color: var(--text-secondary);
+}
+
+.audit-kpi__value {
+  font-size: 1.6rem;
+}
+
+.audit-kpi__hint {
+  color: var(--text-muted);
+}
+
+.audit-kpi--total {
+  --audit-accent: var(--primary);
+}
+
+.audit-kpi--success {
+  --audit-accent: var(--status-up);
+}
+
+.audit-kpi--average {
+  --audit-accent: var(--accent-cyan);
+}
+
+.audit-kpi--peak {
+  --audit-accent: var(--accent-amber);
+}
+
+.audit-chart,
+.audit-actions {
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 34%, transparent), transparent),
+    var(--bg-surface-elevated);
+}
+
+.audit-chart__title {
+  font-size: 0.92rem;
+  letter-spacing: -0.01em;
+}
+
+.audit-bar__track {
+  border-radius: 7px 7px 4px 4px;
+}
+
+.audit-bar__fill {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--accent-emerald) 70%, #064e3b),
+    var(--accent-emerald)
+  );
+}
+
+.audit-bar[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent-emerald) 8%, transparent);
+}
+
+/* =========================================================================
+   Auditoria transversal: tablas, formularios y tarjetas
+   ========================================================================= */
+
+.data-table-wrap {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.data-table thead th {
+  box-shadow: inset 0 -1px 0 var(--border-light);
+}
+
+.data-table tbody tr:focus-within {
+  background: color-mix(in srgb, var(--primary) 5%, var(--bg-surface));
+}
+
+.data-table tbody tr:focus-within td:first-child {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.field-label:has(+ input[required])::after,
+.field-label:has(+ select[required])::after,
+.field-label:has(+ textarea[required])::after,
+.field-label:has(+ .date-picker input[required])::after {
+  content: ' *';
+  color: var(--status-down);
+  font-weight: 800;
+}
+
+.modal-body :is(input, select, textarea):hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.modal-form-footer {
+  box-shadow: 0 -12px 24px -24px rgba(15, 23, 42, 0.35);
+}
+
+.glass-panel-interactive:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 24%, var(--bg-card-border));
+}
+
+@media (max-width: 760px) {
+  .data-table--stack.audit-table {
+    min-width: 0;
+  }
+
+  .data-table--stack .audit-detail {
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .data-table--stack.audit-table td {
+    grid-template-columns: minmax(96px, 32%) minmax(0, 1fr);
+    text-align: left;
+  }
+
+  .data-table--stack.audit-table td > * {
+    justify-self: start;
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .data-table--stack.audit-table .audit-device__name,
+  .data-table--stack.audit-table .audit-device__ip,
+  .data-table--stack.audit-table .audit-detail__text {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

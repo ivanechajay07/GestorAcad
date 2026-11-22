@@ -164,6 +164,16 @@ export const SectionsTab: React.FC = () => {
 
       <div className="data-table-wrap">
         <table className="data-table data-table--stack">
+          <colgroup>
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '18%' }} />
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '17%' }} />
+          <col style={{ width: '7%' }} />
+          <col style={{ width: '19%' }} />
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '15%' }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Periodo</th>

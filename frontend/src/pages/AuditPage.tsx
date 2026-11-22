@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { auditService } from '../services/auditService';
 import type { AuditLogItem, AuditSummary } from '../services/auditService';
 import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { PageHeader } from '../components/ui/PageHeader';
+import { SectionHeader } from '../components/ui/SectionHeader';
 import { Pagination } from '../components/ui/Pagination';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Toolbar } from '../components/ui/Toolbar';
@@ -256,19 +258,19 @@ export const AuditPage: React.FC = () => {
         </select>
       </Toolbar>
 
-      <Card
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <FileText size={20} color="var(--primary)" />
-            <span>Eventos registrados ({filteredLogs.length})</span>
-          </div>
-        }
-        subtitle={
-          lastUpdated
-            ? `Actualizado a las ${formatAuditTime(lastUpdated)} · del más reciente al más antiguo`
-            : 'Del más reciente al más antiguo'
-        }
-      >
+      <Card>
+        <SectionHeader
+          compact
+          icon={<FileText size={18} />}
+          eyebrow="Trazabilidad"
+          title={`Eventos registrados (${filteredLogs.length})`}
+          description={
+            lastUpdated
+              ? `Actualizado a las ${formatAuditTime(lastUpdated)} · del más reciente al más antiguo`
+              : 'Del más reciente al más antiguo'
+          }
+          aside={<Badge variant="outline" size="sm">{pageLogs.length} visibles</Badge>}
+        />
         {loading && logs.length === 0 ? (
           <LoadingSpinner message="Consultando la bitácora de auditoría..." />
         ) : filteredLogs.length === 0 ? (

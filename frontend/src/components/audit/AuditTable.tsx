@@ -28,10 +28,17 @@ interface AuditTableProps {
  */
 export const AuditTable: React.FC<AuditTableProps> = ({ logs, now }) => (
   <div className="data-table-wrap">
-    <table className="data-table audit-table">
+    <table className="data-table data-table--stack audit-table">
       <caption className="sr-only">
         Bitácora de auditoría con acción, usuario, dispositivo e IP, detalle y fecha con hora.
       </caption>
+      <colgroup>
+        <col style={{ width: '12%' }} />
+        <col style={{ width: '17%' }} />
+        <col style={{ width: '18%' }} />
+        <col style={{ width: '37%' }} />
+        <col style={{ width: '16%' }} />
+      </colgroup>
       <thead>
         <tr>
           <th scope="col">Acción</th>
@@ -49,7 +56,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({ logs, now }) => (
 
           return (
             <tr key={log.id}>
-              <td>
+              <td data-label="Acción">
                 <div className="audit-action">
                   <Badge variant={auditActionTone(log.action)} size="sm">
                     {formatAuditAction(log.action)}
@@ -58,7 +65,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({ logs, now }) => (
                 </div>
               </td>
 
-              <td>
+              <td data-label="Usuario">
                 <div className="audit-user">
                   <span className="cell-strong cell-mono">{log.username || 'ANONIMO'}</span>
                   <span className={`audit-result ${result.ok ? 'is-ok' : 'is-fail'}`}>
@@ -68,7 +75,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({ logs, now }) => (
                 </div>
               </td>
 
-              <td>
+              <td data-label="Dispositivo / IP">
                 <div className="audit-device">
                   <span className="audit-device__name" title={log.userAgent ?? undefined}>
                     {device.label}
@@ -80,13 +87,13 @@ export const AuditTable: React.FC<AuditTableProps> = ({ logs, now }) => (
                 </div>
               </td>
 
-              <td>
+              <td data-label="Detalle">
                 <div className="audit-detail" title={log.description ?? undefined}>
                   <span className="audit-detail__text">{log.description || 'Sin detalle registrado'}</span>
                 </div>
               </td>
 
-              <td>
+              <td data-label="Fecha y hora">
                 <time className="audit-date" dateTime={log.timestamp}>
                   <span className="audit-date__day">{formatAuditDate(log.timestamp)}</span>
                   <span className="audit-date__time">{formatAuditTime(log.timestamp)}</span>

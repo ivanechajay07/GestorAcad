@@ -187,6 +187,16 @@ export const EnrollmentsTab: React.FC = () => {
 
       <div className="data-table-wrap">
         <table className="data-table data-table--stack">
+          <colgroup>
+          <col style={{ width: '24%' }} />
+          <col style={{ width: '23%' }} />
+          <col style={{ width: '6%' }} />
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '10%' }} />
+          <col style={{ width: '7%' }} />
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '12%' }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Estudiante</th>

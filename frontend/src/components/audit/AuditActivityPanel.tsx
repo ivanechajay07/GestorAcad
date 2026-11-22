@@ -140,7 +140,7 @@ export const AuditActivityPanel: React.FC<AuditActivityPanelProps> = ({
       </div>
 
       <div className="audit-kpis">
-        <article className="audit-kpi">
+        <article className="audit-kpi audit-kpi--total">
           <span className="audit-kpi__icon" aria-hidden="true">
             <Activity size={17} />
           </span>
@@ -152,7 +152,7 @@ export const AuditActivityPanel: React.FC<AuditActivityPanelProps> = ({
           </span>
         </article>
 
-        <article className="audit-kpi">
+        <article className="audit-kpi audit-kpi--success">
           <span className="audit-kpi__icon" aria-hidden="true">
             <ShieldCheck size={17} />
           </span>
@@ -163,7 +163,7 @@ export const AuditActivityPanel: React.FC<AuditActivityPanelProps> = ({
           </span>
         </article>
 
-        <article className="audit-kpi">
+        <article className="audit-kpi audit-kpi--average">
           <span className="audit-kpi__icon" aria-hidden="true">
             <Gauge size={17} />
           </span>
@@ -172,7 +172,7 @@ export const AuditActivityPanel: React.FC<AuditActivityPanelProps> = ({
           <span className="audit-kpi__hint">eventos por día</span>
         </article>
 
-        <article className="audit-kpi">
+        <article className="audit-kpi audit-kpi--peak">
           <span className="audit-kpi__icon" aria-hidden="true">
             <CalendarDays size={17} />
           </span>

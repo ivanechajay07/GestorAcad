@@ -87,6 +87,16 @@ export const StudentPortalPage: React.FC = () => {
         <p className="table-scroll-hint">Desliza para ver más columnas →</p>
         <div className="data-table-wrap">
           <table className="data-table data-table--stack">
+            <colgroup>
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '25%' }} />
+            <col style={{ width: '7%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '17%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '12%' }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>Periodo</th>
@@ -171,6 +181,16 @@ export const StudentPortalPage: React.FC = () => {
               <p className="table-scroll-hint">Desliza para ver más columnas →</p>
           <div className="data-table-wrap">
                 <table className="data-table data-table--stack">
+                  <colgroup>
+                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '16%' }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Curso</th>

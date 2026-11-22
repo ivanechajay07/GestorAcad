@@ -223,6 +223,16 @@ export const StudyPlansTab: React.FC = () => {
 
       <div className="data-table-wrap">
         <table className="data-table data-table--stack">
+          <colgroup>
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '24%' }} />
+          <col style={{ width: '24%' }} />
+          <col style={{ width: '7%' }} />
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '11%' }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Código</th>
@@ -338,6 +348,13 @@ export const StudyPlansTab: React.FC = () => {
             <>
               <div className="data-table-wrap" style={{ marginBottom: '16px' }}>
                 <table className="data-table data-table--stack">
+                  <colgroup>
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '42%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '16%' }} />
+                  <col style={{ width: '20%' }} />
+                  </colgroup>
                   <thead>
                     <tr><th>Ciclo</th><th>Curso</th><th>Créditos</th><th>Obligatorio</th><th>Acciones</th></tr>
                   </thead>

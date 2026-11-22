@@ -91,6 +91,13 @@ export const SectionScheduleModal: React.FC<Props> = ({ section, onClose, onChan
         <>
           <div className="data-table-wrap" style={{ marginBottom: '16px' }}>
             <table className="data-table data-table--stack">
+              <colgroup>
+              <col style={{ width: '18%' }} />
+              <col style={{ width: '15%' }} />
+              <col style={{ width: '15%' }} />
+              <col style={{ width: '30%' }} />
+              <col style={{ width: '22%' }} />
+              </colgroup>
               <thead>
                 <tr><th>Día</th><th>Inicio</th><th>Fin</th><th>Aula</th><th>Acciones</th></tr>
               </thead>

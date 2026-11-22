@@ -96,6 +96,12 @@ export const CoursePrerequisitesModal: React.FC<Props> = ({ course, onClose }) =
         <>
           <div className="data-table-wrap" style={{ marginBottom: '16px' }}>
             <table className="data-table data-table--stack">
+              <colgroup>
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '46%' }} />
+              <col style={{ width: '12%' }} />
+              <col style={{ width: '28%' }} />
+              </colgroup>
               <thead>
                 <tr><th>Código</th><th>Curso prerrequisito</th><th>Créditos</th><th>Acciones</th></tr>
               </thead>

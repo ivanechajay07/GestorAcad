@@ -205,6 +205,12 @@ export const TeacherSectionPage: React.FC = () => {
           />
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
+              <colgroup>
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '38%' }} />
+              <col style={{ width: '20%' }} />
+              <col style={{ width: '28%' }} />
+              </colgroup>
               <thead><tr><th>Código</th><th>Estudiante</th><th>Nota (0–{selectedEvaluation?.maxScore ?? 20})</th><th>Observación</th></tr></thead>
               <tbody>
                 {grades.map((grade) => (
@@ -258,6 +264,11 @@ export const TeacherSectionPage: React.FC = () => {
           />
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
+              <colgroup>
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '54%' }} />
+              <col style={{ width: '32%' }} />
+              </colgroup>
               <thead><tr><th>Código</th><th>Estudiante</th><th>Estado</th></tr></thead>
               <tbody>
                 {attendance.map((record) => (
@@ -314,6 +325,13 @@ export const TeacherSectionPage: React.FC = () => {
           />
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
+              <colgroup>
+              <col style={{ width: '13%' }} />
+              <col style={{ width: '32%' }} />
+              <col style={{ width: '15%' }} />
+              <col style={{ width: '25%' }} />
+              <col style={{ width: '15%' }} />
+              </colgroup>
               <thead><tr><th>Código</th><th>Estudiante</th><th>Promedio</th><th>Estado</th><th>Créditos</th></tr></thead>
               <tbody>
                 {(acta?.details ?? []).map((detail) => (
