@@ -392,17 +392,44 @@ export const EvaluationPage: React.FC = () => {
     }
   };
 
-  const tabButton = (key: TabKey, label: string, icon: React.ReactNode) => (
+  const visibleTabKeys: TabKey[] = [
+    ...(canViewEvaluations ? (['evaluations'] as TabKey[]) : []),
+    ...(canViewGrades ? (['grades'] as TabKey[]) : []),
+    ...(canViewAttendance ? (['attendance'] as TabKey[]) : []),
+    ...(canViewActa ? (['act'] as TabKey[]) : []),
+  ];
+
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, key: TabKey) => {
+    if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const current = visibleTabKeys.indexOf(key);
+    if (current < 0) return;
+    let next = current;
+    if (event.key === 'ArrowRight') next = (current + 1) % visibleTabKeys.length;
+    else if (event.key === 'ArrowLeft') next = (current - 1 + visibleTabKeys.length) % visibleTabKeys.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = visibleTabKeys.length - 1;
+    const nextKey = visibleTabKeys[next];
+    setActiveTab(nextKey);
+    window.requestAnimationFrame(() => document.getElementById(`evaluation-tab-${nextKey}`)?.focus());
+  };
+
+  const tabButton = (key: TabKey, label: string, icon: React.ReactNode, count?: number) => (
     <button
       key={key}
+      id={`evaluation-tab-${key}`}
       type="button"
       role="tab"
       aria-selected={activeTab === key}
+      aria-controls={`evaluation-panel-${key}`}
+      tabIndex={activeTab === key ? 0 : -1}
       className={`academic-tab${activeTab === key ? ' active' : ''}`}
       onClick={() => setActiveTab(key)}
+      onKeyDown={(event) => handleTabKeyDown(event, key)}
     >
       {icon}
       {label}
+      {count !== undefined && <span className="academic-tab__count">{count}</span>}
     </button>
   );
 
@@ -477,14 +504,20 @@ export const EvaluationPage: React.FC = () => {
       ) : (
         <>
           <div className="academic-tabs" role="tablist" aria-label="Evaluación académica">
-            {canViewEvaluations && tabButton('evaluations', 'Evaluaciones', <ClipboardList size={15} />)}
-            {canViewGrades && tabButton('grades', 'Notas', <Pencil size={15} />)}
-            {canViewAttendance && tabButton('attendance', 'Asistencia', <UserCheck size={15} />)}
-            {canViewActa && tabButton('act', 'Acta', <CheckCircle2 size={15} />)}
+            {canViewEvaluations && tabButton('evaluations', 'Evaluaciones', <ClipboardList size={15} />, evaluations.length)}
+            {canViewGrades && tabButton('grades', 'Notas', <Pencil size={15} />, grades.length)}
+            {canViewAttendance && tabButton('attendance', 'Asistencia', <UserCheck size={15} />, attendance.length)}
+            {canViewActa && tabButton('act', 'Acta', <CheckCircle2 size={15} />, acta?.details?.length ?? 0)}
           </div>
 
           {activeTab === 'evaluations' && canViewEvaluations && (
-            <div className="glass-panel" style={{ padding: '18px' }}>
+            <div
+              className="glass-panel"
+              role="tabpanel"
+              id="evaluation-panel-evaluations"
+              aria-labelledby="evaluation-tab-evaluations"
+              style={{ padding: '18px' }}
+            >
               <SectionHeader
                 compact
                 icon={<ClipboardList size={18} />}
@@ -572,7 +605,13 @@ export const EvaluationPage: React.FC = () => {
           )}
 
           {activeTab === 'grades' && canViewGrades && (
-            <div className="glass-panel" style={{ padding: '18px' }}>
+            <div
+              className="glass-panel"
+              role="tabpanel"
+              id="evaluation-panel-grades"
+              aria-labelledby="evaluation-tab-grades"
+              style={{ padding: '18px' }}
+            >
               <SectionHeader
                 compact
                 icon={<Pencil size={18} />}
@@ -673,7 +712,13 @@ export const EvaluationPage: React.FC = () => {
           )}
 
           {activeTab === 'attendance' && canViewAttendance && (
-            <div className="glass-panel" style={{ padding: '18px' }}>
+            <div
+              className="glass-panel"
+              role="tabpanel"
+              id="evaluation-panel-attendance"
+              aria-labelledby="evaluation-tab-attendance"
+              style={{ padding: '18px' }}
+            >
               <SectionHeader
                 compact
                 icon={<UserCheck size={18} />}
@@ -764,7 +809,13 @@ export const EvaluationPage: React.FC = () => {
           )}
 
           {activeTab === 'act' && canViewActa && (
-            <div className="glass-panel" style={{ padding: '18px' }}>
+            <div
+              className="glass-panel"
+              role="tabpanel"
+              id="evaluation-panel-act"
+              aria-labelledby="evaluation-tab-act"
+              style={{ padding: '18px' }}
+            >
               <SectionHeader
                 compact
                 icon={<CheckCircle2 size={18} />}

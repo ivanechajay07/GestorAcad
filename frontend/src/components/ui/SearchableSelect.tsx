@@ -102,15 +102,20 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       close(false);
     };
     const handleWindowChange = () => close(false);
+    const handleScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && popoverRef.current?.contains(target)) return;
+      close(false);
+    };
 
     document.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('resize', handleWindowChange);
-    window.addEventListener('scroll', handleWindowChange, true);
+    window.addEventListener('scroll', handleScroll, true);
     return () => {
       window.clearTimeout(timer);
       document.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('resize', handleWindowChange);
-      window.removeEventListener('scroll', handleWindowChange, true);
+      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [open]);
 

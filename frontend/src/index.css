@@ -16089,3 +16089,25 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 .institution-form__footer {
   max-width: 1080px;
 }
+
+
+.academic-tab__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  background: var(--bg-surface);
+}
+
+.academic-tab.active .academic-tab__count {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.18);
+}
