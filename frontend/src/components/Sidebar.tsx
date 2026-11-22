@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { universityService } from '../services/universityService';
 import { NAV_SECTIONS } from '../config/navigation';
-import { GraduationCap, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatRoleName } from '../utils/roleFormatters';
+import { GraduationCap, ChevronDown, ChevronLeft, ChevronRight, LogOut, X } from 'lucide-react';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -27,10 +28,66 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   onToggleCollapse,
 }) => {
-  const { hasPermission, roles } = useAuth();
+  const { hasPermission, roles, user, logout } = useAuth();
   const [closedSections, setClosedSections] = useState<Record<string, boolean>>({});
   const [uniName, setUniName] = useState('');
   const [tooltip, setTooltip] = useState<SidebarTooltip | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const asideRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!mobile || !open) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    const main = document.querySelector<HTMLElement>('.app-main');
+    const previousMainOverflow = main?.style.overflow ?? '';
+    document.body.style.overflow = 'hidden';
+    if (main) main.style.overflow = 'hidden';
+    const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 60);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current?.();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusables = Array.from(
+        asideRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((element) => element.getClientRects().length > 0 && !element.closest('.nav-list.is-collapsed'));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.body.style.overflow = previousOverflow;
+      if (main) main.style.overflow = previousMainOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      const focusTarget = previousFocusRef.current && previousFocusRef.current !== document.body
+        ? previousFocusRef.current
+        : document.querySelector<HTMLElement>('.header-menu-btn');
+      focusTarget?.focus?.();
+    };
+  }, [mobile, open]);
 
   useEffect(() => {
     let mounted = true;
@@ -48,6 +105,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   const hasAnyRole = (...allowed: string[]) => roles.some((r) => allowed.includes(r));
+  const primaryRole = roles.find((role) => role === 'ROLE_UNIVERSIDAD') ?? roles[0];
+  const primaryRoleLabel = primaryRole ? formatRoleName(primaryRole) : 'Sesión activa';
+  const userInitials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase() || 'GA';
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   const visibleSections = NAV_SECTIONS
     .map((sec) => ({
@@ -94,7 +164,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {mobile && open && <div className="app-sidebar-backdrop" onClick={onClose} aria-hidden="true" />}
       <aside
+        ref={asideRef}
+        id="app-sidebar"
         className={asideClass}
+        aria-label="Menú principal"
+        aria-hidden={mobile && !open ? true : undefined}
         style={mobile ? undefined : { width: collapsed ? 'var(--sidebar-collapsed-width)' : 'var(--sidebar-width)' }}
         onScroll={() => setTooltip(null)}
       >
@@ -110,9 +184,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <small title={uniName || 'Portal académico'}>{uniName || 'Portal académico'}</small>
               </div>
             )}
+            {mobile && (
+              <button
+                ref={closeButtonRef}
+                type="button"
+                className="sidebar-mobile-close"
+                onClick={() => onCloseRef.current?.()}
+                aria-label="Cerrar menú"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            )}
           </div>
 
-          <div className="sidebar-nav">
+          <div
+            className="sidebar-nav"
+            tabIndex={mobile ? 0 : undefined}
+            aria-label={mobile ? 'Menú de navegación' : undefined}
+          >
             {filteredSections.map((sec) => {
               const isClosed = closedSections[sec.title];
               return (
@@ -163,6 +252,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
           </div>
+
+          {mobile && (
+            <div className="sidebar-mobile-footer">
+              <div className="sidebar-mobile-user">
+                <span className="sidebar-mobile-avatar" aria-hidden="true">{userInitials}</span>
+                <div>
+                  <strong title={user?.fullName || user?.username || 'Sesión activa'}>
+                    {user?.fullName || user?.username || 'Sesión activa'}
+                  </strong>
+                  <small>{primaryRoleLabel}</small>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="sidebar-mobile-logout"
+                onClick={handleLogout}
+                disabled={loggingOut}
+              >
+                <LogOut size={16} aria-hidden="true" />
+                {loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
+              </button>
+            </div>
+          )}
         </div>
 
         {!mobile && onToggleCollapse && (

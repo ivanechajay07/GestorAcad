@@ -49,7 +49,7 @@ export const MainLayout: React.FC = () => {
       />
 
       <div className="app-right">
-        <Header onToggleSidebar={handleToggleSidebar} />
+        <Header onToggleSidebar={handleToggleSidebar} sidebarOpen={isMobile ? mobileOpen : undefined} />
         <main className="app-main" ref={mainRef}>
           <Suspense fallback={<PageSkeleton />}>
             <div className={`animate-fade-in route-view`} key={location.pathname}>

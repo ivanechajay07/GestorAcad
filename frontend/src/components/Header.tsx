@@ -21,6 +21,7 @@ import {
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
+  sidebarOpen?: boolean;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -35,7 +36,7 @@ const normalize = (value: string): string =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
+export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, sidebarOpen }) => {
   const { user, roles, logout, hasPermission, hasAnyRole } = useAuth();
   const { mode, toggle: toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -266,6 +267,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             onClick={onToggleSidebar}
             title="Alternar menú lateral"
             aria-label="Alternar menú lateral"
+            aria-controls="app-sidebar"
+            aria-expanded={sidebarOpen}
           >
             <Menu size={20} />
           </button>

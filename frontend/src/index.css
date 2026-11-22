@@ -15952,3 +15952,280 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   );
   box-shadow: 0 10px 22px -14px var(--primary-glow);
 }
+
+/* =========================================================================
+   Menú lateral móvil/tablet: cajón de altura completa y navegación táctil
+   ========================================================================= */
+.app-sidebar--mobile {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(88vw, 340px);
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  border-right: 1px solid var(--border-light);
+  border-radius: 0 22px 22px 0;
+  background: var(--bg-surface);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0.28s;
+  box-shadow: 26px 0 70px -34px rgba(2, 12, 32, 0.72);
+  z-index: 90;
+}
+
+.app-sidebar--mobile.app-sidebar--open {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.app-sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  background: color-mix(in srgb, var(--overlay) 82%, transparent);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.app-sidebar--mobile .sidebar-inner {
+  height: 100%;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.app-sidebar--mobile .sidebar-brand {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  gap: 12px;
+  flex: 0 0 auto;
+  padding:
+    calc(14px + env(safe-area-inset-top))
+    14px
+    14px
+    18px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-light);
+  box-shadow: 0 10px 24px -24px rgba(15, 23, 42, 0.5);
+}
+
+.app-sidebar--mobile .sidebar-brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+}
+
+.app-sidebar--mobile .sidebar-brand-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 2px;
+}
+
+.app-sidebar--mobile .sidebar-brand-text strong {
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.app-sidebar--mobile .sidebar-brand-text small {
+  -webkit-line-clamp: 1;
+  font-size: 0.72rem;
+}
+
+.sidebar-mobile-close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  padding: 0;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-surface-elevated);
+  cursor: pointer;
+  transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.sidebar-mobile-close:hover {
+  color: var(--text-main);
+  border-color: var(--border-strong);
+  background: var(--bg-surface);
+}
+
+.sidebar-mobile-close:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.app-sidebar--mobile .sidebar-nav {
+  flex: 1 1 auto;
+  gap: 10px;
+  margin: 0;
+  padding:
+    12px
+    12px
+    calc(18px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.app-sidebar--mobile .nav-section {
+  gap: 4px;
+}
+
+.app-sidebar--mobile .nav-section + .nav-section {
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+}
+
+.app-sidebar--mobile .nav-section-title {
+  min-height: 32px;
+  padding: 6px 10px;
+  color: var(--text-muted);
+  border-radius: 8px;
+  font-size: 0.67rem;
+  letter-spacing: 0.07em;
+}
+
+.app-sidebar--mobile .nav-section-title:hover {
+  color: var(--text-secondary);
+  background: var(--bg-surface-elevated);
+}
+
+.app-sidebar--mobile .nav-list {
+  gap: 4px;
+}
+
+.app-sidebar--mobile .nav-item {
+  min-height: 46px;
+  gap: 12px;
+  padding: 11px 14px !important;
+  border-radius: 12px;
+  font-size: 0.88rem;
+}
+
+.app-sidebar--mobile .nav-icon {
+  width: 22px;
+}
+
+.app-sidebar--mobile .nav-badge {
+  margin-left: auto;
+}
+
+@media (min-width: 641px) {
+  .app-sidebar--mobile {
+    width: min(80vw, 360px);
+  }
+}
+
+@media (max-width: 380px) {
+  .app-sidebar--mobile {
+    width: calc(100vw - 20px);
+    border-radius: 0 18px 18px 0;
+  }
+
+  .app-sidebar--mobile .sidebar-brand {
+    padding-left: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar--mobile {
+    transition: none;
+  }
+}
+
+.app-sidebar--mobile .sidebar-mobile-footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-surface);
+}
+
+.sidebar-mobile-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sidebar-mobile-avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 9%, var(--bg-surface));
+}
+
+.sidebar-mobile-user div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sidebar-mobile-user strong {
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-mobile-user small {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.sidebar-mobile-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: var(--bg-surface-elevated);
+  cursor: pointer;
+  transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.sidebar-mobile-logout:hover:not(:disabled) {
+  color: var(--status-down-text);
+  border-color: color-mix(in srgb, var(--status-down) 26%, transparent);
+  background: var(--status-down-bg);
+}
+
+.sidebar-mobile-logout:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.sidebar-mobile-logout:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
