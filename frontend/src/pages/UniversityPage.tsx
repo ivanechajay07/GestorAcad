@@ -29,6 +29,7 @@ import {
   BookOpen,
   Briefcase,
   Building2,
+  Check,
   Calendar,
   CalendarDays,
   DoorOpen,
@@ -75,6 +76,12 @@ const VALUE_TYPE_LABELS: Record<string, string> = {
   DATE: 'Fecha',
   JSON: 'JSON',
 };
+
+const CAMPUS_TYPES = [
+  { value: 'CAMPUS', label: 'Campus' },
+  { value: 'SEDE_PRINCIPAL', label: 'Sede principal' },
+  { value: 'FILIAL', label: 'Filial' },
+];
 
 const errMsg = (err: unknown, fallback: string): string => getApiErrorMessage(err, fallback);
 
@@ -499,6 +506,16 @@ export const UniversityPage: React.FC = () => {
   const visibleCareers = careerFilter === 'ALL'
     ? careers
     : careers.filter((c) => c.facultyId === careerFilter);
+
+  const campusProgressFields = [
+    campusForm.name,
+    campusForm.code,
+    campusForm.city,
+    campusForm.address,
+    campusForm.capacity,
+  ].filter((value) => value !== undefined && value !== null && String(value).trim() !== '').length;
+  const campusProgress = Math.round((campusProgressFields / 5) * 100);
+  const campusTypeLabel = CAMPUS_TYPES.find((type) => type.value === campusForm.campusType)?.label ?? 'Campus';
 
   const tabButton = (key: TabKey, label: string, icon: React.ReactNode) => (
     <button
@@ -1079,57 +1096,148 @@ export const UniversityPage: React.FC = () => {
           title={campusForm.id ? 'Editar Sede' : 'Registrar Sede'}
           subtitle="Identifica la sede, registra su ubicación y describe su capacidad instalada."
           icon={<MapPin size={20} />}
-          maxWidth="720px"
+          maxWidth="880px"
           onClose={() => setCampusModal(false)}
         >
           <FormError message={formError} />
-          <form onSubmit={handleSaveCampus} className="modal-form">
-            <div className="form-section">Identificación de la sede</div>
-            <div className="institution-grid">
-              <Field label="Nombre de la sede" icon={<Building2 size={13} />}>
-                <input style={inputStyle} required value={campusForm.name} onChange={(e) => setCampusForm({ ...campusForm, name: e.target.value })} placeholder="Ej. Campus Ate" autoComplete="organization" />
-              </Field>
-              <Field label="Código" icon={<Hash size={13} />}>
-                <input style={inputStyle} required value={campusForm.code} onChange={(e) => setCampusForm({ ...campusForm, code: e.target.value })} placeholder="Ej. SEDE-ATE" />
-              </Field>
-              <Field label="Tipo" icon={<Layers size={13} />}>
-                <select style={inputStyle} value={campusForm.campusType} onChange={(e) => setCampusForm({ ...campusForm, campusType: e.target.value })}>
-                  <option value="CAMPUS">Campus</option>
-                  <option value="SEDE_PRINCIPAL">Sede Principal</option>
-                  <option value="FILIAL">Filial</option>
-                </select>
-              </Field>
+          <form onSubmit={handleSaveCampus} className="modal-form campus-form">
+            <div className="campus-form__layout">
+              <div className="campus-form__main">
+                <div className="form-section">
+                  <span>Identificación de la sede</span>
+                  <span className={`form-section__status${campusForm.name.trim() && campusForm.code.trim() ? ' is-done' : ''}`}>
+                    {campusForm.name.trim() && campusForm.code.trim()
+                      ? <><Check size={12} aria-hidden="true" /> Listo</>
+                      : 'Pendiente'}
+                  </span>
+                </div>
+                <div className="institution-grid">
+                  <Field className="field--span-2" label="Nombre de la sede" icon={<Building2 size={13} />} hint="Nombre visible en la oferta académica y los reportes.">
+                    <input
+                      style={inputStyle}
+                      required
+                      maxLength={150}
+                      value={campusForm.name}
+                      onChange={(e) => setCampusForm({ ...campusForm, name: e.target.value })}
+                      placeholder="Ej. Campus Ate"
+                      autoComplete="organization"
+                    />
+                  </Field>
+                  <Field label="Código" icon={<Hash size={13} />} hint="Máximo 20 caracteres; se guarda en mayúsculas.">
+                    <input
+                      style={{ ...inputStyle, textTransform: 'uppercase' }}
+                      required
+                      maxLength={20}
+                      value={campusForm.code}
+                      onChange={(e) => setCampusForm({ ...campusForm, code: e.target.value.toUpperCase() })}
+                      placeholder="Ej. SEDE-ATE"
+                    />
+                  </Field>
+                  <Field label="Tipo" icon={<Layers size={13} />}>
+                    <select style={inputStyle} value={campusForm.campusType} onChange={(e) => setCampusForm({ ...campusForm, campusType: e.target.value })}>
+                      {CAMPUS_TYPES.map((type) => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                <div className="form-section">
+                  <span>Ubicación</span>
+                  <span className={`form-section__status${campusForm.city?.trim() && campusForm.address?.trim() ? ' is-done' : ''}`}>
+                    {campusForm.city?.trim() && campusForm.address?.trim()
+                      ? <><Check size={12} aria-hidden="true" /> Listo</>
+                      : 'Opcional'}
+                  </span>
+                </div>
+                <div className="institution-grid campus-form__grid--3">
+                  <Field label="Ciudad" icon={<Building2 size={13} />}>
+                    <input style={inputStyle} maxLength={100} value={campusForm.city ?? ''} onChange={(e) => setCampusForm({ ...campusForm, city: e.target.value })} placeholder="Ej. Lima" />
+                  </Field>
+                  <Field label="Distrito" icon={<MapPin size={13} />}>
+                    <input style={inputStyle} maxLength={100} value={campusForm.district ?? ''} onChange={(e) => setCampusForm({ ...campusForm, district: e.target.value })} placeholder="Ej. Ate" />
+                  </Field>
+                  <Field label="Región" icon={<Map size={13} />}>
+                    <input style={inputStyle} maxLength={100} value={campusForm.region ?? ''} onChange={(e) => setCampusForm({ ...campusForm, region: e.target.value })} placeholder="Ej. Lima Metropolitana" />
+                  </Field>
+                </div>
+                <Field label="Dirección" icon={<Navigation size={13} />} hint="Incluye avenida, número y referencia si corresponde.">
+                  <input style={inputStyle} maxLength={255} value={campusForm.address ?? ''} onChange={(e) => setCampusForm({ ...campusForm, address: e.target.value })} placeholder="Ej. Av. Carretera Central 1234" autoComplete="street-address" />
+                </Field>
+
+                <div className="form-section">
+                  <span>Infraestructura</span>
+                  <span className={`form-section__status${campusForm.capacity != null ? ' is-done' : ''}`}>
+                    {campusForm.capacity != null
+                      ? <><Check size={12} aria-hidden="true" /> Listo</>
+                      : 'Opcional'}
+                  </span>
+                </div>
+                <div className="institution-grid campus-form__grid--3">
+                  <Field label="Aforo" icon={<Users size={13} />} hint="Capacidad total estimada.">
+                    <input style={inputStyle} type="number" min={0} value={campusForm.capacity ?? ''} onChange={(e) => setCampusForm({ ...campusForm, capacity: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ej. 5000" />
+                  </Field>
+                  <Field label="Pabellones" icon={<LayoutGrid size={13} />}>
+                    <input style={inputStyle} type="number" min={0} value={campusForm.pavilions ?? ''} onChange={(e) => setCampusForm({ ...campusForm, pavilions: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ej. 4" />
+                  </Field>
+                  <Field label="Laboratorios" icon={<FlaskConical size={13} />}>
+                    <input style={inputStyle} type="number" min={0} value={campusForm.laboratories ?? ''} onChange={(e) => setCampusForm({ ...campusForm, laboratories: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ej. 12" />
+                  </Field>
+                </div>
+              </div>
+
+              <aside className="campus-preview" aria-label="Vista previa de la sede">
+                <div className="campus-preview__head">
+                  <span className="campus-preview__eyebrow">Vista previa</span>
+                  <Badge variant="outline" size="sm">{campusTypeLabel}</Badge>
+                </div>
+                <div className="campus-preview__identity">
+                  <span className="campus-preview__logo" aria-hidden="true"><Building2 size={20} /></span>
+                  <div>
+                    <strong>{campusForm.name.trim() || 'Nueva sede'}</strong>
+                    <span>{campusForm.code.trim() || 'SEDE-XXX'}</span>
+                  </div>
+                </div>
+                <p className="campus-preview__line">
+                  <MapPin size={14} aria-hidden="true" />
+                  {[campusForm.district, campusForm.city, campusForm.region].filter((value) => value?.trim()).join(' · ') || 'Ubicación por definir'}
+                </p>
+                <p className="campus-preview__line">
+                  <Navigation size={14} aria-hidden="true" />
+                  {campusForm.address?.trim() || 'Dirección por definir'}
+                </p>
+                <div className="campus-preview__stats">
+                  <div>
+                    <Users size={14} aria-hidden="true" />
+                    <strong>{campusForm.capacity != null ? campusForm.capacity.toLocaleString('es-PE') : '—'}</strong>
+                    <small>Aforo</small>
+                  </div>
+                  <div>
+                    <LayoutGrid size={14} aria-hidden="true" />
+                    <strong>{campusForm.pavilions ?? '—'}</strong>
+                    <small>Pabellones</small>
+                  </div>
+                  <div>
+                    <FlaskConical size={14} aria-hidden="true" />
+                    <strong>{campusForm.laboratories ?? '—'}</strong>
+                    <small>Laboratorios</small>
+                  </div>
+                </div>
+                <div className="campus-preview__progress">
+                  <div>
+                    <span>Datos completos</span>
+                    <strong>{campusProgress}%</strong>
+                  </div>
+                  <span className="campus-preview__track" aria-hidden="true">
+                    <span style={{ width: `${campusProgress}%` }} />
+                  </span>
+                  <small>{campusProgressFields} de 5 campos clave</small>
+                </div>
+              </aside>
             </div>
 
-            <div className="form-section">Ubicación</div>
-            <div className="institution-grid">
-              <Field label="Ciudad" icon={<Building2 size={13} />}>
-                <input style={inputStyle} value={campusForm.city ?? ''} onChange={(e) => setCampusForm({ ...campusForm, city: e.target.value })} placeholder="Ej. Lima" />
-              </Field>
-              <Field label="Distrito" icon={<MapPin size={13} />}>
-                <input style={inputStyle} value={campusForm.district ?? ''} onChange={(e) => setCampusForm({ ...campusForm, district: e.target.value })} placeholder="Ej. Ate" />
-              </Field>
-              <Field label="Región" icon={<Map size={13} />}>
-                <input style={inputStyle} value={campusForm.region ?? ''} onChange={(e) => setCampusForm({ ...campusForm, region: e.target.value })} placeholder="Ej. Lima Metropolitana" />
-              </Field>
-            </div>
-            <Field label="Dirección" icon={<Navigation size={13} />} hint="Incluye avenida, número y referencia si corresponde.">
-              <input style={inputStyle} value={campusForm.address ?? ''} onChange={(e) => setCampusForm({ ...campusForm, address: e.target.value })} placeholder="Ej. Av. Carretera Central 1234" autoComplete="street-address" />
-            </Field>
-
-            <div className="form-section">Infraestructura</div>
-            <div className="institution-grid">
-              <Field label="Aforo" icon={<Users size={13} />}>
-                <input style={inputStyle} type="number" min={0} value={campusForm.capacity ?? ''} onChange={(e) => setCampusForm({ ...campusForm, capacity: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ej. 5000" />
-              </Field>
-              <Field label="Pabellones" icon={<LayoutGrid size={13} />}>
-                <input style={inputStyle} type="number" min={0} value={campusForm.pavilions ?? ''} onChange={(e) => setCampusForm({ ...campusForm, pavilions: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ej. 4" />
-              </Field>
-              <Field label="Laboratorios" icon={<FlaskConical size={13} />}>
-                <input style={inputStyle} type="number" min={0} value={campusForm.laboratories ?? ''} onChange={(e) => setCampusForm({ ...campusForm, laboratories: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ej. 12" />
-              </Field>
-            </div>
             <div className="modal-form-footer">
+              <span className="campus-form__note">Los cambios se reflejan en la oferta académica y la auditoría institucional.</span>
               <Button type="button" variant="secondary" onClick={() => setCampusModal(false)}>Cancelar</Button>
               <Button type="submit" isLoading={isSubmitting}>Guardar Sede</Button>
             </div>
