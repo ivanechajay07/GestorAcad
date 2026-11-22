@@ -6372,7 +6372,7 @@ input[type="checkbox"] {
   place-items: center;
   width: 27px;
   height: 27px;
-  color: var(--primary);
+  color: var(--primary-hover);
   border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
   border-radius: 8px;
   background: color-mix(in srgb, var(--primary) 10%, transparent);

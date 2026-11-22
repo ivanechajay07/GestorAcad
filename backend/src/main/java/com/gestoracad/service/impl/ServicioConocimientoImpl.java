@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -59,6 +60,36 @@ public class ServicioConocimientoImpl implements ServicioConocimiento {
             "pregunta", "duda", "informacion", "orientacion", "ayuda", "ayudarme",
             "puedes", "podrias", "por", "favor", "porfa", "gracias", "como", "estas",
             "esta", "que", "va", "bien", "mucho", "gusto", "saludar"
+    );
+
+    /**
+     * Normaliza términos coloquiales del dominio para que la búsqueda local
+     * encuentre la misma guía aunque el usuario use singular, plural o sinónimos.
+     */
+    private static final Map<String, String> SYNONYMS = Map.ofEntries(
+            Map.entry("asignado", "asignad"),
+            Map.entry("asignados", "asignad"),
+            Map.entry("asignada", "asignad"),
+            Map.entry("asignadas", "asignad"),
+            Map.entry("curso", "curso"),
+            Map.entry("cursos", "curso"),
+            Map.entry("nota", "nota"),
+            Map.entry("notas", "nota"),
+            Map.entry("calificacion", "nota"),
+            Map.entry("calificaciones", "nota"),
+            Map.entry("matricula", "matricula"),
+            Map.entry("matriculas", "matricula"),
+            Map.entry("matricular", "matricula"),
+            Map.entry("alumno", "estudiante"),
+            Map.entry("alumnos", "estudiante"),
+            Map.entry("profesor", "docente"),
+            Map.entry("profesores", "docente"),
+            Map.entry("clave", "contrasena"),
+            Map.entry("contrasena", "contrasena"),
+            Map.entry("foto", "avatar"),
+            Map.entry("imagen", "avatar"),
+            Map.entry("login", "sesion"),
+            Map.entry("ingresar", "sesion")
     );
 
     private static final String WELCOME_MESSAGE =
@@ -251,6 +282,7 @@ public class ServicioConocimientoImpl implements ServicioConocimiento {
         }
         return Arrays.stream(normalizedQuestion.split("[^a-z0-9ñ]+"))
                 .filter(word -> word.length() > 2 && !STOP_WORDS.contains(word))
+                .map(word -> SYNONYMS.getOrDefault(word, word))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

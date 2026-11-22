@@ -92,6 +92,19 @@ class ServicioConocimientoTest {
     }
 
     @Test
+    @DisplayName("Reconoce singular, plural y sinónimos del dominio en la búsqueda local")
+    void matchesDomainSynonyms() {
+        when(documentRepository.findByActiveTrueOrderByNameAsc()).thenReturn(List.of(
+                document("Portal docente", "Las secciones asignadas aparecen en el portal del docente.")
+        ));
+
+        DtoRespuestaAsistente response = knowledgeService.ask("¿Dónde veo mis asignados?");
+
+        assertFalse(response.getSources().isEmpty());
+        assertEquals("Portal docente", response.getSources().get(0).getName());
+    }
+
+    @Test
     @DisplayName("Devuelve un mensaje claro cuando no hay coincidencias")
     void answersWithoutMatches() {
         when(documentRepository.findByActiveTrueOrderByNameAsc()).thenReturn(List.of(
