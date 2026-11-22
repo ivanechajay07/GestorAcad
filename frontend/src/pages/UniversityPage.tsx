@@ -37,7 +37,6 @@ import {
   FileText,
   FlaskConical,
   GraduationCap,
-  Globe,
   Hash,
   Key,
   Layers,
@@ -85,6 +84,12 @@ const CAMPUS_TYPES = [
   { value: 'FILIAL', label: 'Filial' },
 ];
 
+const UNIVERSITY_STEPS = [
+  { title: 'Identidad', description: 'Datos oficiales' },
+  { title: 'Licenciamiento', description: 'RUC y acreditación' },
+  { title: 'Contacto', description: 'Ubicación y canales' },
+];
+
 const errMsg = (err: unknown, fallback: string): string => getApiErrorMessage(err, fallback);
 
 const Field: React.FC<{
@@ -117,6 +122,7 @@ export const UniversityPage: React.FC = () => {
   const { confirm } = useConfirm();
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<TabKey>('general');
+  const [universityStep, setUniversityStep] = useState(0);
 
   const [university, setUniversity] = useState<UniversityDto | null>(null);
   const [campuses, setCampuses] = useState<CampusDto[]>([]);
@@ -519,24 +525,6 @@ export const UniversityPage: React.FC = () => {
   const campusProgress = Math.round((campusProgressFields / 5) * 100);
   const campusTypeLabel = CAMPUS_TYPES.find((type) => type.value === campusForm.campusType)?.label ?? 'Campus';
 
-  const universityProgressFields = [
-    university?.name,
-    university?.shortName,
-    university?.taxId,
-    university?.licensingStatus,
-    university?.address,
-    university?.phone,
-    university?.email,
-    university?.website,
-  ].filter((value) => String(value ?? '').trim() !== '').length;
-  const universityProgress = Math.round((universityProgressFields / 8) * 100);
-  const universityTypeLabel = university?.institutionType === 'PUBLICA'
-    ? 'Pública'
-    : university?.institutionType === 'ASOCIATIVA'
-      ? 'Asociativa'
-      : 'Privada';
-  const licensingLabel = university?.licensingStatus ? humanize(university.licensingStatus) : 'Sin estado';
-
   const tabButton = (key: TabKey, label: string, icon: React.ReactNode) => (
     <button
       key={key}
@@ -609,8 +597,30 @@ export const UniversityPage: React.FC = () => {
                   }
                 />
 
+                <div className="institution-stepper university-stepper" aria-label="Pasos de configuración institucional">
+                  {UNIVERSITY_STEPS.map((step, index) => (
+                    <button
+                      key={step.title}
+                      type="button"
+                      className={`institution-step${universityStep === index ? ' is-active' : ''}${index < universityStep ? ' is-complete' : ''}`}
+                      aria-current={universityStep === index ? 'step' : undefined}
+                      onClick={() => setUniversityStep(index)}
+                    >
+                      <span className="institution-step__number">{index + 1}</span>
+                      <span className="institution-step__copy">
+                        <strong>{step.title}</strong>
+                        <small>{step.description}</small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="university-step-progress" aria-hidden="true">
+                  <span style={{ width: `${((universityStep + 1) / UNIVERSITY_STEPS.length) * 100}%` }} />
+                </div>
+
                 <div className="institution-layout">
-                  <div className="institution-form">
+                  <div className={`institution-form university-step-${universityStep}`}>
                   <section className="institution-form__section" aria-labelledby="university-identity">
                     <h4 id="university-identity" className="institution-section__title">
                       <Building2 size={14} aria-hidden="true" /> Identidad institucional
@@ -708,70 +718,7 @@ export const UniversityPage: React.FC = () => {
                   </section>
                 </div>
 
-                  <aside className="institution-preview" aria-label="Resumen institucional">
-                    <div className="institution-preview__head">
-                      <span className="institution-preview__eyebrow">Resumen institucional</span>
-                      <Badge variant={university?.licensingStatus === 'LICENCIADA' ? 'success' : 'outline'} size="sm" dot>
-                        {licensingLabel}
-                      </Badge>
-                    </div>
-                    <div className="institution-preview__identity">
-                      <span className="institution-preview__logo" aria-hidden="true"><Building2 size={20} /></span>
-                      <div>
-                        <strong>{university?.name?.trim() || 'Institución sin nombre'}</strong>
-                        <span>{university?.shortName?.trim() || 'Sigla por definir'} · {universityTypeLabel}</span>
-                      </div>
-                    </div>
-                    <p className="institution-preview__line">
-                      <MapPin size={14} aria-hidden="true" />
-                      {university?.address?.trim() || 'Dirección por definir'}
-                    </p>
-                    {university?.phone && (
-                      <p className="institution-preview__line">
-                        <Phone size={14} aria-hidden="true" />
-                        {university.phone}
-                      </p>
-                    )}
-                    {university?.email && (
-                      <p className="institution-preview__line">
-                        <Mail size={14} aria-hidden="true" />
-                        {university.email}
-                      </p>
-                    )}
-                    {university?.website && (
-                      <p className="institution-preview__line">
-                        <Globe size={14} aria-hidden="true" />
-                        {university.website}
-                      </p>
-                    )}
-                    <div className="institution-preview__checklist">
-                      <span className={university?.name?.trim() && university?.shortName?.trim() ? 'is-done' : ''}>
-                        <Check size={12} aria-hidden="true" /> Identidad
-                      </span>
-                      <span className={university?.taxId?.trim() && university?.licensingStatus?.trim() ? 'is-done' : ''}>
-                        <Check size={12} aria-hidden="true" /> Licenciamiento
-                      </span>
-                      <span className={university?.address?.trim() && (university?.phone?.trim() || university?.email?.trim()) ? 'is-done' : ''}>
-                        <Check size={12} aria-hidden="true" /> Contacto
-                      </span>
-                    </div>
-                    <div className="institution-preview__progress">
-                      <div>
-                        <span>Datos completos</span>
-                        <strong>{universityProgress}%</strong>
-                      </div>
-                      <span className="institution-preview__track" aria-hidden="true">
-                        <span style={{ width: `${universityProgress}%` }} />
-                      </span>
-                      <small>{universityProgressFields} de 8 campos clave</small>
-                    </div>
-                    <p className="institution-preview__updated">
-                      <Calendar size={13} aria-hidden="true" />
-                      {university?.updatedAt
-                        ? `Actualizado ${new Date(university.updatedAt).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}`
-                        : 'Sin actualizaciones registradas'}
-                    </p>
-                  </aside>
+
                 </div>
 
                 <div className="institution-form__footer">
@@ -785,8 +732,24 @@ export const UniversityPage: React.FC = () => {
                       <>Vista de solo lectura.</>
                     )}
                   </span>
+                  <span className="institution-form__step">
+                    Paso {universityStep + 1} de {UNIVERSITY_STEPS.length} · {UNIVERSITY_STEPS[universityStep].title}
+                  </span>
                   <div className="institution-form__actions">
-                    {canEditUniversity ? (
+                    {universityStep > 0 && (
+                      <Button type="button" variant="secondary" onClick={() => setUniversityStep((current) => Math.max(0, current - 1))}>
+                        Anterior
+                      </Button>
+                    )}
+                    {universityStep < UNIVERSITY_STEPS.length - 1 ? (
+                      <Button
+                        type="button"
+                        onClick={() => setUniversityStep((current) => Math.min(UNIVERSITY_STEPS.length - 1, current + 1))}
+                        disabled={universityStep === 0 && !university?.name?.trim()}
+                      >
+                        Siguiente
+                      </Button>
+                    ) : canEditUniversity ? (
                       <Button type="submit" leftIcon={<Save size={16} />} isLoading={isSubmitting}>
                         Guardar información
                       </Button>

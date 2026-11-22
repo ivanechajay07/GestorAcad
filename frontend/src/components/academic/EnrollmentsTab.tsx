@@ -5,7 +5,7 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { EmptyState } from '../ui/EmptyState';
 import { SectionHeader } from '../ui/SectionHeader';
 import { FormSummary } from '../ui/FormSummary';
-import { TableFilterMobile, TableFilterRow, matchesFilter } from '../ui/TableFilters';
+import { TableFilterMobile, TableHeader, filterByKey, matchesFilter } from '../ui/TableFilters';
 import { SearchableSelect } from '../ui/SearchableSelect';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
@@ -262,24 +262,20 @@ export const EnrollmentsTab: React.FC = () => {
           <col style={{ width: '9%' }} />
           <col style={{ width: '12%' }} />
           </colgroup>
-          <thead>
-            <tr>
-              <th>Estudiante</th>
-              <th>Curso</th>
-              <th>Sección</th>
-              <th>Periodo</th>
-              <th>Fecha</th>
-              <th>Créditos</th>
-              <th>Estado</th>
-              <th style={{ textAlign: 'center' }}>Acciones</th>
-            </tr>
-            <TableFilterRow
-              filters={ENROLLMENT_FILTERS}
+          <TableHeader
+              columns={[
+                { key: 'student', label: 'Estudiante', filter: filterByKey(ENROLLMENT_FILTERS, 'student') },
+                { key: 'course', label: 'Curso', filter: filterByKey(ENROLLMENT_FILTERS, 'course') },
+                { key: 'section', label: 'Sección', filter: filterByKey(ENROLLMENT_FILTERS, 'section') },
+                { key: 'period', label: 'Periodo', filter: filterByKey(ENROLLMENT_FILTERS, 'period') },
+                { key: 'date', label: 'Fecha', filter: filterByKey(ENROLLMENT_FILTERS, 'date') },
+                { key: 'credits', label: 'Créditos', filter: filterByKey(ENROLLMENT_FILTERS, 'credits') },
+                { key: 'status', label: 'Estado', filter: filterByKey(ENROLLMENT_FILTERS, 'status') },
+                { key: 'actions', label: 'Acciones', align: 'center' },
+              ]}
               values={columnFilters}
               onChange={(key, value) => setColumnFilters((current) => ({ ...current, [key]: value }))}
-              trailing={1}
             />
-          </thead>
           <tbody>
             {filteredEnrollments.map((enrollment) => (
               <tr key={enrollment.id}>

@@ -6,7 +6,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { DatePicker } from '../components/ui/DatePicker';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { FormSummary } from '../components/ui/FormSummary';
-import { TableFilterMobile, TableFilterRow, matchesFilter } from '../components/ui/TableFilters';
+import { TableFilterMobile, TableHeader, filterByKey, matchesFilter } from '../components/ui/TableFilters';
 import type { TableFilterDef } from '../components/ui/TableFilters';
 import { EmptyState } from '../components/ui/EmptyState';
 import { useAuth } from '../contexts/AuthContext';
@@ -515,15 +515,18 @@ export const EvaluationPage: React.FC = () => {
                     <col style={{ width: '12%' }} />
                     <col style={{ width: '16%' }} />
                   </colgroup>
-                  <thead>
-                    <tr><th>Evaluación</th><th>Tipo</th><th>Peso</th><th>Fecha</th><th>Nota máxima</th><th style={{ textAlign: 'center' }}>Acciones</th></tr>
-                    <TableFilterRow
-                      filters={EVALUATION_FILTERS}
+                  <TableHeader
+                      columns={[
+                        { key: 'name', label: 'Evaluación', filter: filterByKey(EVALUATION_FILTERS, 'name') },
+                        { key: 'type', label: 'Tipo', filter: filterByKey(EVALUATION_FILTERS, 'type') },
+                        { key: 'weight', label: 'Peso', filter: filterByKey(EVALUATION_FILTERS, 'weight') },
+                        { key: 'date', label: 'Fecha', filter: filterByKey(EVALUATION_FILTERS, 'date') },
+                        { key: 'maxScore', label: 'Nota máxima', filter: filterByKey(EVALUATION_FILTERS, 'maxScore') },
+                        { key: 'actions', label: 'Acciones', align: 'center' },
+                      ]}
                       values={evaluationFilters}
                       onChange={(key, value) => setEvaluationFilters((current) => ({ ...current, [key]: value }))}
-                      trailing={1}
                     />
-                  </thead>
                   <tbody>
                     {filteredEvaluations.map((evaluation) => (
                       <tr key={evaluation.id}>
@@ -609,15 +612,16 @@ export const EvaluationPage: React.FC = () => {
                     <col style={{ width: '22%' }} />
                     <col style={{ width: '34%' }} />
                   </colgroup>
-                  <thead>
-                    <tr><th>Código</th><th>Estudiante</th><th>Nota (0–{selectedEvaluation?.maxScore ?? 20})</th><th>Observación</th></tr>
-                    <TableFilterRow
-                      filters={GRADE_FILTERS}
+                  <TableHeader
+                      columns={[
+                        { key: 'code', label: 'Código', filter: filterByKey(GRADE_FILTERS, 'code') },
+                        { key: 'student', label: 'Estudiante', filter: filterByKey(GRADE_FILTERS, 'student') },
+                        { key: 'score', label: `Nota (0–${selectedEvaluation?.maxScore ?? 20})`, filter: filterByKey(GRADE_FILTERS, 'score') },
+                        { key: 'observation', label: 'Observación', filter: filterByKey(GRADE_FILTERS, 'observation') },
+                      ]}
                       values={gradeFilters}
                       onChange={(key, value) => setGradeFilters((current) => ({ ...current, [key]: value }))}
-                      trailing={0}
                     />
-                  </thead>
                   <tbody>
                     {filteredGrades.map((grade) => (
                       <tr key={grade.studentId}>
@@ -704,15 +708,16 @@ export const EvaluationPage: React.FC = () => {
                     <col style={{ width: '22%' }} />
                     <col style={{ width: '34%' }} />
                   </colgroup>
-                  <thead>
-                    <tr><th>Código</th><th>Estudiante</th><th>Estado</th><th>Observación</th></tr>
-                    <TableFilterRow
-                      filters={ATTENDANCE_FILTERS}
+                  <TableHeader
+                      columns={[
+                        { key: 'code', label: 'Código', filter: filterByKey(ATTENDANCE_FILTERS, 'code') },
+                        { key: 'student', label: 'Estudiante', filter: filterByKey(ATTENDANCE_FILTERS, 'student') },
+                        { key: 'status', label: 'Estado', filter: filterByKey(ATTENDANCE_FILTERS, 'status') },
+                        { key: 'observation', label: 'Observación', filter: filterByKey(ATTENDANCE_FILTERS, 'observation') },
+                      ]}
                       values={attendanceFilters}
                       onChange={(key, value) => setAttendanceFilters((current) => ({ ...current, [key]: value }))}
-                      trailing={0}
                     />
-                  </thead>
                   <tbody>
                     {filteredAttendance.map((record) => (
                       <tr key={record.studentId}>
@@ -803,15 +808,17 @@ export const EvaluationPage: React.FC = () => {
                     <col style={{ width: '26%' }} />
                     <col style={{ width: '14%' }} />
                   </colgroup>
-                  <thead>
-                    <tr><th>Código</th><th>Estudiante</th><th>Promedio</th><th>Estado</th><th>Créditos</th></tr>
-                    <TableFilterRow
-                      filters={ACTA_FILTERS}
+                  <TableHeader
+                      columns={[
+                        { key: 'code', label: 'Código', filter: filterByKey(ACTA_FILTERS, 'code') },
+                        { key: 'student', label: 'Estudiante', filter: filterByKey(ACTA_FILTERS, 'student') },
+                        { key: 'average', label: 'Promedio', filter: filterByKey(ACTA_FILTERS, 'average') },
+                        { key: 'status', label: 'Estado', filter: filterByKey(ACTA_FILTERS, 'status') },
+                        { key: 'credits', label: 'Créditos', filter: filterByKey(ACTA_FILTERS, 'credits') },
+                      ]}
                       values={actaFilters}
                       onChange={(key, value) => setActaFilters((current) => ({ ...current, [key]: value }))}
-                      trailing={0}
                     />
-                  </thead>
                   <tbody>
                     {filteredActaDetails.map((detail) => (
                       <tr key={detail.studentId}>

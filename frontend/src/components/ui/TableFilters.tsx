@@ -88,3 +88,44 @@ export const matchesFilter = (value: unknown, filter: string): boolean => {
   if (!query) return true;
   return String(value ?? '').toLocaleLowerCase().includes(query);
 };
+
+export const filterByKey = (filters: TableFilterDef[], key: string): TableFilterDef | undefined =>
+  filters.find((filter) => filter.key === key);
+
+export interface TableHeaderColumn {
+  key: string;
+  label: React.ReactNode;
+  filter?: TableFilterDef;
+  align?: 'left' | 'center' | 'right';
+}
+
+interface TableHeaderProps {
+  columns: TableHeaderColumn[];
+  values: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+}
+
+/** Cabecera de tabla con el filtro integrado en cada columna. */
+export const TableHeader: React.FC<TableHeaderProps> = ({ columns, values, onChange }) => (
+  <thead>
+    <tr>
+      {columns.map((column) => (
+        <th key={column.key} scope="col" style={column.align ? { textAlign: column.align } : undefined}>
+          <span className="table-th__label">{column.label}</span>
+          {column.filter && (
+            <span className="table-th__filter">
+              {control(
+                column.filter.type === 'select'
+                  ? column.filter
+                  : { ...column.filter, placeholder: 'Filtrar' },
+                values,
+                onChange,
+              )}
+            </span>
+          )}
+        </th>
+      ))}
+    </tr>
+  </thead>
+);
+
