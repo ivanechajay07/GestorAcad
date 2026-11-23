@@ -26,6 +26,12 @@ public interface RepositorioSeccion extends JpaRepository<Seccion, Long> {
 
     long countByPeriodIdAndActiveTrue(Long periodId);
 
+    @Query("SELECT COALESCE(SUM(s.capacity), 0) FROM Seccion s WHERE s.period.id = :periodId AND s.active = true")
+    long sumCapacityByPeriodId(@Param("periodId") Long periodId);
+
+    @Query("SELECT COUNT(s) FROM Seccion s WHERE s.period.id = :periodId AND s.active = true AND s.teacher IS NULL")
+    long countWithoutTeacherByPeriodId(@Param("periodId") Long periodId);
+
     @Query("SELECT s FROM Seccion s JOIN FETCH s.period JOIN FETCH s.course LEFT JOIN FETCH s.teacher "
             + "WHERE s.teacher.id = :teacherId ORDER BY s.period.startDate DESC, s.course.code ASC, s.code ASC")
     List<Seccion> findByTeacherIdDetailed(@Param("teacherId") Long teacherId);

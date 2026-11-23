@@ -100,6 +100,8 @@ export const DashboardPage: React.FC = () => {
   const users = summary?.usuarios ?? null;
   const audit = summary?.auditoria ?? null;
   const management = summary?.gestion ?? null;
+  const period = summary?.periodo ?? null;
+  const periodProgress = Math.max(0, Math.min(100, period?.avance ?? 0));
   const initialLoading = loading && !summary;
   const isStudent = role === 'ESTUDIANTE';
   const isTeacher = role === 'DOCENTE';
@@ -176,6 +178,24 @@ export const DashboardPage: React.FC = () => {
   }, [management]);
 
   const managementTotal = managementItems.reduce((total, item) => total + item.value, 0);
+
+  const periodStats = period ? [
+    { key: 'sections', label: 'Secciones', value: period.secciones },
+    { key: 'free-seats', label: 'Cupos libres', value: period.cuposDisponibles },
+    { key: 'without-enrollment', label: 'Sin matrícula', value: period.estudiantesSinMatricula },
+    { key: 'without-teacher', label: 'Secciones sin docente', value: period.seccionesSinDocente },
+  ].filter((item): item is { key: string; label: string; value: number } => item.value != null) : [];
+
+  const periodDateLabel = period
+    ? [period.fechaInicio, period.fechaFin]
+        .filter((value): value is string => Boolean(value))
+        .map((value) => new Date(`${value}T00:00:00`).toLocaleDateString('es-PE', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        }))
+        .join(' — ')
+    : '';
 
   const auditDays = summary?.auditoria?.eventosPorDia ?? [];
   const auditHasTrend = auditDays.filter((day) => day.total > 0).length >= 3;
@@ -535,6 +555,59 @@ export const DashboardPage: React.FC = () => {
               </Card>
             )}
           </section>
+
+          {summary && period && (
+            <section className="dash-section" aria-labelledby="dash-period-title">
+              <SectionHeader
+                id="dash-period-title"
+                eyebrow="Periodo actual"
+                title={period.codigo ? `Periodo ${period.codigo}` : 'Periodo académico actual'}
+                description="Avance de matrícula, capacidad y pendientes del periodo activo."
+                icon={<Calendar size={18} />}
+                aside={
+                  <Badge variant={period.avance != null ? 'info' : 'outline'} size="sm" dot>
+                    {period.avance != null ? `${period.avance}% de avance` : 'Periodo activo'}
+                  </Badge>
+                }
+              />
+              <div className="dash-period-card">
+                {period.matriculas != null && (
+                  <div className="dash-period-progress">
+                    <div className="dash-period-progress__head">
+                      <span>Avance de matrícula</span>
+                      <strong>{periodProgress}%</strong>
+                    </div>
+                    <div
+                      className="dash-period-progress__track"
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={periodProgress}
+                      aria-label="Avance de matrícula del periodo"
+                    >
+                      <span style={{ width: `${periodProgress}%` }} />
+                    </div>
+                    <small>
+                      {period.capacidad != null
+                        ? `${formatCount(period.matriculas)} matrículas de ${formatCount(period.capacidad)} cupos`
+                        : `${formatCount(period.matriculas)} matrículas registradas`}
+                      {periodDateLabel ? ` · ${periodDateLabel}` : ''}
+                    </small>
+                  </div>
+                )}
+                {periodStats.length > 0 && (
+                  <div className="dash-period-stats">
+                    {periodStats.map((stat) => (
+                      <div className="dash-period-stat" key={stat.key}>
+                        <strong>{formatCount(stat.value)}</strong>
+                        <span>{stat.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
 
           {summary && management && (
             <section className="dash-section" aria-labelledby="dash-management-title">

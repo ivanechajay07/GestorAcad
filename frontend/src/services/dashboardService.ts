@@ -37,6 +37,20 @@ export interface DashboardManagement {
   estudiantesBajoPromedio?: number | null;
 }
 
+/** Estado operativo del periodo académico actual. */
+export interface DashboardPeriod {
+  codigo?: string | null;
+  fechaInicio?: string | null;
+  fechaFin?: string | null;
+  secciones?: number | null;
+  capacidad?: number | null;
+  matriculas?: number | null;
+  cuposDisponibles?: number | null;
+  estudiantesSinMatricula?: number | null;
+  seccionesSinDocente?: number | null;
+  avance?: number | null;
+}
+
 /**
  * Resumen agregado del panel institucional.
  * Los bloques son `null` cuando el usuario no tiene el permiso del módulo;
@@ -51,6 +65,7 @@ export interface DashboardSummary {
   carreras?: number | null;
   auditoria?: DashboardAudit | null;
   gestion?: DashboardManagement | null;
+  periodo?: DashboardPeriod | null;
   estudiantesPorCiclo?: DashboardCount[] | null;
   estudiantesPorFacultad?: DashboardCount[] | null;
   estudiantesPorCarrera?: DashboardCount[] | null;

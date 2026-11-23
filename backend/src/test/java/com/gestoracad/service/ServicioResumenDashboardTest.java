@@ -9,7 +9,10 @@ import com.gestoracad.repository.ProyeccionConteoTexto;
 import com.gestoracad.repository.RepositorioDocente;
 import com.gestoracad.repository.RepositorioEstudiante;
 import com.gestoracad.repository.RepositorioParametroSistema;
+import com.gestoracad.repository.RepositorioPeriodoAcademico;
 import com.gestoracad.repository.RepositorioRegistroAuditoria;
+import com.gestoracad.repository.RepositorioSeccion;
+import com.gestoracad.repository.RepositorioMatricula;
 import com.gestoracad.repository.RepositorioSede;
 import com.gestoracad.repository.RepositorioUniversidad;
 import com.gestoracad.repository.RepositorioUsuario;
@@ -62,6 +65,12 @@ class ServicioResumenDashboardTest {
     private RepositorioUniversidad universityRepository;
     @Mock
     private RepositorioParametroSistema parameterRepository;
+    @Mock
+    private RepositorioPeriodoAcademico periodRepository;
+    @Mock
+    private RepositorioSeccion sectionRepository;
+    @Mock
+    private RepositorioMatricula enrollmentRepository;
     @Mock
     private EvaluadorPermisos permissionEvaluator;
 

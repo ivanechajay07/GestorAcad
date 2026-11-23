@@ -5,15 +5,20 @@ import com.gestoracad.dto.DtoConteoDashboard;
 import com.gestoracad.dto.DtoGestionDashboard;
 import com.gestoracad.dto.DtoInstitucionDashboard;
 import com.gestoracad.dto.DtoMetricaDashboard;
+import com.gestoracad.dto.DtoPeriodoDashboard;
 import com.gestoracad.dto.DtoResumenDashboard;
 import com.gestoracad.entity.ParametroSistema;
+import com.gestoracad.entity.PeriodoAcademico;
 import com.gestoracad.entity.Universidad;
 import com.gestoracad.repository.ProyeccionConteoCiclo;
 import com.gestoracad.repository.ProyeccionConteoTexto;
 import com.gestoracad.repository.RepositorioDocente;
 import com.gestoracad.repository.RepositorioEstudiante;
+import com.gestoracad.repository.RepositorioMatricula;
 import com.gestoracad.repository.RepositorioParametroSistema;
+import com.gestoracad.repository.RepositorioPeriodoAcademico;
 import com.gestoracad.repository.RepositorioRegistroAuditoria;
+import com.gestoracad.repository.RepositorioSeccion;
 import com.gestoracad.repository.RepositorioSede;
 import com.gestoracad.repository.RepositorioUniversidad;
 import com.gestoracad.repository.RepositorioUsuario;
@@ -52,6 +57,8 @@ public class ServicioResumenDashboardImpl implements ServicioResumenDashboard {
     private static final String PERMISO_USUARIO = "USUARIO_VIEW";
     private static final String PERMISO_AUDITORIA = "AUDITORIA_VIEW";
     private static final String PERMISO_SEDE = "SEDE_VIEW";
+    private static final String PERMISO_SECCION = "SECCION_VIEW";
+    private static final String PERMISO_MATRICULA = "MATRICULA_VIEW";
 
     private final RepositorioEstudiante studentRepository;
     private final RepositorioDocente teacherRepository;
@@ -60,6 +67,9 @@ public class ServicioResumenDashboardImpl implements ServicioResumenDashboard {
     private final RepositorioSede campusRepository;
     private final RepositorioUniversidad universityRepository;
     private final RepositorioParametroSistema parameterRepository;
+    private final RepositorioPeriodoAcademico periodRepository;
+    private final RepositorioSeccion sectionRepository;
+    private final RepositorioMatricula enrollmentRepository;
     private final EvaluadorPermisos permissionEvaluator;
 
     public ServicioResumenDashboardImpl(RepositorioEstudiante studentRepository,
@@ -69,6 +79,9 @@ public class ServicioResumenDashboardImpl implements ServicioResumenDashboard {
                                         RepositorioSede campusRepository,
                                         RepositorioUniversidad universityRepository,
                                         RepositorioParametroSistema parameterRepository,
+                                        RepositorioPeriodoAcademico periodRepository,
+                                        RepositorioSeccion sectionRepository,
+                                        RepositorioMatricula enrollmentRepository,
                                         EvaluadorPermisos permissionEvaluator) {
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
@@ -77,6 +90,9 @@ public class ServicioResumenDashboardImpl implements ServicioResumenDashboard {
         this.campusRepository = campusRepository;
         this.universityRepository = universityRepository;
         this.parameterRepository = parameterRepository;
+        this.periodRepository = periodRepository;
+        this.sectionRepository = sectionRepository;
+        this.enrollmentRepository = enrollmentRepository;
         this.permissionEvaluator = permissionEvaluator;
     }
 
@@ -118,9 +134,62 @@ public class ServicioResumenDashboardImpl implements ServicioResumenDashboard {
         }
 
         summary.setGestion(buildGestion());
+        summary.setPeriodo(buildPeriodSummary());
 
         summary.setGeneradoEn(LocalDateTime.now());
         return summary;
+    }
+
+    private DtoPeriodoDashboard buildPeriodSummary() {
+        boolean canSections = permissionEvaluator.tiene(PERMISO_SECCION);
+        boolean canEnrollments = permissionEvaluator.tiene(PERMISO_MATRICULA);
+        if (!canSections && !canEnrollments) {
+            return null;
+        }
+
+        Optional<PeriodoAcademico> current = Optional.empty();
+        String configuredPeriod = parameterRepository.findByKey(PARAMETRO_PERIODO)
+                .map(ParametroSistema::getValue)
+                .orElse(null);
+        if (configuredPeriod != null) {
+            current = Optional.ofNullable(periodRepository.findByCode(configuredPeriod))
+                    .orElse(Optional.empty());
+        }
+        if (current.isEmpty()) {
+            current = Optional.ofNullable(periodRepository.findFirstByCurrentTrueAndActiveTrue())
+                    .orElse(Optional.empty());
+        }
+        if (current.isEmpty()) {
+            return null;
+        }
+
+        PeriodoAcademico period = current.get();
+        DtoPeriodoDashboard dto = new DtoPeriodoDashboard();
+        dto.setCodigo(period.getCode());
+        dto.setFechaInicio(period.getStartDate());
+        dto.setFechaFin(period.getEndDate());
+
+        long capacity = 0;
+        if (canSections) {
+            dto.setSecciones(sectionRepository.countByPeriodIdAndActiveTrue(period.getId()));
+            capacity = sectionRepository.sumCapacityByPeriodId(period.getId());
+            dto.setCapacidad(capacity);
+            dto.setSeccionesSinDocente(sectionRepository.countWithoutTeacherByPeriodId(period.getId()));
+        }
+
+        if (canEnrollments) {
+            long enrollments = enrollmentRepository.countActiveByPeriodId(period.getId());
+            dto.setMatriculas(enrollments);
+            dto.setEstudiantesSinMatricula(studentRepository.countActiveWithoutEnrollmentInPeriod(period.getId()));
+            if (canSections) {
+                dto.setCuposDisponibles(Math.max(0, capacity - enrollments));
+                dto.setAvance(capacity > 0
+                        ? (int) Math.min(100, Math.round((enrollments * 100.0) / capacity))
+                        : 0);
+            }
+        }
+
+        return dto;
     }
 
     private DtoGestionDashboard buildGestion() {

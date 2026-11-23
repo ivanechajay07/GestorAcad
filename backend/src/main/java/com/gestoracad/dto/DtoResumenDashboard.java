@@ -23,6 +23,7 @@ public class DtoResumenDashboard {
     private Long carreras;
     private DtoAuditoriaDashboard auditoria;
     private DtoGestionDashboard gestion;
+    private DtoPeriodoDashboard periodo;
     private List<DtoConteoDashboard> estudiantesPorCiclo;
     private List<DtoConteoDashboard> estudiantesPorFacultad;
     private List<DtoConteoDashboard> estudiantesPorCarrera;
@@ -92,6 +93,14 @@ public class DtoResumenDashboard {
 
     public void setGestion(DtoGestionDashboard gestion) {
         this.gestion = gestion;
+    }
+
+    public DtoPeriodoDashboard getPeriodo() {
+        return periodo;
+    }
+
+    public void setPeriodo(DtoPeriodoDashboard periodo) {
+        this.periodo = periodo;
     }
 
     public List<DtoConteoDashboard> getEstudiantesPorCiclo() {

@@ -38,6 +38,9 @@ public interface RepositorioMatricula extends JpaRepository<Matricula, Long> {
     @Query("SELECT COUNT(m) FROM Matricula m WHERE m.section.id = :sectionId AND m.active = true")
     long countActiveBySectionId(@Param("sectionId") Long sectionId);
 
+    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.section.period.id = :periodId AND m.active = true")
+    long countActiveByPeriodId(@Param("periodId") Long periodId);
+
     @Query("SELECT COUNT(m) FROM Matricula m WHERE m.student.id = :studentId "
             + "AND m.section.course.id = :courseId AND m.section.period.id = :periodId AND m.active = true")
     long countActiveByStudentCoursePeriod(@Param("studentId") Long studentId,
