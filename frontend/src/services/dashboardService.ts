@@ -26,6 +26,17 @@ export interface DashboardAudit {
   eventosPorDia: DashboardCount[];
 }
 
+/** Pendientes accionables calculados por el servidor. */
+export interface DashboardManagement {
+  estudiantesSinCuenta?: number | null;
+  docentesSinCuenta?: number | null;
+  estudiantesSinFoto?: number | null;
+  docentesSinFoto?: number | null;
+  cuentasBloqueadas?: number | null;
+  estudiantesObservados?: number | null;
+  estudiantesBajoPromedio?: number | null;
+}
+
 /**
  * Resumen agregado del panel institucional.
  * Los bloques son `null` cuando el usuario no tiene el permiso del módulo;
@@ -39,6 +50,7 @@ export interface DashboardSummary {
   facultades?: number | null;
   carreras?: number | null;
   auditoria?: DashboardAudit | null;
+  gestion?: DashboardManagement | null;
   estudiantesPorCiclo?: DashboardCount[] | null;
   estudiantesPorFacultad?: DashboardCount[] | null;
   estudiantesPorCarrera?: DashboardCount[] | null;

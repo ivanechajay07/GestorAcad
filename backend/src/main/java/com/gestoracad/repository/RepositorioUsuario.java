@@ -30,6 +30,8 @@ public interface RepositorioUsuario extends JpaRepository<Usuario, Long> {
 
     long countByActiveTrue();
 
+    long countByActiveTrueAndAccountLockedTrue();
+
     /**
      * Cuenta los usuarios asignados a cada rol en una sola consulta agrupada.
      * Se usa para enriquecer el catálogo de roles sin cargar las entidades.

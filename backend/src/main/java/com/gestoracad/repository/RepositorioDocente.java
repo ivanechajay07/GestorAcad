@@ -31,6 +31,12 @@ public interface RepositorioDocente extends JpaRepository<Docente, Long> {
 
     long countByActiveTrue();
 
+    @Query("SELECT COUNT(d) FROM Docente d WHERE d.active = true AND d.userId IS NULL")
+    long countActiveWithoutAccount();
+
+    @Query("SELECT COUNT(d) FROM Docente d WHERE d.active = true AND (d.avatar IS NULL OR TRIM(d.avatar) = '')")
+    long countActiveWithoutAvatar();
+
     long countByFacultyIdAndActiveTrue(Long facultyId);
 
     @Query("SELECT d.category AS etiqueta, COUNT(d) AS total FROM Docente d "

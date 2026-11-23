@@ -22,6 +22,7 @@ public class DtoResumenDashboard {
     private Long facultades;
     private Long carreras;
     private DtoAuditoriaDashboard auditoria;
+    private DtoGestionDashboard gestion;
     private List<DtoConteoDashboard> estudiantesPorCiclo;
     private List<DtoConteoDashboard> estudiantesPorFacultad;
     private List<DtoConteoDashboard> estudiantesPorCarrera;
@@ -83,6 +84,14 @@ public class DtoResumenDashboard {
 
     public void setAuditoria(DtoAuditoriaDashboard auditoria) {
         this.auditoria = auditoria;
+    }
+
+    public DtoGestionDashboard getGestion() {
+        return gestion;
+    }
+
+    public void setGestion(DtoGestionDashboard gestion) {
+        this.gestion = gestion;
     }
 
     public List<DtoConteoDashboard> getEstudiantesPorCiclo() {

@@ -35,6 +35,18 @@ public interface RepositorioEstudiante extends JpaRepository<Estudiante, Long> {
 
     long countByActiveTrue();
 
+    @Query("SELECT COUNT(e) FROM Estudiante e WHERE e.active = true AND e.userId IS NULL")
+    long countActiveWithoutAccount();
+
+    @Query("SELECT COUNT(e) FROM Estudiante e WHERE e.active = true AND (e.avatar IS NULL OR TRIM(e.avatar) = '')")
+    long countActiveWithoutAvatar();
+
+    @Query("SELECT COUNT(e) FROM Estudiante e WHERE e.active = true AND UPPER(e.condition) = 'OBSERVADO'")
+    long countActiveObserved();
+
+    @Query("SELECT COUNT(e) FROM Estudiante e WHERE e.active = true AND e.weightedAverage < :minimum")
+    long countActiveBelowAverage(@Param("minimum") java.math.BigDecimal minimum);
+
     long countByFacultyIdAndActiveTrue(Long facultyId);
 
     long countByCareerIdAndActiveTrue(Long careerId);

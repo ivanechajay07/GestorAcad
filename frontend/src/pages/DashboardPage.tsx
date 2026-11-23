@@ -27,8 +27,10 @@ import {
   BookOpen,
   Building2,
   Calendar,
+  Camera,
   GraduationCap,
   Layers,
+  Lock,
   MapPin,
   RefreshCw,
   ShieldCheck,
@@ -41,6 +43,16 @@ type TeacherView = 'categoria' | 'facultad';
 type BreakdownMode = 'facultad' | 'carrera';
 type AuditMode = 'diario' | 'acumulado';
 type AnalyticsTab = 'poblacion' | 'claustro' | 'auditoria';
+
+interface ManagementItem {
+  key: string;
+  label: string;
+  hint: string;
+  value: number;
+  to: string;
+  icon: React.ReactNode;
+  tone: 'warn' | 'info' | 'danger';
+}
 type CycleMode = 'linea' | 'barras';
 
 const refreshLabel = (lastUpdated: Date | null, now: number): string =>
@@ -87,10 +99,83 @@ export const DashboardPage: React.FC = () => {
   const teachers = summary?.docentes ?? null;
   const users = summary?.usuarios ?? null;
   const audit = summary?.auditoria ?? null;
+  const management = summary?.gestion ?? null;
   const initialLoading = loading && !summary;
   const isStudent = role === 'ESTUDIANTE';
   const isTeacher = role === 'DOCENTE';
   const isRolePortal = isStudent || isTeacher;
+
+  const managementItems = useMemo<ManagementItem[]>(() => {
+    if (!management) return [];
+    const items: ManagementItem[] = [
+      {
+        key: 'students-account',
+        label: 'Estudiantes sin cuenta',
+        hint: 'No podrán ingresar al portal',
+        value: management.estudiantesSinCuenta ?? 0,
+        to: '/students',
+        icon: <Users size={17} aria-hidden="true" />,
+        tone: 'warn',
+      },
+      {
+        key: 'teachers-account',
+        label: 'Docentes sin cuenta',
+        hint: 'Fichas sin acceso al portal',
+        value: management.docentesSinCuenta ?? 0,
+        to: '/teachers',
+        icon: <GraduationCap size={17} aria-hidden="true" />,
+        tone: 'warn',
+      },
+      {
+        key: 'students-photo',
+        label: 'Estudiantes sin foto',
+        hint: 'Avatar pendiente en su ficha',
+        value: management.estudiantesSinFoto ?? 0,
+        to: '/students',
+        icon: <Camera size={17} aria-hidden="true" />,
+        tone: 'info',
+      },
+      {
+        key: 'teachers-photo',
+        label: 'Docentes sin foto',
+        hint: 'Avatar pendiente en su ficha',
+        value: management.docentesSinFoto ?? 0,
+        to: '/teachers',
+        icon: <Camera size={17} aria-hidden="true" />,
+        tone: 'info',
+      },
+      {
+        key: 'locked-users',
+        label: 'Cuentas bloqueadas',
+        hint: 'Por intentos fallidos de acceso',
+        value: management.cuentasBloqueadas ?? 0,
+        to: '/users',
+        icon: <Lock size={17} aria-hidden="true" />,
+        tone: 'danger',
+      },
+      {
+        key: 'observed-students',
+        label: 'Estudiantes observados',
+        hint: 'Requieren seguimiento académico',
+        value: management.estudiantesObservados ?? 0,
+        to: '/students',
+        icon: <AlertTriangle size={17} aria-hidden="true" />,
+        tone: 'danger',
+      },
+      {
+        key: 'low-average',
+        label: 'Promedio menor a 13',
+        hint: 'Posible riesgo de desaprobar',
+        value: management.estudiantesBajoPromedio ?? 0,
+        to: '/students',
+        icon: <Activity size={17} aria-hidden="true" />,
+        tone: 'danger',
+      },
+    ];
+    return items.filter((item) => item.value > 0);
+  }, [management]);
+
+  const managementTotal = managementItems.reduce((total, item) => total + item.value, 0);
 
   const auditDays = summary?.auditoria?.eventosPorDia ?? [];
   const auditHasTrend = auditDays.filter((day) => day.total > 0).length >= 3;
@@ -450,6 +535,46 @@ export const DashboardPage: React.FC = () => {
               </Card>
             )}
           </section>
+
+          {summary && management && (
+            <section className="dash-section" aria-labelledby="dash-management-title">
+              <SectionHeader
+                id="dash-management-title"
+                eyebrow="Atención"
+                title="Pendientes de gestión"
+                description="Fichas, accesos y casos académicos que requieren una acción concreta."
+                icon={<AlertTriangle size={18} />}
+                aside={
+                  <Badge variant={managementTotal > 0 ? 'warning' : 'success'} size="sm" dot>
+                    {managementTotal > 0 ? `${managementTotal} pendientes` : 'Todo en orden'}
+                  </Badge>
+                }
+              />
+              {managementTotal > 0 ? (
+                <div className="dash-management-grid">
+                  {managementItems.map((item) => (
+                    <Link key={item.key} to={item.to} className={`dash-management-card dash-management-card--${item.tone}`}>
+                      <span className="dash-management-card__icon">{item.icon}</span>
+                      <div className="dash-management-card__copy">
+                        <strong>{formatCount(item.value)}</strong>
+                        <span>{item.label}</span>
+                        <small>{item.hint}</small>
+                      </div>
+                      <ArrowRight size={15} className="dash-management-card__arrow" aria-hidden="true" />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="dash-management-empty">
+                  <ShieldCheck size={18} aria-hidden="true" />
+                  <div>
+                    <strong>Sin pendientes críticos</strong>
+                    <span>Las cuentas, fotos y casos académicos visibles están al día.</span>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
 
           {initialLoading && (
             <section className="dash-section" aria-hidden="true">

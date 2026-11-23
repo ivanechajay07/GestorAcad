@@ -2,6 +2,7 @@ package com.gestoracad.service.impl;
 
 import com.gestoracad.dto.DtoAuditoriaDashboard;
 import com.gestoracad.dto.DtoConteoDashboard;
+import com.gestoracad.dto.DtoGestionDashboard;
 import com.gestoracad.dto.DtoInstitucionDashboard;
 import com.gestoracad.dto.DtoMetricaDashboard;
 import com.gestoracad.dto.DtoResumenDashboard;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +45,7 @@ public class ServicioResumenDashboardImpl implements ServicioResumenDashboard {
 
     static final String PARAMETRO_PERIODO = "PERIODO_ACADEMICO_ACTUAL";
     static final int DIAS_ACTIVIDAD_AUDITORIA = 7;
+    private static final BigDecimal PROMEDIO_MINIMO = new BigDecimal("13.00");
 
     private static final String PERMISO_ESTUDIANTE = "ESTUDIANTE_VIEW";
     private static final String PERMISO_DOCENTE = "DOCENTE_VIEW";
@@ -114,8 +117,36 @@ public class ServicioResumenDashboardImpl implements ServicioResumenDashboard {
             summary.setAuditoria(buildAuditSummary());
         }
 
+        summary.setGestion(buildGestion());
+
         summary.setGeneradoEn(LocalDateTime.now());
         return summary;
+    }
+
+    private DtoGestionDashboard buildGestion() {
+        DtoGestionDashboard gestion = new DtoGestionDashboard();
+        boolean hasGestion = false;
+
+        if (permissionEvaluator.tiene(PERMISO_ESTUDIANTE)) {
+            gestion.setEstudiantesSinCuenta(studentRepository.countActiveWithoutAccount());
+            gestion.setEstudiantesSinFoto(studentRepository.countActiveWithoutAvatar());
+            gestion.setEstudiantesObservados(studentRepository.countActiveObserved());
+            gestion.setEstudiantesBajoPromedio(studentRepository.countActiveBelowAverage(PROMEDIO_MINIMO));
+            hasGestion = true;
+        }
+
+        if (permissionEvaluator.tiene(PERMISO_DOCENTE)) {
+            gestion.setDocentesSinCuenta(teacherRepository.countActiveWithoutAccount());
+            gestion.setDocentesSinFoto(teacherRepository.countActiveWithoutAvatar());
+            hasGestion = true;
+        }
+
+        if (permissionEvaluator.tiene(PERMISO_USUARIO)) {
+            gestion.setCuentasBloqueadas(userRepository.countByActiveTrueAndAccountLockedTrue());
+            hasGestion = true;
+        }
+
+        return hasGestion ? gestion : null;
     }
 
     private DtoInstitucionDashboard buildInstitution(Optional<Universidad> activeUniversity) {

@@ -16731,3 +16731,142 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   }
 }
 
+/* Pendientes accionables del panel */
+.dash-management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 641px) and (max-width: 1200px) {
+  .dash-management-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dash-management-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 104px;
+  padding: 14px;
+  text-decoration: none;
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  box-shadow: 0 10px 22px -22px rgba(15, 23, 42, 0.4);
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.dash-management-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  background: var(--bg-surface-elevated);
+}
+
+.dash-management-card:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.dash-management-card__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.dash-management-card__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.dash-management-card__copy strong {
+  color: var(--text-main);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-management-card__copy span {
+  color: var(--text-main);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.dash-management-card__copy small {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.dash-management-card__arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-left: auto;
+  color: var(--text-muted);
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.dash-management-card:hover .dash-management-card__arrow {
+  transform: translateX(2px);
+  color: var(--primary);
+}
+
+.dash-management-card--warn .dash-management-card__icon {
+  color: var(--status-warn-text);
+  border-color: color-mix(in srgb, var(--status-warn) 24%, transparent);
+  background: var(--status-warn-bg);
+}
+
+.dash-management-card--info .dash-management-card__icon {
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.dash-management-card--danger .dash-management-card__icon {
+  color: var(--status-down-text);
+  border-color: color-mix(in srgb, var(--status-down) 22%, transparent);
+  background: var(--status-down-bg);
+}
+
+.dash-management-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--status-up) 24%, var(--border-light));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--status-up) 6%, var(--bg-surface));
+  color: var(--status-up-text);
+}
+
+.dash-management-empty > svg {
+  flex: 0 0 auto;
+}
+
+.dash-management-empty div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dash-management-empty strong {
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+
+.dash-management-empty span {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
