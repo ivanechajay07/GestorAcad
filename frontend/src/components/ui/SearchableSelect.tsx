@@ -67,7 +67,13 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 280, maxHeight: POPOVER_MAX_HEIGHT });
+  const [position, setPosition] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+  }>({ top: 0, left: 0, width: 280, maxHeight: POPOVER_MAX_HEIGHT });
 
   const selected = options.find((option) => option.value === value);
 
@@ -96,11 +102,19 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     const openUp = spaceAbove > spaceBelow;
     const available = Math.max(POPOVER_MIN_HEIGHT, openUp ? spaceAbove : spaceBelow);
     const maxHeight = Math.min(POPOVER_MAX_HEIGHT, available);
-    const top = openUp
-      ? Math.max(POPOVER_EDGE, rect.top - POPOVER_GAP - maxHeight)
-      : Math.min(rect.bottom + POPOVER_GAP, window.innerHeight - maxHeight - POPOVER_EDGE);
 
-    return { top, left, width, maxHeight };
+    // Al abrir hacia arriba se ancla el borde inferior al campo: así el panel
+    // queda pegado a él aunque su contenido sea más bajo que el máximo.
+    if (openUp) {
+      return {
+        bottom: window.innerHeight - rect.top + POPOVER_GAP,
+        left,
+        width,
+        maxHeight,
+      };
+    }
+
+    return { top: rect.bottom + POPOVER_GAP, left, width, maxHeight };
   }, []);
 
   const openPopover = () => {
@@ -234,7 +248,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         <div
           ref={popoverRef}
           className="searchable-select__popover"
-          style={{ top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }}
+          style={{ top: position.top, bottom: position.bottom, left: position.left, width: position.width, maxHeight: position.maxHeight }}
         >
           <div className="searchable-select__search">
             <Search size={15} aria-hidden="true" />
