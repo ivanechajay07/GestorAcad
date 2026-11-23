@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { useToast } from '../../contexts/ToastContext';
@@ -130,18 +131,18 @@ export const SectionScheduleModal: React.FC<Props> = ({ section, onClose, onChan
 
           <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', alignItems: 'end' }}>
             <AcademicField label="Día">
-              <select style={academicInputStyle} value={form.day} onChange={(e) => setForm({ ...form, day: e.target.value })}>
+              <Select style={academicInputStyle} value={form.day} onChange={(e) => setForm({ ...form, day: e.target.value })}>
                 {DAYS.map((day) => <option key={day} value={day}>{day}</option>)}
-              </select>
+              </Select>
             </AcademicField>
-            <AcademicField label="Inicio">
-              <input style={academicInputStyle} type="time" required value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} />
+            <AcademicField label="Inicio" htmlFor="schedule-start">
+              <input id="schedule-start" style={academicInputStyle} type="time" required value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} />
             </AcademicField>
-            <AcademicField label="Fin">
-              <input style={academicInputStyle} type="time" required value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
+            <AcademicField label="Fin" htmlFor="schedule-end">
+              <input id="schedule-end" style={academicInputStyle} type="time" required value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
             </AcademicField>
-            <AcademicField label="Aula">
-              <input style={academicInputStyle} value={form.classroom ?? ''} onChange={(e) => setForm({ ...form, classroom: e.target.value })} />
+            <AcademicField label="Aula" htmlFor="schedule-room">
+              <input id="schedule-room" style={academicInputStyle} value={form.classroom ?? ''} onChange={(e) => setForm({ ...form, classroom: e.target.value })} />
             </AcademicField>
             <Button type="submit" size="sm" isLoading={saving} leftIcon={<Plus size={15} />}>Agregar</Button>
           </form>

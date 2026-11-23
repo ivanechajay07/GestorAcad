@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { Select } from '../components/ui/Select';
 import { Card } from '../components/ui/Card';
 
 import { Badge } from '../components/ui/Badge';
@@ -1431,7 +1432,7 @@ export const StudentsPage: React.FC = () => {
 
 
 
-        <select className="field-select" aria-label="Filtrar por carrera" value={selectedCareer} onChange={(e) => setSelectedCareer(e.target.value)}>
+        <Select className="field-select" aria-label="Filtrar por carrera" value={selectedCareer} onChange={(e) => setSelectedCareer(e.target.value)}>
 
           <option value="ALL">Todas las Carreras</option>
 
@@ -1441,11 +1442,11 @@ export const StudentsPage: React.FC = () => {
 
           ))}
 
-        </select>
+        </Select>
 
 
 
-        <select className="field-select" aria-label="Filtrar por condición" value={selectedCondition} onChange={(e) => setSelectedCondition(e.target.value)}>
+        <Select className="field-select" aria-label="Filtrar por condición" value={selectedCondition} onChange={(e) => setSelectedCondition(e.target.value)}>
 
           <option value="ALL">Todas las Condiciones</option>
 
@@ -1455,7 +1456,7 @@ export const StudentsPage: React.FC = () => {
 
           ))}
 
-        </select>
+        </Select>
 
       </Toolbar>
 
@@ -1967,13 +1968,13 @@ export const StudentsPage: React.FC = () => {
 
                     <Field label="Género" icon={<UserRound size={13} />} error={fieldErrors.gender}>
 
-                      <select style={inputStyle} value={studentForm.gender ?? ''} onChange={(e) => setStudentField('gender', e.target.value)}>
+                      <Select style={inputStyle} value={studentForm.gender ?? ''} onChange={(e) => setStudentField('gender', e.target.value)}>
 
                         <option value="">—</option>
 
                         {GENDERS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
 
-                      </select>
+                      </Select>
 
                     </Field>
 
@@ -2019,7 +2020,7 @@ export const StudentsPage: React.FC = () => {
 
                     <Field label="Facultad" icon={<Building2 size={13} />} error={fieldErrors.faculty}>
 
-                      <select
+                      <Select
 
                         style={inputStyle}
 
@@ -2045,13 +2046,13 @@ export const StudentsPage: React.FC = () => {
 
                         ))}
 
-                      </select>
+                      </Select>
 
                     </Field>
 
                     <Field label="Carrera / Escuela profesional" icon={<DegreeIcon size={13} />} error={fieldErrors.career}>
 
-                      <select
+                      <Select
 
                         style={inputStyle}
 
@@ -2085,7 +2086,7 @@ export const StudentsPage: React.FC = () => {
 
                         ))}
 
-                      </select>
+                      </Select>
 
                     </Field>
 
@@ -2117,21 +2118,21 @@ export const StudentsPage: React.FC = () => {
 
                     <Field label="Condición" icon={<DegreeIcon size={13} />} error={fieldErrors.condition}>
 
-                      <select style={inputStyle} value={studentForm.condition} onChange={(e) => setStudentField('condition', e.target.value)}>
+                      <Select style={inputStyle} value={studentForm.condition} onChange={(e) => setStudentField('condition', e.target.value)}>
 
                         {CONDITIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
 
-                      </select>
+                      </Select>
 
                     </Field>
 
                     <Field label="Estado de matrícula" icon={<CheckCircle2 size={13} />} error={fieldErrors.enrollmentStatus}>
 
-                      <select style={inputStyle} value={studentForm.enrollmentStatus} onChange={(e) => setStudentField('enrollmentStatus', e.target.value)}>
+                      <Select style={inputStyle} value={studentForm.enrollmentStatus} onChange={(e) => setStudentField('enrollmentStatus', e.target.value)}>
 
                         {ENROLLMENT_STATUS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
 
-                      </select>
+                      </Select>
 
                     </Field>
 
@@ -2195,7 +2196,7 @@ export const StudentsPage: React.FC = () => {
                               : 'Permite que el estudiante consulte su avance y su historial en el portal.'
                           }
                         >
-                          <select
+                          <Select
                             style={inputStyle}
                             value={studentForm.userId && studentForm.userId > 0 ? studentForm.userId : ''}
                             onChange={(e) => setStudentField('userId', e.target.value ? Number(e.target.value) : 0)}
@@ -2208,7 +2209,7 @@ export const StudentsPage: React.FC = () => {
                                   {candidate.username} · {candidate.email}
                                 </option>
                               ))}
-                          </select>
+                          </Select>
                         </Field>
                       ) : (
                         <>
@@ -2406,11 +2407,11 @@ export const StudentsPage: React.FC = () => {
 
                         <Field label="Modalidad">
 
-                          <select style={inputStyle} value={admissionForm.modality} onChange={(e) => setAdmissionForm({ ...admissionForm, modality: e.target.value })}>
+                          <Select style={inputStyle} value={admissionForm.modality} onChange={(e) => setAdmissionForm({ ...admissionForm, modality: e.target.value })}>
 
                             {MODALITIES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
 
-                          </select>
+                          </Select>
 
                         </Field>
 
@@ -2434,11 +2435,11 @@ export const StudentsPage: React.FC = () => {
 
                         <Field label="Estado">
 
-                          <select style={inputStyle} value={admissionForm.status} onChange={(e) => setAdmissionForm({ ...admissionForm, status: e.target.value })}>
+                          <Select style={inputStyle} value={admissionForm.status} onChange={(e) => setAdmissionForm({ ...admissionForm, status: e.target.value })}>
 
                             {ADMISSION_STATUS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
 
-                          </select>
+                          </Select>
 
                         </Field>
 

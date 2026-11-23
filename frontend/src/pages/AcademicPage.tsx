@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { Select } from '../components/ui/Select';
 import { Badge } from '../components/ui/Badge';
 
 import { Button } from '../components/ui/Button';
@@ -1196,11 +1197,11 @@ export const AcademicPage: React.FC = () => {
 
               <Field label="Tipo" icon={<Layers size={13} />}>
 
-                <select style={inputStyle} value={courseForm.type} onChange={(e) => setCourseForm({ ...courseForm, type: e.target.value })}>
+                <Select style={inputStyle} value={courseForm.type} onChange={(e) => setCourseForm({ ...courseForm, type: e.target.value })}>
 
                   {COURSE_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
 
-                </select>
+                </Select>
 
               </Field>
 

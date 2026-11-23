@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Select } from '../ui/Select';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
@@ -354,7 +355,7 @@ export const EnrollmentsTab: React.FC = () => {
             />
             <div className="modal-field-grid">
               <AcademicField label="Periodo">
-                <select
+                <Select
                   style={academicInputStyle}
                   value={periodFilter || ''}
                   onChange={(e) => {
@@ -365,7 +366,7 @@ export const EnrollmentsTab: React.FC = () => {
                 >
                   <option value="">— Seleccione —</option>
                   {periods.map((p) => <option key={p.id} value={p.id}>{p.code}</option>)}
-                </select>
+                </Select>
               </AcademicField>
               <AcademicField label="Sección" htmlFor="enrollment-section">
                 <SearchableSelect

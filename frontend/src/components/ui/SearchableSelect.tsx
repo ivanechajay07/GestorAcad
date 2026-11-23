@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown, Search } from 'lucide-react';
 
@@ -20,6 +20,10 @@ interface SearchableSelectProps {
   disabled?: boolean;
   invalid?: boolean;
   ariaLabel?: string;
+  ariaDescribedBy?: string;
+  className?: string;
+  triggerClassName?: string;
+  triggerStyle?: React.CSSProperties;
 }
 
 const normalize = (value: string): string =>
@@ -29,6 +33,9 @@ const normalize = (value: string): string =>
     .replace(/[\u0300-\u036f]/g, '');
 
 const POPOVER_MAX_HEIGHT = 300;
+const POPOVER_MIN_HEIGHT = 140;
+const POPOVER_GAP = 6;
+const POPOVER_EDGE = 8;
 
 /**
  * Selector accesible con búsqueda para listas largas.
@@ -46,6 +53,10 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   disabled = false,
   invalid = false,
   ariaLabel,
+  ariaDescribedBy,
+  className,
+  triggerClassName,
+  triggerStyle,
 }) => {
   const generatedId = useId().replace(/:/g, '');
   const inputId = id ?? `searchable-${generatedId}`;
@@ -56,7 +67,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 280 });
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 280, maxHeight: POPOVER_MAX_HEIGHT });
 
   const selected = options.find((option) => option.value === value);
 
@@ -74,21 +85,33 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     if (restoreFocus) window.setTimeout(() => triggerRef.current?.focus(), 0);
   };
 
-  const openPopover = () => {
-    if (disabled) return;
+  const computePosition = useCallback(() => {
     const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!rect) return null;
 
     const width = Math.min(Math.max(rect.width, 240), window.innerWidth - 16);
-    const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
-    const openUp = rect.bottom + POPOVER_MAX_HEIGHT > window.innerHeight && rect.top > POPOVER_MAX_HEIGHT;
+    const left = Math.max(POPOVER_EDGE, Math.min(rect.left, window.innerWidth - width - POPOVER_EDGE));
+    const spaceBelow = window.innerHeight - rect.bottom - POPOVER_GAP - POPOVER_EDGE;
+    const spaceAbove = rect.top - POPOVER_GAP - POPOVER_EDGE;
+    const openUp = spaceAbove > spaceBelow;
+    const available = Math.max(POPOVER_MIN_HEIGHT, openUp ? spaceAbove : spaceBelow);
+    const maxHeight = Math.min(POPOVER_MAX_HEIGHT, available);
     const top = openUp
-      ? Math.max(8, rect.top - POPOVER_MAX_HEIGHT - 6)
-      : Math.min(rect.bottom + 6, window.innerHeight - 80);
+      ? Math.max(POPOVER_EDGE, rect.top - POPOVER_GAP - maxHeight)
+      : Math.min(rect.bottom + POPOVER_GAP, window.innerHeight - maxHeight - POPOVER_EDGE);
 
-    setPosition({ top, left, width });
+    return { top, left, width, maxHeight };
+  }, []);
+
+  const openPopover = () => {
+    if (disabled) return;
+    const next = computePosition();
+    if (!next) return;
+
+    setPosition(next);
     setQuery('');
     setActiveIndex(0);
+    document.dispatchEvent(new CustomEvent('gestoracad:searchable-select-open', { detail: inputId }));
     setOpen(true);
   };
 
@@ -101,23 +124,31 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       if (popoverRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
       close(false);
     };
-    const handleWindowChange = () => close(false);
-    const handleScroll = (event: Event) => {
-      const target = event.target as Node | null;
-      if (target && popoverRef.current?.contains(target)) return;
-      close(false);
+    // Mantiene el panel anclado al campo al desplazar o redimensionar, sin
+    // cerrarlo: en móvil el teclado redimensiona la ventana al enfocar.
+    const handleReflow = (event?: Event) => {
+      const target = event?.target;
+      if (target instanceof Node && popoverRef.current?.contains(target)) return;
+      const next = computePosition();
+      if (next) setPosition(next);
+    };
+    const handleOtherOpen = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail;
+      if (detail !== inputId) close(false);
     };
 
     document.addEventListener('pointerdown', handlePointerDown);
-    window.addEventListener('resize', handleWindowChange);
-    window.addEventListener('scroll', handleScroll, true);
+    document.addEventListener('gestoracad:searchable-select-open', handleOtherOpen);
+    window.addEventListener('resize', handleReflow);
+    window.addEventListener('scroll', handleReflow, true);
     return () => {
       window.clearTimeout(timer);
       document.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('resize', handleWindowChange);
-      window.removeEventListener('scroll', handleScroll, true);
+      document.removeEventListener('gestoracad:searchable-select-open', handleOtherOpen);
+      window.removeEventListener('resize', handleReflow);
+      window.removeEventListener('scroll', handleReflow, true);
     };
-  }, [open]);
+  }, [open, inputId, computePosition]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -172,20 +203,25 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   };
 
   const activeOption = filtered[activeIndex];
+  const visibleLabel = selected ? selected.label : placeholder;
+  // El nombre accesible debe incluir el texto visible (WCAG 2.5.3).
+  const accessibleName = ariaLabel ? `${ariaLabel}: ${visibleLabel}` : undefined;
 
   return (
-    <div className="searchable-select">
+    <div className={`searchable-select${className ? ` ${className}` : ''}`}>
       <button
         ref={triggerRef}
         id={inputId}
         type="button"
-        className={`searchable-select__trigger${invalid ? ' is-invalid' : ''}`}
+        className={`searchable-select__trigger${triggerClassName ? ` ${triggerClassName}` : ''}${invalid ? ' is-invalid' : ''}`}
+        style={triggerStyle}
         disabled={disabled}
         onClick={() => (open ? close(false) : openPopover())}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
-        aria-label={ariaLabel}
+        aria-label={accessibleName}
+        aria-describedby={ariaDescribedBy}
         aria-invalid={invalid || undefined}
       >
         <span className={`searchable-select__value${selected ? '' : ' is-placeholder'}`}>
@@ -198,7 +234,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         <div
           ref={popoverRef}
           className="searchable-select__popover"
-          style={{ top: position.top, left: position.left, width: position.width }}
+          style={{ top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }}
         >
           <div className="searchable-select__search">
             <Search size={15} aria-hidden="true" />

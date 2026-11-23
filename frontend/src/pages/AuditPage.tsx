@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Select } from '../components/ui/Select';
 import { auditService } from '../services/auditService';
 import type { AuditLogItem, AuditSummary } from '../services/auditService';
 import { Card } from '../components/ui/Card';
@@ -224,7 +225,7 @@ export const AuditPage: React.FC = () => {
           />
         </div>
 
-        <select
+        <Select
           className="field-select"
           aria-label="Filtrar por acción"
           value={actionFilter}
@@ -239,9 +240,9 @@ export const AuditPage: React.FC = () => {
               {formatAuditAction(action)} ({actionCounts[action] ?? 0})
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           className="field-select"
           aria-label="Filtrar por resultado"
           value={resultFilter}
@@ -255,7 +256,7 @@ export const AuditPage: React.FC = () => {
               {option.label}
             </option>
           ))}
-        </select>
+        </Select>
       </Toolbar>
 
       <Card>

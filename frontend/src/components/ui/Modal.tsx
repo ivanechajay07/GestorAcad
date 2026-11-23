@@ -63,7 +63,7 @@ export const Modal: React.FC<ModalProps> = ({
       if (event.key !== 'Tab') return;
 
       const focusables = panelRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'a[href], button:not([disabled]), input:not([disabled]):not([aria-hidden="true"]), select:not([disabled]):not([aria-hidden="true"]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       );
       if (!focusables || focusables.length === 0) return;
 

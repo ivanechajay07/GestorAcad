@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Select } from '../ui/Select';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
@@ -260,28 +261,28 @@ export const SectionsTab: React.FC = () => {
             <div className="form-section">Oferta académica</div>
             <div className="modal-field-grid">
               <AcademicField label="Periodo" icon={<CalendarDays size={13} />}>
-                <select style={academicInputStyle} required value={form.periodId || ''} onChange={(e) => setForm({ ...form, periodId: Number(e.target.value) })}>
+                <Select style={academicInputStyle} required value={form.periodId || ''} onChange={(e) => setForm({ ...form, periodId: Number(e.target.value) })}>
                   <option value="">— Seleccione —</option>
                   {periods.filter((p) => p.active !== false || p.id === form.periodId).map((p) => (
                     <option key={p.id} value={p.id}>{p.code} · {p.name}</option>
                   ))}
-                </select>
+                </Select>
               </AcademicField>
               <AcademicField label="Curso" icon={<BookOpen size={13} />}>
-                <select style={academicInputStyle} required value={form.courseId || ''} onChange={(e) => setForm({ ...form, courseId: Number(e.target.value) })}>
+                <Select style={academicInputStyle} required value={form.courseId || ''} onChange={(e) => setForm({ ...form, courseId: Number(e.target.value) })}>
                   <option value="">— Seleccione —</option>
                   {courses.filter((c) => c.active !== false || c.id === form.courseId).map((c) => (
                     <option key={c.id} value={c.id}>{c.code} · {c.name}</option>
                   ))}
-                </select>
+                </Select>
               </AcademicField>
               <AcademicField label="Docente" icon={<UserRound size={13} />}>
-                <select style={academicInputStyle} value={form.teacherId ?? ''} onChange={(e) => setForm({ ...form, teacherId: e.target.value ? Number(e.target.value) : undefined })}>
+                <Select style={academicInputStyle} value={form.teacherId ?? ''} onChange={(e) => setForm({ ...form, teacherId: e.target.value ? Number(e.target.value) : undefined })}>
                   <option value="">— Sin asignar —</option>
                   {teachers.map((t) => (
                     <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>
                   ))}
-                </select>
+                </Select>
               </AcademicField>
               <AcademicField label="Código de sección" icon={<Hash size={13} />}>
                 <input style={academicInputStyle} required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Ej. A" />

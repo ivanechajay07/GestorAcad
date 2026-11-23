@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Select } from '../components/ui/Select';
 import { roleService } from '../services/roleService';
 import type { PermissionData, RoleData } from '../services/roleService';
 import { Badge } from '../components/ui/Badge';
@@ -532,7 +533,7 @@ export const RolesPage: React.FC = () => {
                 </button>
               )}
             </div>
-            <select
+            <Select
               className="field-select"
               value={roleSort}
               onChange={(event) => setRoleSort(event.target.value as RoleSort)}
@@ -541,7 +542,7 @@ export const RolesPage: React.FC = () => {
               <option value="name">Ordenar por nombre</option>
               <option value="permissions">Más permisos primero</option>
               <option value="users">Más usuarios primero</option>
-            </select>
+            </Select>
             <span className="roles-toolbar__count">
               {filteredRoles.length} de {pluralize(roles.length, 'rol', 'roles')}
             </span>
@@ -684,7 +685,7 @@ export const RolesPage: React.FC = () => {
                   </button>
                 )}
               </div>
-              <select
+              <Select
                 className="field-select"
                 value={moduleFilter}
                 onChange={(event) => {
@@ -699,7 +700,7 @@ export const RolesPage: React.FC = () => {
                     {module.label} ({module.total})
                   </option>
                 ))}
-              </select>
+              </Select>
               {canCreate && (
                 <Button size="sm" leftIcon={<Plus size={15} />} onClick={openCreatePerm}>
                   Nuevo permiso
@@ -1044,7 +1045,7 @@ export const RolesPage: React.FC = () => {
             <div className="roles-form__row">
               <div>
                 <label htmlFor="permission-module" className="field-label">Módulo</label>
-                <select
+                <Select
                   id="permission-module"
                   className="roles-input"
                   required
@@ -1058,12 +1059,12 @@ export const RolesPage: React.FC = () => {
                   {!modules.some((module) => module.module === permForm.module) && permForm.module && (
                     <option value={permForm.module}>{formatModuleName(permForm.module)}</option>
                   )}
-                </select>
+                </Select>
                 <span className="roles-form__hint">Agrupa el permiso dentro del catálogo.</span>
               </div>
               <div>
                 <label htmlFor="permission-action" className="field-label">Acción</label>
-                <select
+                <Select
                   id="permission-action"
                   className="roles-input"
                   required
@@ -1076,7 +1077,7 @@ export const RolesPage: React.FC = () => {
                   {!PERMISSION_ACTIONS.some((action) => action.value === permForm.action) && (
                     <option value={permForm.action}>{formatPermissionAction(`${permForm.module}_${permForm.action}`)}</option>
                   )}
-                </select>
+                </Select>
                 <span className="roles-form__hint">
                   Se mostrará como «{formatPermissionName(`${permForm.module}_${permForm.action}`)}».
                 </span>

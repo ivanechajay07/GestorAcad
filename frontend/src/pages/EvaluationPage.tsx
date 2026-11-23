@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Select } from '../components/ui/Select';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
@@ -460,7 +461,7 @@ export const EvaluationPage: React.FC = () => {
       <div className="glass-panel evaluation-context">
         <div className="evaluation-context__field">
           <label className="field-label" htmlFor="evaluation-section">Sección activa</label>
-          <select
+          <Select
             id="evaluation-section"
             style={academicInputStyle}
             value={selectedSectionId || ''}
@@ -472,7 +473,7 @@ export const EvaluationPage: React.FC = () => {
                 {section.periodCode} · {section.courseCode}-{section.code} · {section.courseName}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         {selectedSection && (
           <div className="evaluation-context__meta">
@@ -620,7 +621,7 @@ export const EvaluationPage: React.FC = () => {
                 description="Selecciona una evaluación y registra la nota de cada estudiante."
                 aside={
                   <>
-                    <select
+                    <Select
                       aria-label="Evaluación"
                       style={{ ...academicInputStyle, width: '220px', maxWidth: '100%' }}
                       value={selectedEvaluationId || ''}
@@ -630,7 +631,7 @@ export const EvaluationPage: React.FC = () => {
                       {evaluations.map((evaluation) => (
                         <option key={evaluation.id} value={evaluation.id}>{evaluation.name} ({evaluation.weight}%)</option>
                       ))}
-                    </select>
+                    </Select>
                     {canEditGrades && selectedEvaluation && !actClosed && (
                       <Button size="sm" onClick={handleSaveGrades} isLoading={saving}>Guardar notas</Button>
                     )}
@@ -769,14 +770,14 @@ export const EvaluationPage: React.FC = () => {
                         <td className="cell-mono">{record.studentCode}</td>
                         <td>{record.studentName}</td>
                         <td>
-                          <select
+                          <Select
                             style={academicInputStyle}
                             value={record.status}
                             disabled={!canEditAttendance || actClosed}
                             onChange={(event) => setAttendance((items) => items.map((item) => item.studentId === record.studentId ? { ...item, status: event.target.value } : item))}
                           >
                             {ATTENDANCE_STATUS.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-                          </select>
+                          </Select>
                         </td>
                         <td>
                           <input
@@ -929,9 +930,9 @@ export const EvaluationPage: React.FC = () => {
                 <input style={academicInputStyle} required value={evaluationForm.name} onChange={(e) => setEvaluationForm({ ...evaluationForm, name: e.target.value })} placeholder="Ej. Examen parcial" />
               </AcademicField>
               <AcademicField label="Tipo" icon={<Layers size={13} />}>
-                <select style={academicInputStyle} value={evaluationForm.type} onChange={(e) => setEvaluationForm({ ...evaluationForm, type: e.target.value })}>
+                <Select style={academicInputStyle} value={evaluationForm.type} onChange={(e) => setEvaluationForm({ ...evaluationForm, type: e.target.value })}>
                   {EVALUATION_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
-                </select>
+                </Select>
               </AcademicField>
             </div>
 

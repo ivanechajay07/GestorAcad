@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Select } from '../components/ui/Select';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useConfirm } from '../contexts/ConfirmContext';
@@ -651,11 +652,11 @@ export const UsersPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="field-label" style={labelStyle} htmlFor="create-user-role">Rol institucional</label>
-                  <select id="create-user-role" style={inputStyle} value={formData.roles[0]} onChange={(e) => setFormData({ ...formData, roles: [e.target.value] })}>
+                  <Select id="create-user-role" style={inputStyle} value={formData.roles[0]} onChange={(e) => setFormData({ ...formData, roles: [e.target.value] })}>
                     <option value="ROLE_UNIVERSIDAD">UNIVERSIDAD (Administración Central)</option>
                     <option value="ROLE_DOCENTE">DOCENTE (Cuerpo Académico)</option>
                     <option value="ROLE_ESTUDIANTE">ESTUDIANTE (Comunidad Universitaria)</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
               <div className="modal-form-footer">
@@ -753,11 +754,11 @@ export const UsersPage: React.FC = () => {
 
               <div>
                 <label className="field-label" style={labelStyle} htmlFor="edit-user-role">Rol institucional</label>
-                <select id="edit-user-role" style={inputStyle} value={editForm.roles[0]} onChange={(e) => setEditForm((f) => ({ ...f, roles: [e.target.value] }))}>
+                <Select id="edit-user-role" style={inputStyle} value={editForm.roles[0]} onChange={(e) => setEditForm((f) => ({ ...f, roles: [e.target.value] }))}>
                   <option value="ROLE_UNIVERSIDAD">UNIVERSIDAD (Administración Central)</option>
                   <option value="ROLE_DOCENTE">DOCENTE (Cuerpo Académico)</option>
                   <option value="ROLE_ESTUDIANTE">ESTUDIANTE (Comunidad Universitaria)</option>
-                </select>
+                </Select>
               </div>
 
               <div>

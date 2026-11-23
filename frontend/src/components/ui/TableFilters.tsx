@@ -1,4 +1,5 @@
 import React from 'react';
+import { Select } from './Select';
 import { Filter } from 'lucide-react';
 
 export interface TableFilterDef {
@@ -23,7 +24,7 @@ const control = (
   const value = values[filter.key] ?? '';
   if (filter.type === 'select') {
     return (
-      <select
+      <Select
         className="table-filter-control table-filter-control--select"
         aria-label={`Filtrar por ${filter.label}`}
         value={value}
@@ -33,7 +34,7 @@ const control = (
         {filter.options?.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
         ))}
-      </select>
+      </Select>
     );
   }
   return (

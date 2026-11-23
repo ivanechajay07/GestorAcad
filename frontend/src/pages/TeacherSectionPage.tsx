@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Select } from '../components/ui/Select';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -193,10 +194,10 @@ export const TeacherSectionPage: React.FC = () => {
             description="Selecciona una evaluación y registra la nota de cada estudiante."
             aside={
               <>
-                <select style={{ ...academicInputStyle, width: 'auto' }} value={selectedEvaluationId || ''} onChange={(event) => setSelectedEvaluationId(Number(event.target.value))}>
+                <Select style={{ ...academicInputStyle, width: 'auto' }} value={selectedEvaluationId || ''} onChange={(event) => setSelectedEvaluationId(Number(event.target.value))}>
                   <option value="">— Evaluación —</option>
                   {evaluations.map((evaluation) => <option key={evaluation.id} value={evaluation.id}>{evaluation.name} ({evaluation.weight}%)</option>)}
-                </select>
+                </Select>
                 {selectedEvaluation && !closed && (
                   <Button size="sm" onClick={saveGrades} isLoading={saving}>Guardar notas</Button>
                 )}
@@ -219,6 +220,7 @@ export const TeacherSectionPage: React.FC = () => {
                     <td>{grade.studentName}</td>
                     <td style={{ maxWidth: '110px' }}>
                       <input style={academicInputStyle} type="number" min={0} max={selectedEvaluation?.maxScore ?? 20} step={0.01}
+                        aria-label={`Nota de ${grade.studentName}`}
                         value={grade.score ?? ''} disabled={closed}
                         onChange={(event) => {
                           const value = event.target.value === '' ? null : Number(event.target.value);
@@ -227,6 +229,7 @@ export const TeacherSectionPage: React.FC = () => {
                     </td>
                     <td>
                       <input style={academicInputStyle} value={grade.observation ?? ''} disabled={closed}
+                        aria-label={`Observación de ${grade.studentName}`}
                         onChange={(event) => setGrades((items) => items.map((item) => item.studentId === grade.studentId ? { ...item, observation: event.target.value } : item))} />
                     </td>
                   </tr>
@@ -276,10 +279,10 @@ export const TeacherSectionPage: React.FC = () => {
                     <td className="cell-mono">{record.studentCode}</td>
                     <td>{record.studentName}</td>
                     <td>
-                      <select style={academicInputStyle} value={record.status} disabled={closed}
+                      <Select style={academicInputStyle} value={record.status} disabled={closed}
                         onChange={(event) => setAttendance((items) => items.map((item) => item.studentId === record.studentId ? { ...item, status: event.target.value } : item))}>
                         {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
-                      </select>
+                      </Select>
                     </td>
                   </tr>
                 ))}

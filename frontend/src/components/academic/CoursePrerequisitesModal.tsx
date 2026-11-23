@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { useToast } from '../../contexts/ToastContext';
@@ -133,14 +134,14 @@ export const CoursePrerequisitesModal: React.FC<Props> = ({ course, onClose }) =
 
           <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'end' }}>
             <AcademicField label="Agregar curso prerrequisito">
-              <select
+              <Select
                 style={academicInputStyle}
                 value={selected || ''}
                 onChange={(e) => setSelected(Number(e.target.value))}
               >
                 <option value="">— Seleccione un curso —</option>
                 {available.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}
-              </select>
+              </Select>
             </AcademicField>
             <Button type="submit" size="sm" disabled={!selected} isLoading={saving} leftIcon={<Plus size={15} />}>
               Agregar

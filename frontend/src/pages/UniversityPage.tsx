@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Select } from '../components/ui/Select';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -638,11 +639,11 @@ export const UniversityPage: React.FC = () => {
                         <input style={inputStyle} disabled={!canEditUniversity} value={university?.shortName ?? ''} onChange={(e) => setUniField('shortName', e.target.value)} placeholder="Ej. UTP" />
                       </Field>
                       <Field label="Tipo de institución">
-                        <select style={inputStyle} disabled={!canEditUniversity} value={university?.institutionType ?? 'PUBLICA'} onChange={(e) => setUniField('institutionType', e.target.value)}>
+                        <Select style={inputStyle} disabled={!canEditUniversity} value={university?.institutionType ?? 'PUBLICA'} onChange={(e) => setUniField('institutionType', e.target.value)}>
                           <option value="PUBLICA">Pública</option>
                           <option value="PRIVADA">Privada</option>
                           <option value="ASOCIATIVA">Asociativa</option>
-                        </select>
+                        </Select>
                       </Field>
                       <Field label="Lema institucional" className="field--span-2">
                         <input style={inputStyle} disabled={!canEditUniversity} value={university?.motto ?? ''} onChange={(e) => setUniField('motto', e.target.value)} placeholder="Ej. Ciencia, Veritas et Progressus" />
@@ -667,12 +668,12 @@ export const UniversityPage: React.FC = () => {
                         <input style={inputStyle} disabled={!canEditUniversity} maxLength={255} value={university?.licensingResolution ?? ''} onChange={(e) => setUniField('licensingResolution', e.target.value)} placeholder="Ej. Res. CD N° 048-2022-SUNEDU" />
                       </Field>
                       <Field label="Estado de licenciamiento">
-                        <select style={inputStyle} disabled={!canEditUniversity} value={university?.licensingStatus ?? 'EN_PROCESO'} onChange={(e) => setUniField('licensingStatus', e.target.value)}>
+                        <Select style={inputStyle} disabled={!canEditUniversity} value={university?.licensingStatus ?? 'EN_PROCESO'} onChange={(e) => setUniField('licensingStatus', e.target.value)}>
                           <option value="LICENCIADA">Licenciada</option>
                           <option value="EN_PROCESO">En proceso</option>
                           <option value="NO_LICENCIADA">No licenciada</option>
                           <option value="SUSPENDIDA">Suspendida</option>
-                        </select>
+                        </Select>
                       </Field>
                       <Field label="Vigencia de acreditación">
                         <DatePicker style={inputStyle} ariaLabel="Vigencia de la acreditación" disabled={!canEditUniversity} value={university?.accreditationValidity ?? ''} onChange={(next) => setUniField('accreditationValidity', next)} />
@@ -933,7 +934,7 @@ export const UniversityPage: React.FC = () => {
               />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', marginBottom: '14px' }}>
                 <label style={{ ...labelStyle, marginBottom: 0 }}>Filtrar por facultad</label>
-                <select
+                <Select
                   style={{ ...inputStyle, maxWidth: '320px' }}
                   value={careerFilter}
                   onChange={(e) => setCareerFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
@@ -942,7 +943,7 @@ export const UniversityPage: React.FC = () => {
                   {faculties.map((f) => (
                     <option key={f.id} value={f.id}>{f.name}</option>
                   ))}
-                </select>
+                </Select>
                 {faculties.length === 0 && (
                   <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
                     Registra una facultad antes de crear carreras.
@@ -1227,11 +1228,11 @@ export const UniversityPage: React.FC = () => {
                     />
                   </Field>
                   <Field label="Tipo" icon={<Layers size={13} />}>
-                    <select style={inputStyle} value={campusForm.campusType} onChange={(e) => setCampusForm({ ...campusForm, campusType: e.target.value })}>
+                    <Select style={inputStyle} value={campusForm.campusType} onChange={(e) => setCampusForm({ ...campusForm, campusType: e.target.value })}>
                       {CAMPUS_TYPES.map((type) => (
                         <option key={type.value} value={type.value}>{type.label}</option>
                       ))}
-                    </select>
+                    </Select>
                   </Field>
                 </div>
 
@@ -1392,12 +1393,12 @@ export const UniversityPage: React.FC = () => {
                 <input style={inputStyle} required value={parameterForm.value} onChange={(e) => setParameterForm({ ...parameterForm, value: e.target.value })} placeholder="Ej. 11" />
               </Field>
               <Field label="Tipo de valor" icon={<List size={13} />}>
-                <select style={inputStyle} value={parameterForm.valueType} onChange={(e) => setParameterForm({ ...parameterForm, valueType: e.target.value })}>
+                <Select style={inputStyle} value={parameterForm.valueType} onChange={(e) => setParameterForm({ ...parameterForm, valueType: e.target.value })}>
                   <option value="STRING">Texto</option>
                   <option value="NUMBER">Número</option>
                   <option value="BOOLEAN">Booleano</option>
                   <option value="DATE">Fecha</option>
-                </select>
+                </Select>
               </Field>
               <Field label="Módulo" icon={<Layers size={13} />}>
                 <input style={inputStyle} required value={parameterForm.module} onChange={(e) => setParameterForm({ ...parameterForm, module: e.target.value })} placeholder="Ej. ACADEMICO" />
@@ -1496,7 +1497,7 @@ export const UniversityPage: React.FC = () => {
               />
             </Field>
             <Field label="Facultad de adscripción" icon={<Building2 size={13} />}>
-              <select
+              <Select
                 style={inputStyle}
                 required
                 value={careerForm.facultyId || ''}
@@ -1506,7 +1507,7 @@ export const UniversityPage: React.FC = () => {
                 {faculties.filter((f) => f.active !== false).map((f) => (
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
-              </select>
+              </Select>
             </Field>
             <Field label="Descripción" icon={<FileText size={13} />} hint="Describe el perfil o alcance de la carrera.">
               <input

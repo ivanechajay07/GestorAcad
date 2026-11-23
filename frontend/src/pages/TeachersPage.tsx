@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { Select } from '../components/ui/Select';
 import { Card } from '../components/ui/Card';
 
 import { Badge } from '../components/ui/Badge';
@@ -1401,7 +1402,7 @@ export const TeachersPage: React.FC = () => {
 
 
 
-        <select className="field-select" aria-label="Filtrar por facultad" value={selectedFaculty} onChange={(e) => setSelectedFaculty(e.target.value)}>
+        <Select className="field-select" aria-label="Filtrar por facultad" value={selectedFaculty} onChange={(e) => setSelectedFaculty(e.target.value)}>
 
           <option value="ALL">Todas las Facultades</option>
 
@@ -1411,11 +1412,11 @@ export const TeachersPage: React.FC = () => {
 
           ))}
 
-        </select>
+        </Select>
 
 
 
-        <select className="field-select" aria-label="Filtrar por categoría" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+        <Select className="field-select" aria-label="Filtrar por categoría" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
 
           <option value="ALL">Todas las Categorías</option>
 
@@ -1425,7 +1426,7 @@ export const TeachersPage: React.FC = () => {
 
           ))}
 
-        </select>
+        </Select>
 
       </Toolbar>
 
@@ -1947,21 +1948,21 @@ export const TeachersPage: React.FC = () => {
 
                     <Field label="Categoría" icon={<DegreeIcon size={13} />} error={fieldErrors.category}>
 
-                      <select style={inputStyle} value={teacherForm.category} onChange={(e) => setTeacherField('category', e.target.value)}>
+                      <Select style={inputStyle} value={teacherForm.category} onChange={(e) => setTeacherField('category', e.target.value)}>
 
                         {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
 
-                      </select>
+                      </Select>
 
                     </Field>
 
                     <Field label="Dedicación" icon={<Clock size={13} />} error={fieldErrors.dedication}>
 
-                      <select style={inputStyle} value={teacherForm.dedication} onChange={(e) => setTeacherField('dedication', e.target.value)}>
+                      <Select style={inputStyle} value={teacherForm.dedication} onChange={(e) => setTeacherField('dedication', e.target.value)}>
 
                         {DEDICATIONS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
 
-                      </select>
+                      </Select>
 
                     </Field>
 
@@ -1979,7 +1980,7 @@ export const TeachersPage: React.FC = () => {
 
                     <Field label="Facultad" icon={<Building2 size={13} />} error={fieldErrors.faculty}>
 
-                      <select
+                      <Select
 
                         style={inputStyle}
 
@@ -2003,7 +2004,7 @@ export const TeachersPage: React.FC = () => {
 
                         ))}
 
-                      </select>
+                      </Select>
 
                     </Field>
 
@@ -2073,7 +2074,7 @@ export const TeachersPage: React.FC = () => {
                               : 'Permite que el docente acceda a sus secciones, notas y actas en el portal.'
                           }
                         >
-                          <select
+                          <Select
                             style={inputStyle}
                             value={teacherForm.userId && teacherForm.userId > 0 ? teacherForm.userId : ''}
                             onChange={(e) => setTeacherField('userId', e.target.value ? Number(e.target.value) : 0)}
@@ -2086,7 +2087,7 @@ export const TeachersPage: React.FC = () => {
                                   {candidate.username} · {candidate.email}
                                 </option>
                               ))}
-                          </select>
+                          </Select>
                         </Field>
                       ) : (
                         <>
@@ -2260,11 +2261,11 @@ export const TeachersPage: React.FC = () => {
 
                         <Field label="Nivel">
 
-                          <select style={inputStyle} value={specialtyForm.level} onChange={(e) => setSpecialtyForm({ ...specialtyForm, level: e.target.value })}>
+                          <Select style={inputStyle} value={specialtyForm.level} onChange={(e) => setSpecialtyForm({ ...specialtyForm, level: e.target.value })}>
 
                             {LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
 
-                          </select>
+                          </Select>
 
                         </Field>
 
@@ -2418,11 +2419,11 @@ export const TeachersPage: React.FC = () => {
 
                         <Field label="Estado">
 
-                          <select style={inputStyle} value={assignmentForm.status} onChange={(e) => setAssignmentForm({ ...assignmentForm, status: e.target.value })}>
+                          <Select style={inputStyle} value={assignmentForm.status} onChange={(e) => setAssignmentForm({ ...assignmentForm, status: e.target.value })}>
 
                             {ASSIGNMENT_STATUS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
 
-                          </select>
+                          </Select>
 
                         </Field>
 

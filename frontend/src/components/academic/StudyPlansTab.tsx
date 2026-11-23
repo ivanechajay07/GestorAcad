@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Select } from '../ui/Select';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
@@ -324,12 +325,12 @@ export const StudyPlansTab: React.FC = () => {
             <div className="form-section">Adscripción académica</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '12px' }}>
               <AcademicField label="Carrera" icon={<GraduationCap size={13} />}>
-                <select style={academicInputStyle} required value={planForm.careerId || ''} onChange={(e) => setPlanForm({ ...planForm, careerId: Number(e.target.value) })}>
+                <Select style={academicInputStyle} required value={planForm.careerId || ''} onChange={(e) => setPlanForm({ ...planForm, careerId: Number(e.target.value) })}>
                   <option value="">— Seleccione una carrera —</option>
                   {careers.filter((c) => c.active !== false || c.id === planForm.careerId).map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
-                </select>
+                </Select>
               </AcademicField>
               <AcademicField label="Año" icon={<CalendarDays size={13} />}>
                 <input style={academicInputStyle} type="number" min={2000} max={2100} required value={planForm.year} onChange={(e) => setPlanForm({ ...planForm, year: Number(e.target.value) })} placeholder="Ej. 2026" />
@@ -405,10 +406,10 @@ export const StudyPlansTab: React.FC = () => {
               {canEdit && (
                 <form onSubmit={handleAddCourse} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto auto', gap: '10px', alignItems: 'end' }}>
                   <AcademicField label="Agregar curso">
-                    <select style={academicInputStyle} value={courseToAdd || ''} onChange={(e) => setCourseToAdd(Number(e.target.value))}>
+                    <Select style={academicInputStyle} value={courseToAdd || ''} onChange={(e) => setCourseToAdd(Number(e.target.value))}>
                       <option value="">— Seleccione un curso —</option>
                       {availableCourses.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}
-                    </select>
+                    </Select>
                   </AcademicField>
                   <AcademicField label="Ciclo">
                     <input style={academicInputStyle} type="number" min={1} max={20} value={cycleToAdd} onChange={(e) => setCycleToAdd(Number(e.target.value))} />

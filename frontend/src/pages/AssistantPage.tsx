@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Select } from '../components/ui/Select';
 import {
   BookOpen,
   Bot,
@@ -393,7 +394,7 @@ export const AssistantPage: React.FC = () => {
           {canCreate && (
             <>
               <div className="assistant-upload-row">
-                <select
+                <Select
                   className="assistant-upload-category"
                   value={uploadCategory}
                   onChange={(event) => setUploadCategory(event.target.value)}
@@ -402,7 +403,7 @@ export const AssistantPage: React.FC = () => {
                   {CATEGORIES.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
-                </select>
+                </Select>
                 <button className="assistant-upload" type="button" onClick={() => fileRef.current?.click()}>
                   <Upload size={16} aria-hidden="true" /> Agregar .txt
                 </button>
