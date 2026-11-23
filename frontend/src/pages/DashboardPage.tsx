@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDashboardSummary } from '../hooks/useDashboardSummary';
 import { portalService } from '../services/portalService';
 import type { PortalCourseDto, StudentPortalDto, TeacherPortalDto, TeacherSectionDto } from '../services/portalService';
+import { academicService } from '../services/academicService';
+import type { SectionDto } from '../services/academicService';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -93,6 +95,8 @@ export const DashboardPage: React.FC = () => {
   const [portalData, setPortalData] = useState<StudentPortalDto | TeacherPortalDto | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
+  const [criticalSections, setCriticalSections] = useState<SectionDto[]>([]);
+  const canViewSections = hasPermission('SECCION_VIEW');
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -136,6 +140,37 @@ export const DashboardPage: React.FC = () => {
       active = false;
     };
   }, [isRolePortal, isStudent, user?.id]);
+
+  useEffect(() => {
+    if (isRolePortal || !canViewSections || !summary?.periodo?.codigo) {
+      setCriticalSections([]);
+      return;
+    }
+    let active = true;
+    academicService
+      .getSections()
+      .then((response) => {
+        if (!active) return;
+        const periodCode = summary.periodo?.codigo;
+        const current = response.data.filter(
+          (section) => !periodCode || section.periodCode === periodCode
+        );
+        setCriticalSections(
+          current
+            .filter((section) => {
+              const enrolled = section.enrolledCount ?? 0;
+              return enrolled === 0 || enrolled > section.capacity;
+            })
+            .slice(0, 5)
+        );
+      })
+      .catch(() => {
+        if (active) setCriticalSections([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isRolePortal, canViewSections, summary?.periodo?.codigo]);
 
   const managementItems = useMemo<ManagementItem[]>(() => {
     if (!management) return [];
@@ -782,6 +817,50 @@ export const DashboardPage: React.FC = () => {
                     ))}
                   </div>
                 )}
+              </div>
+            </section>
+          )}
+
+          {summary && period && criticalSections.length > 0 && (
+            <section className="dash-section" aria-labelledby="dash-critical-title">
+              <SectionHeader
+                id="dash-critical-title"
+                eyebrow="Operación"
+                title="Secciones que requieren atención"
+                description="Secciones del periodo actual sin matrícula o por encima de su capacidad."
+                icon={<Layers size={18} />}
+                aside={
+                  <Link to="/academic" className="dash-text-link">
+                    Gestionar secciones <ArrowRight size={14} aria-hidden="true" />
+                  </Link>
+                }
+              />
+              <div className="dash-critical-list">
+                {criticalSections.map((section) => {
+                  const enrolled = section.enrolledCount ?? 0;
+                  const overCapacity = enrolled > section.capacity;
+                  return (
+                    <Link
+                      key={section.id}
+                      to="/academic"
+                      className="dash-critical-row"
+                    >
+                      <span className="dash-critical-row__icon">
+                        <BookOpen size={16} aria-hidden="true" />
+                      </span>
+                      <div className="dash-critical-row__copy">
+                        <strong>{section.courseName}</strong>
+                        <small>{section.courseCode} · Sección {section.code} · {section.periodCode}</small>
+                      </div>
+                      <div className="dash-critical-row__meta">
+                        <strong>{formatCount(enrolled)} / {formatCount(section.capacity)}</strong>
+                        <Badge variant={overCapacity ? 'danger' : 'warning'} size="sm" dot>
+                          {overCapacity ? 'Sobrecupo' : 'Sin matrícula'}
+                        </Badge>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
           )}
