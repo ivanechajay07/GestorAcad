@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardSummary } from '../hooks/useDashboardSummary';
+import { portalService } from '../services/portalService';
+import type { PortalCourseDto, StudentPortalDto, TeacherPortalDto, TeacherSectionDto } from '../services/portalService';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -88,6 +90,9 @@ export const DashboardPage: React.FC = () => {
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>('poblacion');
   const [cycleMode, setCycleMode] = useState<CycleMode>('linea');
   const [now, setNow] = useState<number>(() => Date.now());
+  const [portalData, setPortalData] = useState<StudentPortalDto | TeacherPortalDto | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -106,6 +111,31 @@ export const DashboardPage: React.FC = () => {
   const isStudent = role === 'ESTUDIANTE';
   const isTeacher = role === 'DOCENTE';
   const isRolePortal = isStudent || isTeacher;
+
+  useEffect(() => {
+    if (!isRolePortal) {
+      setPortalData(null);
+      setPortalError(null);
+      return;
+    }
+    let active = true;
+    setPortalLoading(true);
+    setPortalError(null);
+    const request = isStudent ? portalService.getStudentSummary() : portalService.getTeacherSummary();
+    request
+      .then((response) => {
+        if (active) setPortalData(response.data);
+      })
+      .catch(() => {
+        if (active) setPortalError('No se pudo cargar tu resumen personal.');
+      })
+      .finally(() => {
+        if (active) setPortalLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isRolePortal, isStudent, user?.id]);
 
   const managementItems = useMemo<ManagementItem[]>(() => {
     if (!management) return [];
@@ -196,6 +226,16 @@ export const DashboardPage: React.FC = () => {
         }))
         .join(' — ')
     : '';
+
+  const studentPortal = isStudent ? (portalData as StudentPortalDto | null) : null;
+  const teacherPortal = isTeacher ? (portalData as TeacherPortalDto | null) : null;
+  const studentCourses: PortalCourseDto[] = studentPortal?.courses.slice(0, 4) ?? [];
+  const teacherSections: TeacherSectionDto[] = teacherPortal?.sections.slice(0, 4) ?? [];
+  const teacherStudentCount = (teacherPortal?.sections ?? []).reduce((total, section) => total + section.students, 0);
+  const teacherEvaluationCount = (teacherPortal?.sections ?? []).reduce((total, section) => total + section.evaluations, 0);
+  const teacherOpenActs = (teacherPortal?.sections ?? []).filter(
+    (section) => (section.actaStatus ?? '').toUpperCase() !== 'CERRADA'
+  ).length;
 
   const auditDays = summary?.auditoria?.eventosPorDia ?? [];
   const auditHasTrend = auditDays.filter((day) => day.total > 0).length >= 3;
@@ -513,6 +553,143 @@ export const DashboardPage: React.FC = () => {
           <span><strong>No se pudo actualizar el panel.</strong> {error}</span>
           <Button variant="outline" size="sm" onClick={reload}>Reintentar</Button>
         </div>
+      )}
+
+      {isRolePortal && (
+        <section className="dash-section" aria-labelledby="dash-role-title">
+          <SectionHeader
+            id="dash-role-title"
+            eyebrow="Mi espacio"
+            title={isStudent ? 'Mi avance académico' : 'Mi carga docente'}
+            description={
+              isStudent
+                ? 'Resumen de tu matrícula, créditos, promedio y cursos del periodo.'
+                : 'Secciones, estudiantes, evaluaciones y actas asignadas a tu cuenta.'
+            }
+            icon={isStudent ? <GraduationCap size={18} /> : <BookOpen size={18} />}
+            aside={
+              <Link to={isStudent ? '/my-progress' : '/my-sections'} className="dash-text-link">
+                Ver detalle <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            }
+          />
+
+          {portalLoading ? (
+            <div className="dash-role-loading" role="status">Cargando tu resumen personal…</div>
+          ) : portalError ? (
+            <Card className="dash-state-card">
+              <EmptyState
+                icon={<AlertTriangle size={24} />}
+                title="No se pudo cargar tu resumen"
+                description={portalError}
+              />
+            </Card>
+          ) : studentPortal ? (
+            <>
+              <div className="dash-role-stats">
+                <div className="dash-role-stat">
+                  <span>Ciclo actual</span>
+                  <strong>{studentPortal.currentCycle}</strong>
+                </div>
+                <div className="dash-role-stat">
+                  <span>Créditos aprobados</span>
+                  <strong>{formatCount(studentPortal.approvedCredits)}</strong>
+                </div>
+                <div className="dash-role-stat">
+                  <span>Promedio ponderado</span>
+                  <strong>{Number(studentPortal.weightedAverage ?? 0).toFixed(2)}</strong>
+                </div>
+                <div className="dash-role-stat">
+                  <span>Cursos matriculados</span>
+                  <strong>{studentPortal.courses.length}</strong>
+                </div>
+              </div>
+              <div className="dash-role-list">
+                {studentCourses.length > 0 ? studentCourses.map((course) => (
+                  <Link
+                    key={`${course.periodCode}-${course.courseCode}-${course.sectionCode}`}
+                    to="/my-progress"
+                    className="dash-role-row"
+                  >
+                    <span className="dash-role-row__icon"><BookOpen size={16} aria-hidden="true" /></span>
+                    <div className="dash-role-row__copy">
+                      <strong>{course.courseName}</strong>
+                      <small>{course.courseCode} · Sección {course.sectionCode} · {course.periodCode}</small>
+                    </div>
+                    <div className="dash-role-row__meta">
+                      <strong>{course.average != null ? course.average.toFixed(2) : '—'}</strong>
+                      <small>Promedio</small>
+                    </div>
+                  </Link>
+                )) : (
+                  <div className="dash-role-empty">
+                    <BookOpen size={18} aria-hidden="true" />
+                    <span>Aún no tienes cursos matriculados en el periodo actual.</span>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : teacherPortal ? (
+            <>
+              <div className="dash-role-stats">
+                <div className="dash-role-stat">
+                  <span>Secciones asignadas</span>
+                  <strong>{teacherPortal.sections.length}</strong>
+                </div>
+                <div className="dash-role-stat">
+                  <span>Estudiantes</span>
+                  <strong>{formatCount(teacherStudentCount)}</strong>
+                </div>
+                <div className="dash-role-stat">
+                  <span>Evaluaciones</span>
+                  <strong>{formatCount(teacherEvaluationCount)}</strong>
+                </div>
+                <div className="dash-role-stat">
+                  <span>Actas abiertas</span>
+                  <strong>{teacherOpenActs}</strong>
+                </div>
+              </div>
+              <div className="dash-role-list">
+                {teacherSections.length > 0 ? teacherSections.map((section) => (
+                  <Link
+                    key={`${section.periodCode}-${section.courseCode}-${section.sectionCode}`}
+                    to="/my-sections"
+                    className="dash-role-row"
+                  >
+                    <span className="dash-role-row__icon"><BookOpen size={16} aria-hidden="true" /></span>
+                    <div className="dash-role-row__copy">
+                      <strong>{section.courseName}</strong>
+                      <small>{section.courseCode} · Sección {section.sectionCode} · {section.periodCode}</small>
+                    </div>
+                    <div className="dash-role-row__meta">
+                      <strong>{section.students} est.</strong>
+                      <Badge
+                        variant={(section.actaStatus ?? '').toUpperCase() === 'CERRADA' ? 'success' : 'warning'}
+                        size="sm"
+                        dot
+                      >
+                        {(section.actaStatus ?? 'ABIERTA')}
+                      </Badge>
+                    </div>
+                  </Link>
+                )) : (
+                  <div className="dash-role-empty">
+                    <BookOpen size={18} aria-hidden="true" />
+                    <span>No tienes secciones asignadas en el periodo actual.</span>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <Card className="dash-state-card">
+              <EmptyState
+                icon={<Users size={24} />}
+                title="Sin ficha vinculada"
+                description="Tu cuenta no está asociada a una ficha de estudiante o docente. Contacta al administrador."
+              />
+            </Card>
+          )}
+        </section>
       )}
 
       {!isRolePortal && (
