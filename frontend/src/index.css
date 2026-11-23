@@ -16347,6 +16347,45 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   margin-top: 4px;
 }
 
+.account-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border-light);
+  border-radius: 11px;
+  background: var(--bg-surface-elevated);
+}
+
+.account-mode-switch button {
+  padding: 8px 10px;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.account-mode-switch button:hover {
+  color: var(--text-main);
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+}
+
+.account-mode-switch button.is-active {
+  color: var(--primary);
+  background: var(--bg-surface);
+  box-shadow: 0 2px 8px -6px rgba(15, 23, 42, 0.45);
+}
+
+.account-mode-switch button:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
 .entity-avatar img {
   display: block;
   width: 100%;

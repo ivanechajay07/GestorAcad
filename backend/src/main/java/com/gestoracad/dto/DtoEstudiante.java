@@ -53,9 +53,11 @@ public class DtoEstudiante {
 
     private String avatar;
 
+    @NotBlank(message = "La carrera es obligatoria")
     @Size(max = 200, message = "La carrera no puede exceder 200 caracteres")
     private String career;
 
+    @NotBlank(message = "La facultad es obligatoria")
     @Size(max = 200, message = "La facultad no puede exceder 200 caracteres")
     private String faculty;
 

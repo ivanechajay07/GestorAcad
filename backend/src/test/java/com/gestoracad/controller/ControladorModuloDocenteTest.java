@@ -65,6 +65,7 @@ class ControladorModuloDocenteTest {
         dto.setLastName("Gómez");
         dto.setCategory("ASOCIADO");
         dto.setDedication("TIEMPO_PARCIAL");
+        dto.setFaculty("Facultad de Ingeniería y Arquitectura");
         dto.setEmail("luis.gomez@unintep.edu.pe");
         dto.setDocumentId(documentId);
         return dto;

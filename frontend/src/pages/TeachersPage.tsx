@@ -57,6 +57,8 @@ import { defaultListViewMode } from '../utils/viewMode';
 
 import { readImageAsDataUrl } from '../utils/imageUpload';
 
+import { isPasswordSecure } from '../utils/passwordPolicy';
+
 import {
 
   BookOpen,
@@ -345,6 +347,12 @@ export const TeachersPage: React.FC = () => {
 
   const canLinkAccounts = hasPermission('DOCENTE_EDIT') && hasPermission('USUARIO_VIEW');
 
+  const canCreateAccounts = hasPermission('USUARIO_CREATE');
+
+  const [accountMode, setAccountMode] = useState<'link' | 'create'>('link');
+
+  const [accountForm, setAccountForm] = useState({ username: '', email: '', password: '' });
+
   const [formError, setFormError] = useState<string | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -555,6 +563,32 @@ export const TeachersPage: React.FC = () => {
 
     setTeacherForm(teacher ? { ...teacher } : emptyTeacher());
 
+    const availableLinks = linkableUsers.filter(
+
+      (candidate) => !teachers.some((item) => item.userId === candidate.id && item.id !== teacher?.id)
+
+    );
+
+    const shouldCreate = !teacher?.userId && availableLinks.length === 0 && canCreateAccounts;
+
+    setAccountMode(shouldCreate ? 'create' : 'link');
+
+    const suggestedUsername = teacher?.code
+
+      ? `docente.${teacher.code.toLowerCase().replace(/[^a-z0-9._-]+/g, '')}`
+
+      : '';
+
+    setAccountForm({
+
+      username: shouldCreate ? suggestedUsername : '',
+
+      email: teacher?.email ?? '',
+
+      password: '',
+
+    });
+
     setTeacherModal(true);
 
   };
@@ -629,6 +663,8 @@ export const TeachersPage: React.FC = () => {
 
       if (!teacherForm.dedication?.trim()) errors.dedication = 'La dedicación docente es obligatoria.';
 
+      if (!teacherForm.faculty?.trim()) errors.faculty = 'Selecciona una facultad.';
+
       if ((teacherForm.academicDegree ?? '').length > 200) errors.academicDegree = 'El grado académico no puede exceder 200 caracteres.';
 
       if ((teacherForm.professionalTitle ?? '').length > 200) errors.professionalTitle = 'El título profesional no puede exceder 200 caracteres.';
@@ -643,9 +679,43 @@ export const TeachersPage: React.FC = () => {
 
 
 
-    if (step === 2 && canLinkAccounts && !teacherForm.userId) {
+    if (step === 2) {
 
-      errors.userId = 'Selecciona la cuenta de usuario del docente.';
+      const wantsCreate = canCreateAccounts && !teacherForm.userId && (!canLinkAccounts || accountMode === 'create');
+
+      if (wantsCreate) {
+
+        if (!accountForm.username.trim()) {
+
+          errors.accountUsername = 'El nombre de usuario es obligatorio.';
+
+        } else if (accountForm.username.trim().length < 3) {
+
+          errors.accountUsername = 'El usuario debe tener al menos 3 caracteres.';
+
+        }
+
+        if (!accountForm.email.trim()) {
+
+          errors.accountEmail = 'El correo de la cuenta es obligatorio.';
+
+        } else if (!EMAIL_PATTERN.test(accountForm.email.trim())) {
+
+          errors.accountEmail = 'El correo de la cuenta no es válido.';
+
+        }
+
+        if (!isPasswordSecure(accountForm.password)) {
+
+          errors.accountPassword = 'Usa al menos 8 caracteres con mayúscula, minúscula, número y símbolo.';
+
+        }
+
+      } else if (canLinkAccounts && !teacherForm.userId) {
+
+        errors.userId = 'Selecciona la cuenta de usuario del docente.';
+
+      }
 
     }
 
@@ -733,15 +803,51 @@ export const TeachersPage: React.FC = () => {
 
     setFieldErrors({});
 
+    let createdAccountId: number | null = null;
+
     try {
+
+      const wantsCreate = canCreateAccounts && !teacherForm.userId && (!canLinkAccounts || accountMode === 'create');
+
+      let payload = { ...teacherForm };
+
+      if (wantsCreate) {
+
+        const account = await userService.createUser({
+
+          username: accountForm.username.trim(),
+
+          email: accountForm.email.trim(),
+
+          password: accountForm.password,
+
+          firstName: teacherForm.firstName.trim(),
+
+          lastName: teacherForm.lastName.trim(),
+
+          phone: teacherForm.phone,
+
+          department: teacherForm.department || teacherForm.faculty,
+
+          avatar: teacherForm.avatar,
+
+          roles: ['ROLE_DOCENTE'],
+
+        });
+
+        createdAccountId = account.data.id;
+
+        payload = { ...payload, userId: account.data.id };
+
+      }
 
       if (teacherForm.id) {
 
-        await teacherService.updateTeacher(teacherForm.id, teacherForm);
+        await teacherService.updateTeacher(teacherForm.id, payload);
 
       } else {
 
-        await teacherService.createTeacher(teacherForm);
+        await teacherService.createTeacher(payload);
 
       }
 
@@ -752,6 +858,12 @@ export const TeachersPage: React.FC = () => {
       await reload();
 
     } catch (err) {
+
+      if (createdAccountId) {
+
+        await userService.toggleStatus(createdAccountId, false).catch(() => undefined);
+
+      }
 
       const apiErrors = getApiFieldErrors(err);
 
@@ -1146,6 +1258,38 @@ export const TeachersPage: React.FC = () => {
     </button>
 
   );
+
+
+
+  const teacherAccountMode = canCreateAccounts && !teacherForm.userId
+
+    && (!canLinkAccounts || accountMode === 'create')
+
+    ? 'create'
+
+    : 'link';
+
+
+
+  const startTeacherAccountCreation = () => {
+
+    setAccountMode('create');
+
+    setAccountForm((prev) => ({
+
+      ...prev,
+
+      username: prev.username || (teacherForm.code
+
+        ? `docente.${teacherForm.code.toLowerCase().replace(/[^a-z0-9._-]+/g, '')}`
+
+        : ''),
+
+      email: prev.email || teacherForm.email || '',
+
+    }));
+
+  };
 
 
 
@@ -1897,58 +2041,97 @@ export const TeachersPage: React.FC = () => {
 
                   <h4 className="modal-step-title"><UserRound size={15} /> Acceso y confirmación</h4>
 
-                  {canLinkAccounts && (
+                  {(canLinkAccounts || canCreateAccounts) && (
+                    <>
+                      {canCreateAccounts && !teacherForm.userId && (
+                        <div className="account-mode-switch" role="group" aria-label="Forma de acceso">
+                          <button
+                            type="button"
+                            className={teacherAccountMode === 'link' ? 'is-active' : ''}
+                            onClick={() => setAccountMode('link')}
+                          >
+                            Vincular cuenta existente
+                          </button>
+                          <button
+                            type="button"
+                            className={teacherAccountMode === 'create' ? 'is-active' : ''}
+                            onClick={startTeacherAccountCreation}
+                          >
+                            Crear cuenta nueva
+                          </button>
+                        </div>
+                      )}
 
-                    <Field
-
-                      label="Cuenta de acceso (obligatoria)"
-
-                      icon={<UserRound size={13} />}
-
-                      error={fieldErrors.userId}
-
-                      hint={
-
-                        linkableUsers.length === 0
-
-                          ? 'No hay cuentas activas con rol DOCENTE disponibles. Crea una en Usuarios y vuelve a intentarlo.'
-
-                          : 'Permite que el docente acceda a sus secciones, notas y actas en el portal.'
-
-                      }
-
-                    >
-
-                      <select
-
-                        style={inputStyle}
-
-                        value={teacherForm.userId && teacherForm.userId > 0 ? teacherForm.userId : ''}
-
-                        onChange={(e) => setTeacherField('userId', e.target.value ? Number(e.target.value) : 0)}
-
-                      >
-
-                        <option value="">Selecciona una cuenta</option>
-
-                        {linkableUsers
-
-                          .filter((candidate) => !teachers.some((item) => item.userId === candidate.id && item.id !== teacherForm.id))
-
-                          .map((candidate) => (
-
-                            <option key={candidate.id} value={candidate.id}>
-
-                              {candidate.username} · {candidate.email}
-
-                            </option>
-
-                          ))}
-
-                      </select>
-
-                    </Field>
-
+                      {teacherAccountMode === 'link' ? (
+                        <Field
+                          label="Cuenta de acceso (obligatoria)"
+                          icon={<UserRound size={13} />}
+                          error={fieldErrors.userId}
+                          hint={
+                            linkableUsers.filter((candidate) => !teachers.some((item) => item.userId === candidate.id && item.id !== teacherForm.id)).length === 0
+                              ? 'No hay cuentas libres con rol DOCENTE. Usa “Crear cuenta nueva”.'
+                              : 'Permite que el docente acceda a sus secciones, notas y actas en el portal.'
+                          }
+                        >
+                          <select
+                            style={inputStyle}
+                            value={teacherForm.userId && teacherForm.userId > 0 ? teacherForm.userId : ''}
+                            onChange={(e) => setTeacherField('userId', e.target.value ? Number(e.target.value) : 0)}
+                          >
+                            <option value="">Selecciona una cuenta</option>
+                            {linkableUsers
+                              .filter((candidate) => !teachers.some((item) => item.userId === candidate.id && item.id !== teacherForm.id))
+                              .map((candidate) => (
+                                <option key={candidate.id} value={candidate.id}>
+                                  {candidate.username} · {candidate.email}
+                                </option>
+                              ))}
+                          </select>
+                        </Field>
+                      ) : (
+                        <>
+                          <div className="modal-field-grid">
+                            <Field label="Usuario de acceso" icon={<UserRound size={13} />} error={fieldErrors.accountUsername} hint="Se usará para ingresar al portal.">
+                              <input
+                                style={inputStyle}
+                                value={accountForm.username}
+                                onChange={(e) => setAccountForm({ ...accountForm, username: e.target.value })}
+                                placeholder="ej. docente.doc-202601"
+                                autoComplete="username"
+                              />
+                            </Field>
+                            <Field label="Correo de la cuenta" icon={<Mail size={13} />} error={fieldErrors.accountEmail}>
+                              <input
+                                style={inputStyle}
+                                type="email"
+                                value={accountForm.email}
+                                onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+                                placeholder="docente@gestoracad.edu"
+                                autoComplete="email"
+                              />
+                            </Field>
+                            <Field
+                              label="Contraseña de acceso"
+                              icon={<UserRound size={13} />}
+                              error={fieldErrors.accountPassword}
+                              hint="Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo."
+                            >
+                              <input
+                                style={inputStyle}
+                                type="password"
+                                value={accountForm.password}
+                                onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+                                placeholder="Contraseña segura"
+                                autoComplete="new-password"
+                              />
+                            </Field>
+                          </div>
+                          <p className="field-hint">
+                            Se creará una cuenta activa con rol DOCENTE y quedará vinculada a esta ficha. Guarda la contraseña.
+                          </p>
+                        </>
+                      )}
+                    </>
                   )}
 
                   <div className="form-review" aria-label="Resumen del docente">
@@ -1963,7 +2146,7 @@ export const TeachersPage: React.FC = () => {
 
                     <div><span>Correo</span><strong>{teacherForm.email || '—'}</strong></div>
 
-                    <div><span>Cuenta</span><strong>{teacherForm.userId ? 'Vinculada' : 'Sin vincular'}</strong></div>
+                    <div><span>Cuenta</span><strong>{teacherForm.userId ? 'Vinculada' : teacherAccountMode === 'create' ? 'Se creará cuenta nueva' : 'Sin vincular'}</strong></div>
 
                   </div>
 

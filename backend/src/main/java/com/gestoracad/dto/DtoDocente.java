@@ -50,6 +50,7 @@ public class DtoDocente {
     @NotBlank(message = "La dedicación docente es obligatoria")
     private String dedication;
 
+    @NotBlank(message = "La facultad es obligatoria")
     @Size(max = 150, message = "La facultad no puede exceder 150 caracteres")
     private String faculty;
 

@@ -51,6 +51,8 @@ import { defaultListViewMode } from '../utils/viewMode';
 
 import { readImageAsDataUrl } from '../utils/imageUpload';
 
+import { isPasswordSecure } from '../utils/passwordPolicy';
+
 import {
 
   Users,
@@ -415,6 +417,12 @@ export const StudentsPage: React.FC = () => {
 
   const canLinkAccounts = hasPermission('ESTUDIANTE_EDIT') && hasPermission('USUARIO_VIEW');
 
+  const canCreateAccounts = hasPermission('USUARIO_CREATE');
+
+  const [accountMode, setAccountMode] = useState<'link' | 'create'>('link');
+
+  const [accountForm, setAccountForm] = useState({ username: '', email: '', password: '' });
+
   const [formError, setFormError] = useState<string | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -653,6 +661,24 @@ export const StudentsPage: React.FC = () => {
 
     }
 
+    const availableLinks = linkableUsers.filter(
+      (candidate) => !students.some((item) => item.userId === candidate.id && item.id !== student?.id)
+    );
+
+    const shouldCreate = !student?.userId && availableLinks.length === 0 && canCreateAccounts;
+
+    setAccountMode(shouldCreate ? 'create' : 'link');
+
+    const suggestedUsername = student?.code
+      ? `estudiante.${student.code.toLowerCase().replace(/[^a-z0-9._-]+/g, '')}`
+      : '';
+
+    setAccountForm({
+      username: shouldCreate ? suggestedUsername : '',
+      email: student?.email ?? '',
+      password: '',
+    });
+
     setStudentModal(true);
 
   };
@@ -723,6 +749,10 @@ export const StudentsPage: React.FC = () => {
 
     if (step === 1) {
 
+      if (!studentForm.career?.trim()) errors.career = 'Selecciona una carrera.';
+
+      if (!studentForm.faculty?.trim()) errors.faculty = 'La carrera debe tener una facultad asociada.';
+
       if ((studentForm.faculty ?? '').length > 200) errors.faculty = 'La facultad no puede exceder 200 caracteres.';
 
       if ((studentForm.career ?? '').length > 200) errors.career = 'La carrera no puede exceder 200 caracteres.';
@@ -749,9 +779,43 @@ export const StudentsPage: React.FC = () => {
 
 
 
-    if (step === 2 && canLinkAccounts && !studentForm.userId) {
+    if (step === 2) {
 
-      errors.userId = 'Selecciona la cuenta de usuario del estudiante.';
+      const wantsCreate = canCreateAccounts && !studentForm.userId && (!canLinkAccounts || accountMode === 'create');
+
+      if (wantsCreate) {
+
+        if (!accountForm.username.trim()) {
+
+          errors.accountUsername = 'El nombre de usuario es obligatorio.';
+
+        } else if (accountForm.username.trim().length < 3) {
+
+          errors.accountUsername = 'El usuario debe tener al menos 3 caracteres.';
+
+        }
+
+        if (!accountForm.email.trim()) {
+
+          errors.accountEmail = 'El correo de la cuenta es obligatorio.';
+
+        } else if (!EMAIL_PATTERN.test(accountForm.email.trim())) {
+
+          errors.accountEmail = 'El correo de la cuenta no es válido.';
+
+        }
+
+        if (!isPasswordSecure(accountForm.password)) {
+
+          errors.accountPassword = 'Usa al menos 8 caracteres con mayúscula, minúscula, número y símbolo.';
+
+        }
+
+      } else if (canLinkAccounts && !studentForm.userId) {
+
+        errors.userId = 'Selecciona la cuenta de usuario del estudiante.';
+
+      }
 
     }
 
@@ -889,15 +953,51 @@ export const StudentsPage: React.FC = () => {
 
     setFieldErrors({});
 
+    let createdAccountId: number | null = null;
+
     try {
+
+      const wantsCreate = canCreateAccounts && !studentForm.userId && (!canLinkAccounts || accountMode === 'create');
+
+      let payload = { ...studentForm };
+
+      if (wantsCreate) {
+
+        const account = await userService.createUser({
+
+          username: accountForm.username.trim(),
+
+          email: accountForm.email.trim(),
+
+          password: accountForm.password,
+
+          firstName: studentForm.firstName.trim(),
+
+          lastName: studentForm.lastName.trim(),
+
+          phone: studentForm.phone,
+
+          department: studentForm.faculty || studentForm.career,
+
+          avatar: studentForm.avatar,
+
+          roles: ['ROLE_ESTUDIANTE'],
+
+        });
+
+        createdAccountId = account.data.id;
+
+        payload = { ...payload, userId: account.data.id };
+
+      }
 
       if (studentForm.id) {
 
-        await studentService.updateStudent(studentForm.id, studentForm);
+        await studentService.updateStudent(studentForm.id, payload);
 
       } else {
 
-        await studentService.createStudent(studentForm);
+        await studentService.createStudent(payload);
 
       }
 
@@ -908,6 +1008,12 @@ export const StudentsPage: React.FC = () => {
       await reload();
 
     } catch (err) {
+
+      if (createdAccountId) {
+
+        await userService.toggleStatus(createdAccountId, false).catch(() => undefined);
+
+      }
 
       const apiErrors = getApiFieldErrors(err);
 
@@ -1180,6 +1286,38 @@ export const StudentsPage: React.FC = () => {
       event.target.value = '';
 
     }
+
+  };
+
+
+
+  const studentAccountMode = canCreateAccounts && !studentForm.userId
+
+    && (!canLinkAccounts || accountMode === 'create')
+
+    ? 'create'
+
+    : 'link';
+
+
+
+  const startStudentAccountCreation = () => {
+
+    setAccountMode('create');
+
+    setAccountForm((prev) => ({
+
+      ...prev,
+
+      username: prev.username || (studentForm.code
+
+        ? `estudiante.${studentForm.code.toLowerCase().replace(/[^a-z0-9._-]+/g, '')}`
+
+        : ''),
+
+      email: prev.email || studentForm.email || '',
+
+    }));
 
   };
 
@@ -2025,58 +2163,97 @@ export const StudentsPage: React.FC = () => {
 
                   <h4 className="modal-step-title"><UserRound size={15} /> Acceso y confirmación</h4>
 
-                  {canLinkAccounts && (
+                  {(canLinkAccounts || canCreateAccounts) && (
+                    <>
+                      {canCreateAccounts && !studentForm.userId && (
+                        <div className="account-mode-switch" role="group" aria-label="Forma de acceso">
+                          <button
+                            type="button"
+                            className={studentAccountMode === 'link' ? 'is-active' : ''}
+                            onClick={() => setAccountMode('link')}
+                          >
+                            Vincular cuenta existente
+                          </button>
+                          <button
+                            type="button"
+                            className={studentAccountMode === 'create' ? 'is-active' : ''}
+                            onClick={startStudentAccountCreation}
+                          >
+                            Crear cuenta nueva
+                          </button>
+                        </div>
+                      )}
 
-                    <Field
-
-                      label="Cuenta de acceso (obligatoria)"
-
-                      icon={<UserRound size={13} />}
-
-                      error={fieldErrors.userId}
-
-                      hint={
-
-                        linkableUsers.length === 0
-
-                          ? 'No hay cuentas activas con rol ESTUDIANTE disponibles. Crea una en Usuarios y vuelve a intentarlo.'
-
-                          : 'Permite que el estudiante consulte su avance y su historial en el portal.'
-
-                      }
-
-                    >
-
-                      <select
-
-                        style={inputStyle}
-
-                        value={studentForm.userId && studentForm.userId > 0 ? studentForm.userId : ''}
-
-                        onChange={(e) => setStudentField('userId', e.target.value ? Number(e.target.value) : 0)}
-
-                      >
-
-                        <option value="">Selecciona una cuenta</option>
-
-                        {linkableUsers
-
-                          .filter((candidate) => !students.some((item) => item.userId === candidate.id && item.id !== studentForm.id))
-
-                          .map((candidate) => (
-
-                            <option key={candidate.id} value={candidate.id}>
-
-                              {candidate.username} · {candidate.email}
-
-                            </option>
-
-                          ))}
-
-                      </select>
-
-                    </Field>
-
+                      {studentAccountMode === 'link' ? (
+                        <Field
+                          label="Cuenta de acceso (obligatoria)"
+                          icon={<UserRound size={13} />}
+                          error={fieldErrors.userId}
+                          hint={
+                            linkableUsers.filter((candidate) => !students.some((item) => item.userId === candidate.id && item.id !== studentForm.id)).length === 0
+                              ? 'No hay cuentas libres con rol ESTUDIANTE. Usa “Crear cuenta nueva”.'
+                              : 'Permite que el estudiante consulte su avance y su historial en el portal.'
+                          }
+                        >
+                          <select
+                            style={inputStyle}
+                            value={studentForm.userId && studentForm.userId > 0 ? studentForm.userId : ''}
+                            onChange={(e) => setStudentField('userId', e.target.value ? Number(e.target.value) : 0)}
+                          >
+                            <option value="">Selecciona una cuenta</option>
+                            {linkableUsers
+                              .filter((candidate) => !students.some((item) => item.userId === candidate.id && item.id !== studentForm.id))
+                              .map((candidate) => (
+                                <option key={candidate.id} value={candidate.id}>
+                                  {candidate.username} · {candidate.email}
+                                </option>
+                              ))}
+                          </select>
+                        </Field>
+                      ) : (
+                        <>
+                          <div className="modal-field-grid">
+                            <Field label="Usuario de acceso" icon={<UserRound size={13} />} error={fieldErrors.accountUsername} hint="Se usará para ingresar al portal.">
+                              <input
+                                style={inputStyle}
+                                value={accountForm.username}
+                                onChange={(e) => setAccountForm({ ...accountForm, username: e.target.value })}
+                                placeholder="ej. estudiante.2026-030001"
+                                autoComplete="username"
+                              />
+                            </Field>
+                            <Field label="Correo de la cuenta" icon={<Mail size={13} />} error={fieldErrors.accountEmail}>
+                              <input
+                                style={inputStyle}
+                                type="email"
+                                value={accountForm.email}
+                                onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+                                placeholder="estudiante@gestoracad.edu"
+                                autoComplete="email"
+                              />
+                            </Field>
+                            <Field
+                              label="Contraseña de acceso"
+                              icon={<UserRound size={13} />}
+                              error={fieldErrors.accountPassword}
+                              hint="Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo."
+                            >
+                              <input
+                                style={inputStyle}
+                                type="password"
+                                value={accountForm.password}
+                                onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+                                placeholder="Contraseña segura"
+                                autoComplete="new-password"
+                              />
+                            </Field>
+                          </div>
+                          <p className="field-hint">
+                            Se creará una cuenta activa con rol ESTUDIANTE y quedará vinculada a esta ficha. Guarda la contraseña.
+                          </p>
+                        </>
+                      )}
+                    </>
                   )}
 
                   <div className="form-review" aria-label="Resumen del estudiante">
@@ -2095,7 +2272,7 @@ export const StudentsPage: React.FC = () => {
 
                     <div><span>Matrícula</span><strong>{ENROLLMENT_STATUS.find((s) => s.value === studentForm.enrollmentStatus)?.label ?? studentForm.enrollmentStatus}</strong></div>
 
-                    <div><span>Cuenta</span><strong>{studentForm.userId ? 'Vinculada' : 'Sin vincular'}</strong></div>
+                    <div><span>Cuenta</span><strong>{studentForm.userId ? 'Vinculada' : studentAccountMode === 'create' ? 'Se creará cuenta nueva' : 'Sin vincular'}</strong></div>
 
                   </div>
 
