@@ -2,11 +2,14 @@ package com.gestoracad.service.impl;
 
 import com.gestoracad.audit.AccionAuditoria;
 import com.gestoracad.dto.DtoActa;
+import com.gestoracad.dto.DtoPortalEstudiante;
 import com.gestoracad.dto.DtoReporteExportacion;
 import com.gestoracad.dto.DtoUniversidad;
+import com.gestoracad.exception.ExcepcionRecursoNoEncontrado;
 import com.gestoracad.security.UtilidadesSeguridad;
 import com.gestoracad.service.ServicioAuditoria;
 import com.gestoracad.service.ServicioEvaluacionAcademica;
+import com.gestoracad.service.ServicioPortalAcademico;
 import com.gestoracad.service.ServicioReportesPdf;
 import com.gestoracad.service.ServicioUniversidad;
 import com.lowagie.text.Chunk;
@@ -61,13 +64,16 @@ public class ServicioReportesPdfImpl implements ServicioReportesPdf {
     private final ServicioEvaluacionAcademica evaluationService;
     private final ServicioUniversidad universityService;
     private final ServicioAuditoria auditService;
+    private final ServicioPortalAcademico portalService;
 
     public ServicioReportesPdfImpl(ServicioEvaluacionAcademica evaluationService,
                                    ServicioUniversidad universityService,
-                                   ServicioAuditoria auditService) {
+                                   ServicioAuditoria auditService,
+                                   ServicioPortalAcademico portalService) {
         this.evaluationService = evaluationService;
         this.universityService = universityService;
         this.auditService = auditService;
+        this.portalService = portalService;
     }
 
     @Override
@@ -90,6 +96,157 @@ public class ServicioReportesPdfImpl implements ServicioReportesPdf {
         String filename = "acta_" + safe(acta.getCourseCode()) + "-" + safe(acta.getSectionCode())
                 + "_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".pdf";
         return new DtoReporteExportacion(filename, content);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DtoReporteExportacion exportarConstanciaEstudiante(Long sectionId, String clientIp, String userAgent) {
+        DtoPortalEstudiante student = portalService.getStudentSummary();
+        DtoPortalEstudiante.Curso course = portalService.getStudentHistory().stream()
+                .filter(item -> sectionId.equals(item.getSectionId()))
+                .findFirst()
+                .orElseThrow(() -> new ExcepcionRecursoNoEncontrado(
+                        "Constancia de notas", "sección", sectionId));
+
+        byte[] content = renderConstancia(student, course);
+        auditService.log(
+                UtilidadesSeguridad.getCurrentUsername(),
+                AccionAuditoria.EXPORT,
+                "PORTALES",
+                "Exportación de la constancia de notas de " + course.getCourseCode() + "-" + course.getSectionCode(),
+                "/api/v1/portal/student/sections/" + sectionId + "/constancia.pdf",
+                "GET",
+                clientIp,
+                "SUCCESS",
+                userAgent,
+                "tb_secciones",
+                sectionId);
+        String filename = "constancia_notas_" + safe(course.getCourseCode()) + "-" + safe(course.getSectionCode())
+                + "_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".pdf";
+        return new DtoReporteExportacion(filename, content);
+    }
+
+    private byte[] renderConstancia(DtoPortalEstudiante student, DtoPortalEstudiante.Curso course) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4, 42, 42, 42, 56);
+        PdfWriter writer = PdfWriter.getInstance(document, output);
+        writer.setPageEvent(new PdfPageEventHelper() {
+            @Override
+            public void onEndPage(PdfWriter pdfWriter, Document pdfDocument) {
+                Phrase footer = new Phrase(
+                        "Documento generado automáticamente por el Gestor Académico Virtual · "
+                                + LocalDateTime.now().format(DATE_TIME),
+                        NOTE);
+                ColumnText.showTextAligned(pdfWriter.getDirectContent(), Element.ALIGN_CENTER,
+                        footer, PageSize.A4.getWidth() / 2, 24, 0);
+            }
+        });
+        document.open();
+
+        DtoUniversidad university = activeUniversity();
+        String institution = university != null && university.getName() != null
+                ? university.getName()
+                : "Institución académica";
+        String taxId = university != null && university.getTaxId() != null
+                ? "RUC " + university.getTaxId()
+                : "";
+
+        Paragraph brand = new Paragraph(institution, BRAND);
+        brand.setSpacingAfter(2);
+        document.add(brand);
+        Paragraph legend = new Paragraph("Sistema de Gestión Académica" + (taxId.isBlank() ? "" : " · " + taxId), SUBTITLE);
+        legend.setSpacingAfter(14);
+        document.add(legend);
+
+        Paragraph title = new Paragraph("CONSTANCIA DE NOTAS", TITLE);
+        title.setSpacingAfter(2);
+        document.add(title);
+        Paragraph subtitle = new Paragraph(
+                "Sección " + value(course.getSectionCode()) + " · " + value(course.getCourseCode())
+                        + " · " + value(course.getCourseName()),
+                SUBTITLE);
+        subtitle.setSpacingAfter(14);
+        document.add(subtitle);
+
+        String fullName = ((student.getFirstName() == null ? "" : student.getFirstName()) + " "
+                + (student.getLastName() == null ? "" : student.getLastName())).trim();
+
+        PdfPTable studentMeta = new PdfPTable(new float[]{1.1f, 2.4f, 1.1f, 2.4f});
+        studentMeta.setWidthPercentage(100);
+        studentMeta.setSpacingAfter(10);
+        addMeta(studentMeta, "Estudiante", value(fullName));
+        addMeta(studentMeta, "Código", value(student.getCode()));
+        addMeta(studentMeta, "Carrera", value(student.getCareer()));
+        addMeta(studentMeta, "Facultad", value(student.getFaculty()));
+        document.add(studentMeta);
+
+        PdfPTable courseMeta = new PdfPTable(new float[]{1.1f, 2.4f, 1.1f, 2.4f});
+        courseMeta.setWidthPercentage(100);
+        courseMeta.setSpacingAfter(14);
+        addMeta(courseMeta, "Periodo", value(course.getPeriodCode()));
+        addMeta(courseMeta, "Curso", value(course.getCourseCode()) + " · " + value(course.getCourseName()));
+        addMeta(courseMeta, "Sección", value(course.getSectionCode()));
+        addMeta(courseMeta, "Créditos", String.valueOf(course.getCredits()));
+        addMeta(courseMeta, "Docente", value(course.getTeacherName()));
+        addMeta(courseMeta, "Horario", value(course.getSchedule()));
+        addMeta(courseMeta, "Acta", value(course.getActaStatus()));
+        addMeta(courseMeta, "Emitido", DATE_TIME.format(LocalDateTime.now()));
+        document.add(courseMeta);
+
+        PdfPTable table = new PdfPTable(new float[]{3.2f, 1.4f, 1.1f, 1.1f, 1.1f});
+        table.setWidthPercentage(100);
+        table.setHeaderRows(1);
+        header(table, "Evaluación");
+        header(table, "Tipo");
+        header(table, "Peso");
+        header(table, "Nota");
+        header(table, "Máximo");
+
+        if (course.getGrades().isEmpty()) {
+            PdfPCell empty = new PdfPCell(new Phrase("Sin evaluaciones registradas.", TABLE_CELL));
+            empty.setColspan(5);
+            empty.setPadding(12);
+            empty.setBorderColor(BORDER);
+            empty.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(empty);
+        } else {
+            boolean alternate = false;
+            for (DtoPortalEstudiante.Nota grade : course.getGrades()) {
+                cell(table, value(grade.getEvaluationName()), alternate, Element.ALIGN_LEFT);
+                cell(table, typeLabel(grade.getType()), alternate, Element.ALIGN_LEFT);
+                cell(table, weight(grade.getWeight()), alternate, Element.ALIGN_CENTER);
+                cell(table, average(grade.getScore()), alternate, Element.ALIGN_CENTER);
+                cell(table, average(grade.getMaxScore()), alternate, Element.ALIGN_CENTER);
+                alternate = !alternate;
+            }
+        }
+        document.add(table);
+
+        BigDecimal totalWeight = course.getGrades().stream()
+                .map(grade -> grade.getWeight() == null ? BigDecimal.ZERO : grade.getWeight())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        String averageText = course.getAverage() == null ? "En curso" : average(course.getAverage());
+        Paragraph summary = new Paragraph(
+                "Promedio: " + averageText
+                        + "    ·    Asistencia: " + course.getPresent() + " P · "
+                        + course.getAbsent() + " A · " + course.getLate() + " T"
+                        + "    ·    Peso acumulado: " + weight(totalWeight),
+                VALUE);
+        summary.setSpacingBefore(10);
+        document.add(summary);
+
+        boolean closed = "CERRADA".equalsIgnoreCase(course.getActaStatus());
+        Paragraph note = new Paragraph(
+                "Documento informativo generado desde el portal del estudiante. "
+                        + (closed
+                        ? "El acta está cerrada y las notas son definitivas."
+                        : "El acta está abierta y las notas pueden actualizarse."),
+                NOTE);
+        note.setSpacingBefore(10);
+        document.add(note);
+
+        document.close();
+        return output.toByteArray();
     }
 
     private byte[] renderActa(DtoActa acta) {
@@ -240,6 +397,21 @@ public class ServicioReportesPdfImpl implements ServicioReportesPdf {
 
     private String average(BigDecimal value) {
         return value == null ? "—" : value.stripTrailingZeros().toPlainString();
+    }
+
+    private String weight(BigDecimal value) {
+        return value == null ? "—" : value.stripTrailingZeros().toPlainString() + "%";
+    }
+
+    private String typeLabel(String type) {
+        if (type == null || type.isBlank()) return "Evaluación";
+        return switch (type.trim().toUpperCase()) {
+            case "PRACTICA" -> "Práctica";
+            case "PARCIAL" -> "Parcial";
+            case "FINAL" -> "Final";
+            case "OTRO" -> "Otra";
+            default -> type;
+        };
     }
 
     private String value(String value) {

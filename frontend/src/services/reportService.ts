@@ -42,4 +42,10 @@ export const reportService = {
   exportUsers: (): Promise<string> => downloadReport('/v1/reports/users', 'usuarios.csv'),
   exportActa: (sectionId: number): Promise<string> =>
     downloadReport(`/v1/reports/sections/${sectionId}/acta.pdf`, 'acta.pdf', 'application/pdf'),
+  exportStudentConstancia: (sectionId: number): Promise<string> =>
+    downloadReport(
+      `/v1/portal/student/sections/${sectionId}/constancia.pdf`,
+      'constancia.pdf',
+      'application/pdf'
+    ),
 };

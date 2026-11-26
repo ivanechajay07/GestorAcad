@@ -49,6 +49,9 @@ public class DtoPortalEstudiante {
         private String courseCode;
         private String courseName;
         private String sectionCode;
+        private Long sectionId;
+        private String teacherName;
+        private String schedule;
         private LocalDate enrollmentDate;
         private int credits;
         private String status;
@@ -68,6 +71,12 @@ public class DtoPortalEstudiante {
         public void setCourseName(String courseName) { this.courseName = courseName; }
         public String getSectionCode() { return sectionCode; }
         public void setSectionCode(String sectionCode) { this.sectionCode = sectionCode; }
+        public Long getSectionId() { return sectionId; }
+        public void setSectionId(Long sectionId) { this.sectionId = sectionId; }
+        public String getTeacherName() { return teacherName; }
+        public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
+        public String getSchedule() { return schedule; }
+        public void setSchedule(String schedule) { this.schedule = schedule; }
         public LocalDate getEnrollmentDate() { return enrollmentDate; }
         public void setEnrollmentDate(LocalDate enrollmentDate) { this.enrollmentDate = enrollmentDate; }
         public int getCredits() { return credits; }

@@ -121,7 +121,7 @@ export const Modal: React.FC<ModalProps> = ({
             <X size={17} aria-hidden="true" />
           </button>
         </header>
-        <div className="modal-body">{children}</div>
+        <div className="modal-body" tabIndex={0}>{children}</div>
       </div>
     </div>,
     document.body
