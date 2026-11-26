@@ -1,0 +1,24 @@
+# ==============================================================================
+# GESTOR ACADÉMICO VIRTUAL - DOCKERFILE BACKEND (SPRING BOOT 3.4 / JAVA 21)
+# ==============================================================================
+
+FROM eclipse-temurin:21-jre-alpine AS runner
+
+WORKDIR /app
+
+# Crear usuario sin privilegios por seguridad
+RUN addgroup -S gestoracad && adduser -S gestoracad -G gestoracad
+
+# Copiar el ejecutable JAR empaquetado
+COPY backend/target/*.jar app.jar
+
+# Asegurar permisos correctos para el usuario gestoracad
+RUN chown -R gestoracad:gestoracad /app
+
+USER gestoracad
+
+EXPOSE 8080
+
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

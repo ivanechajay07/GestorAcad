@@ -1,0 +1,38 @@
+package com.gestoracad.repository;
+
+import com.gestoracad.entity.Seccion;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+/**
+ * Repositorio JPA de secciones.
+ *
+ * @author Equipo de Desarrollo Gestor Académico
+ */
+@Repository
+public interface RepositorioSeccion extends JpaRepository<Seccion, Long> {
+
+    @Query("SELECT s FROM Seccion s JOIN FETCH s.period JOIN FETCH s.course LEFT JOIN FETCH s.teacher "
+            + "ORDER BY s.period.startDate DESC, s.course.code ASC, s.code ASC")
+    List<Seccion> findAllDetailed();
+
+    boolean existsByPeriodIdAndCourseIdAndCodeIgnoreCase(Long periodId, Long courseId, String code);
+
+    java.util.Optional<Seccion> findByPeriodIdAndCourseIdAndCodeIgnoreCase(Long periodId, Long courseId, String code);
+
+    long countByPeriodIdAndActiveTrue(Long periodId);
+
+    @Query("SELECT COALESCE(SUM(s.capacity), 0) FROM Seccion s WHERE s.period.id = :periodId AND s.active = true")
+    long sumCapacityByPeriodId(@Param("periodId") Long periodId);
+
+    @Query("SELECT COUNT(s) FROM Seccion s WHERE s.period.id = :periodId AND s.active = true AND s.teacher IS NULL")
+    long countWithoutTeacherByPeriodId(@Param("periodId") Long periodId);
+
+    @Query("SELECT s FROM Seccion s JOIN FETCH s.period JOIN FETCH s.course LEFT JOIN FETCH s.teacher "
+            + "WHERE s.teacher.id = :teacherId ORDER BY s.period.startDate DESC, s.course.code ASC, s.code ASC")
+    List<Seccion> findByTeacherIdDetailed(@Param("teacherId") Long teacherId);
+}
