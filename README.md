@@ -16,7 +16,7 @@ Plataforma web para la **gestión académica universitaria**. Centraliza la estr
 | **Problema** | La información académica suele estar dispersa entre hojas de cálculo y procesos manuales, sin trazabilidad ni control de acceso. |
 | **Solución** | Una plataforma integrada con una API REST, base de datos normalizada y una interfaz web común para estudiantes, docentes y administradores. |
 | **Alcance** | Universidad, facultades y carreras; periodos, cursos, planes, secciones y matrículas; evaluaciones, notas, asistencia y actas; portales de docente y estudiante; usuarios, roles, permisos y auditoría. |
-| **Resultado** | Aplicación funcional, con 326 pruebas automatizadas, integración continua y auditoría de accesibilidad sin hallazgos. |
+| **Resultado** | Aplicación funcional, con 329 pruebas automatizadas, integración continua y auditoría de accesibilidad sin hallazgos. |
 
 > **Estado actual:** el sistema está implementado y operativo de extremo a extremo. Los flujos principales están cubiertos por pruebas automatizadas y el proyecto cuenta con integración continua.
 
@@ -57,7 +57,7 @@ La aplicación aplica el modelo de permisos `MODULO_ACCION` y distingue tres per
 | Operaciones REST | 158 |
 | Controladores | 30 |
 | Roles base / permisos | 3 / 90 |
-| Pruebas automatizadas | 326 (206 backend + 120 frontend) |
+| Pruebas automatizadas | 329 (206 backend + 123 frontend) |
 | Cobertura de líneas del backend | 64,3 % (umbral mínimo: 55 %) |
 | Accesibilidad | 0 violaciones detectadas con axe |
 
@@ -105,7 +105,7 @@ Los puertos son configurables en el archivo `.env` (`FRONTEND_PORT`, `BACKEND_PO
 | Roles y permisos | `/roles` | Roles, permisos por módulo, duplicado y protección de roles base. |
 | Auditoría | `/audit` | Bitácora de operaciones, filtros, métricas y tendencias de actividad. |
 | Asistente académico | `/assistant` | Consultas sobre normativa y procesos, con base de conocimiento administrable. |
-| Portal docente | `/my-sections` | Secciones en tarjetas, estudiantes, evaluaciones, filtros y accesos rápidos a notas, asistencia y acta. |
+| Portal docente | `/my-sections` | Secciones en tarjetas, resumen de notas y asistencia, filtros, acciones masivas y accesos rápidos. |
 | Portal estudiante | `/my-progress` | Cursos en tarjetas, promedio final o parcial, asistencia, filtros del historial, evolución y constancia PDF. |
 | Perfil | `/profile` | Datos personales, avatar y cambio de contraseña. |
 
@@ -141,7 +141,7 @@ Los puertos son configurables en el archivo `.env` (`FRONTEND_PORT`, `BACKEND_PO
 
 ### Portales de consulta
 
-- **Portal docente:** secciones en tarjetas, filtros por periodo y acta, pendientes de gestión y accesos rápidos a notas, asistencia y acta.
+- **Portal docente:** secciones en tarjetas, filtros por periodo y acta, pendientes de gestión, resumen de notas/asistencia, acciones masivas y validación del peso del acta.
 - **Portal estudiante:** cursos en tarjetas, promedio final o parcial, filtros del historial, evolución del promedio, constancia de notas en PDF y estado del acta.
 - Ambos portales se limitan automáticamente a la cuenta autenticada.
 
@@ -491,7 +491,7 @@ Todas las respuestas **JSON** usan una estructura uniforme:
 | Ámbito | Herramientas | Resultado |
 | :--- | :--- | :--- |
 | Backend | JUnit 5, Mockito, MockMvc, `@DataJpaTest`, ArchUnit | 206 pruebas, 0 fallos |
-| Frontend | Vitest 5, jsdom, oxlint | 120 pruebas, 0 fallos |
+| Frontend | Vitest 5, jsdom, oxlint | 123 pruebas, 0 fallos |
 | Cobertura | JaCoCo, umbral obligatorio del 55 % | 64,3 % de líneas |
 | Accesibilidad | axe-core | 0 violaciones en vistas principales, modales y móvil |
 | Integración continua | GitHub Actions | Java 21 y Node 24 en cada push o pull request a `main` y `develop` |

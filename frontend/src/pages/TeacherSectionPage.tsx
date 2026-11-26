@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Select } from '../components/ui/Select';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Badge } from '../components/ui/Badge';
@@ -15,11 +15,18 @@ import { reportService } from '../services/reportService';
 import type { TeacherSectionDetailDto } from '../services/portalService';
 import { academicInputStyle } from '../components/academic/AcademicUi';
 import type { ActaDto, AttendanceDto, EvaluationDto, GradeDto } from '../services/evaluationService';
+import { attendanceSummary, evaluationWeight, gradesSummary } from '../utils/teacherSection';
 import { ArrowLeft, CheckCircle2, ClipboardList, Download, Pencil, UserCheck } from 'lucide-react';
 
 type TabKey = 'grades' | 'attendance' | 'act';
 const TODAY = new Date().toISOString().slice(0, 10);
 const STATUSES = ['PRESENTE', 'AUSENTE', 'TARDANZA', 'JUSTIFICADO'];
+const STATUS_LABELS: Record<string, string> = {
+  PRESENTE: 'Presente',
+  AUSENTE: 'Ausente',
+  TARDANZA: 'Tardanza',
+  JUSTIFICADO: 'Justificado',
+};
 
 export const TeacherSectionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -108,6 +115,14 @@ export const TeacherSectionPage: React.FC = () => {
 
   const selectedEvaluation = evaluations.find((evaluation) => evaluation.id === selectedEvaluationId);
   const closed = acta?.status === 'CERRADA';
+  const attendanceTotals = useMemo(() => attendanceSummary(attendance), [attendance]);
+  const gradeTotals = useMemo(() => gradesSummary(grades), [grades]);
+  const totalWeight = useMemo(() => evaluationWeight(evaluations), [evaluations]);
+  const canCloseActa = !closed && evaluations.length > 0 && totalWeight === 100;
+
+  const setAllAttendance = (status: string) => {
+    setAttendance((items) => items.map((item) => ({ ...item, status })));
+  };
 
   const saveGrades = async () => {
     if (!selectedEvaluationId) return;
@@ -266,6 +281,33 @@ export const TeacherSectionPage: React.FC = () => {
               </>
             }
           />
+
+          {selectedEvaluation && (
+            <div className="section-summary-grid">
+              <div className="section-summary-card">
+                <span>Calificados</span>
+                <strong>{gradeTotals.graded}/{gradeTotals.total}</strong>
+                <small>{gradeTotals.pending} pendientes</small>
+              </div>
+              <div className="section-summary-card">
+                <span>Promedio</span>
+                <strong>{gradeTotals.average ?? '—'}</strong>
+                <small>de {selectedEvaluation.maxScore} puntos</small>
+              </div>
+              <div className="section-summary-card">
+                <span>Peso de la evaluación</span>
+                <strong>{selectedEvaluation.weight}%</strong>
+                <small>Peso total de la sección: {totalWeight}%</small>
+              </div>
+            </div>
+          )}
+
+          {closed && (
+            <p className="section-callout is-success">
+              Acta cerrada: la planilla de notas es de solo lectura.
+            </p>
+          )}
+
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
               <colgroup>
@@ -333,6 +375,52 @@ export const TeacherSectionPage: React.FC = () => {
               </>
             }
           />
+
+          {attendance.length > 0 && (
+            <>
+              <div className="section-summary-grid">
+                <div className="section-summary-card">
+                  <span>Presentes</span>
+                  <strong>{attendanceTotals.present}</strong>
+                  <small>{attendanceTotals.total} estudiantes</small>
+                </div>
+                <div className="section-summary-card">
+                  <span>Tardanzas</span>
+                  <strong>{attendanceTotals.late}</strong>
+                  <small>Llegadas tarde</small>
+                </div>
+                <div className="section-summary-card">
+                  <span>Justificados</span>
+                  <strong>{attendanceTotals.justified}</strong>
+                  <small>Con justificación</small>
+                </div>
+                <div className="section-summary-card">
+                  <span>Ausentes</span>
+                  <strong>{attendanceTotals.absent}</strong>
+                  <small>Sin asistencia</small>
+                </div>
+                <div className="section-summary-card">
+                  <span>Asistencia</span>
+                  <strong className={attendanceTotals.rate != null && attendanceTotals.rate < 75 ? 'is-warning' : 'is-success'}>
+                    {attendanceTotals.rate == null ? '—' : `${attendanceTotals.rate}%`}
+                  </strong>
+                  <small>Del total registrado</small>
+                </div>
+              </div>
+              {!closed && (
+                <div className="section-toolbar">
+                  <span className="section-toolbar__label">Acciones rápidas</span>
+                  <Button size="sm" variant="ghost" onClick={() => setAllAttendance('PRESENTE')}>
+                    Marcar presentes
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setAllAttendance('AUSENTE')}>
+                    Marcar ausentes
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
               <colgroup>
@@ -347,9 +435,14 @@ export const TeacherSectionPage: React.FC = () => {
                     <td className="cell-mono">{record.studentCode}</td>
                     <td>{record.studentName}</td>
                     <td>
-                      <Select style={academicInputStyle} value={record.status} disabled={closed}
-                        onChange={(event) => setAttendance((items) => items.map((item) => item.studentId === record.studentId ? { ...item, status: event.target.value } : item))}>
-                        {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+                      <Select
+                        style={academicInputStyle}
+                        value={record.status}
+                        disabled={closed}
+                        aria-label={`Estado de asistencia de ${record.studentName}`}
+                        onChange={(event) => setAttendance((items) => items.map((item) => item.studentId === record.studentId ? { ...item, status: event.target.value } : item))}
+                      >
+                        {STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status] ?? status}</option>)}
                       </Select>
                     </td>
                   </tr>
@@ -395,11 +488,57 @@ export const TeacherSectionPage: React.FC = () => {
                 >
                   PDF
                 </Button>
-                <Badge variant={closed ? 'success' : 'warning'} size="sm" dot>{acta?.status ?? 'ABIERTA'}</Badge>
-                {!closed && <Button size="sm" variant="danger" onClick={closeActa} isLoading={saving}>Cerrar acta</Button>}
+                <Badge variant={closed ? 'success' : 'warning'} size="sm" dot>{closed ? 'Cerrada' : 'Abierta'}</Badge>
+                {!closed && (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={closeActa}
+                    isLoading={saving}
+                    disabled={!canCloseActa}
+                    title={!canCloseActa ? 'El peso acumulado debe ser 100% y debe haber evaluaciones.' : undefined}
+                  >
+                    Cerrar acta
+                  </Button>
+                )}
               </>
             }
           />
+
+          <div className="section-summary-grid">
+            <div className="section-summary-card">
+              <span>Peso acumulado</span>
+              <strong className={totalWeight === 100 ? 'is-success' : 'is-warning'}>{totalWeight}%</strong>
+              <small>{evaluations.length} {evaluations.length === 1 ? 'evaluación' : 'evaluaciones'}</small>
+            </div>
+            <div className="section-summary-card">
+              <span>Estudiantes</span>
+              <strong>{section.students.length}</strong>
+              <small>Matriculados en la sección</small>
+            </div>
+            <div className="section-summary-card">
+              <span>Estado</span>
+              <strong>{closed ? 'Cerrada' : 'Abierta'}</strong>
+              <small>{closed ? 'Notas definitivas' : 'Pendiente de cierre'}</small>
+            </div>
+          </div>
+
+          {!closed && evaluations.length === 0 && (
+            <p className="section-callout is-warning">
+              Agrega evaluaciones antes de cerrar el acta.
+            </p>
+          )}
+          {!closed && evaluations.length > 0 && totalWeight !== 100 && (
+            <p className="section-callout is-warning">
+              El peso acumulado debe ser 100 % para cerrar el acta. Actualmente es {totalWeight} %.
+            </p>
+          )}
+          {closed && (
+            <p className="section-callout is-success">
+              Acta cerrada: las notas y la asistencia quedaron bloqueadas.
+            </p>
+          )}
+
           <div className="data-table-wrap">
             <table className="data-table data-table--stack">
               <colgroup>
@@ -420,7 +559,20 @@ export const TeacherSectionPage: React.FC = () => {
                     <td>{detail.credits}</td>
                   </tr>
                 ))}
-                {(acta?.details ?? []).length === 0 && <tr><td colSpan={5} style={{ color: 'var(--text-muted)' }}>El acta aún no ha sido cerrada.</td></tr>}
+                {(acta?.details ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={5}>
+                      <EmptyState
+                        compact
+                        icon={<ClipboardList size={22} />}
+                        title={closed ? 'Sin detalles del acta' : 'El acta aún no ha sido cerrada'}
+                        description={closed
+                          ? 'No hay promedios registrados en el acta.'
+                          : 'Al cerrar el acta se calcularán los promedios y los créditos aprobados.'}
+                      />
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
