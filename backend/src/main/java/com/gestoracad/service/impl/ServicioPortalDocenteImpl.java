@@ -4,23 +4,31 @@ import com.gestoracad.dto.DtoActa;
 import com.gestoracad.dto.DtoAsistencia;
 import com.gestoracad.dto.DtoCalificacion;
 import com.gestoracad.dto.DtoEvaluacion;
+import com.gestoracad.dto.DtoJustificacionAsistencia;
+import com.gestoracad.dto.DtoResolucionJustificacion;
 import com.gestoracad.dto.DtoSeccionDocente;
+import com.gestoracad.audit.AccionAuditoria;
+import com.gestoracad.entity.Asistencia;
 import com.gestoracad.entity.Docente;
 import com.gestoracad.entity.Estudiante;
 import com.gestoracad.entity.Evaluacion;
+import com.gestoracad.entity.JustificacionAsistencia;
 import com.gestoracad.entity.Matricula;
 import com.gestoracad.entity.Seccion;
 import com.gestoracad.entity.Usuario;
 import com.gestoracad.exception.ExcepcionApi;
 import com.gestoracad.exception.ExcepcionRecursoNoEncontrado;
 import com.gestoracad.mapper.MapeadorAsistencia;
+import com.gestoracad.mapper.MapeadorJustificacionAsistencia;
 import com.gestoracad.repository.RepositorioAsistencia;
 import com.gestoracad.repository.RepositorioDocente;
 import com.gestoracad.repository.RepositorioEvaluacion;
+import com.gestoracad.repository.RepositorioJustificacionAsistencia;
 import com.gestoracad.repository.RepositorioMatricula;
 import com.gestoracad.repository.RepositorioSeccion;
 import com.gestoracad.repository.RepositorioUsuario;
 import com.gestoracad.security.UtilidadesSeguridad;
+import com.gestoracad.service.ServicioAuditoria;
 import com.gestoracad.service.ServicioEvaluacionAcademica;
 import com.gestoracad.service.ServicioPortalDocente;
 import org.springframework.http.HttpStatus;
@@ -28,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -44,8 +53,11 @@ public class ServicioPortalDocenteImpl implements ServicioPortalDocente {
     private final RepositorioMatricula enrollmentRepository;
     private final RepositorioEvaluacion evaluationRepository;
     private final RepositorioAsistencia attendanceRepository;
+    private final RepositorioJustificacionAsistencia justificationRepository;
     private final MapeadorAsistencia attendanceMapper;
+    private final MapeadorJustificacionAsistencia justificationMapper;
     private final ServicioEvaluacionAcademica evaluationService;
+    private final ServicioAuditoria auditService;
 
     public ServicioPortalDocenteImpl(RepositorioUsuario userRepository,
                                      RepositorioDocente teacherRepository,
@@ -53,16 +65,22 @@ public class ServicioPortalDocenteImpl implements ServicioPortalDocente {
                                      RepositorioMatricula enrollmentRepository,
                                      RepositorioEvaluacion evaluationRepository,
                                      RepositorioAsistencia attendanceRepository,
+                                     RepositorioJustificacionAsistencia justificationRepository,
                                      MapeadorAsistencia attendanceMapper,
-                                     ServicioEvaluacionAcademica evaluationService) {
+                                     MapeadorJustificacionAsistencia justificationMapper,
+                                     ServicioEvaluacionAcademica evaluationService,
+                                     ServicioAuditoria auditService) {
         this.userRepository = userRepository;
         this.teacherRepository = teacherRepository;
         this.sectionRepository = sectionRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.evaluationRepository = evaluationRepository;
         this.attendanceRepository = attendanceRepository;
+        this.justificationRepository = justificationRepository;
         this.attendanceMapper = attendanceMapper;
+        this.justificationMapper = justificationMapper;
         this.evaluationService = evaluationService;
+        this.auditService = auditService;
     }
 
     @Override
@@ -143,6 +161,51 @@ public class ServicioPortalDocenteImpl implements ServicioPortalDocente {
                 .stream()
                 .map(attendanceMapper::toDto)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DtoJustificacionAsistencia> getJustifications(Long sectionId) {
+        ownedSection(sectionId);
+        return justificationRepository.findBySectionIdAndActiveTrueOrderByCreatedAtDesc(sectionId)
+                .stream()
+                .map(justificationMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public DtoJustificacionAsistencia resolveJustification(Long justificationId,
+                                                           DtoResolucionJustificacion dto,
+                                                           String clientIp, String userAgent) {
+        JustificacionAsistencia justification = justificationRepository.findById(justificationId)
+                .orElseThrow(() -> new ExcepcionRecursoNoEncontrado(
+                        "Justificación", "id", justificationId));
+        ownedSection(justification.getSection().getId());
+        if (!"PENDIENTE".equals(justification.getStatus())) {
+            throw new ExcepcionApi("La justificación ya fue resuelta");
+        }
+
+        String status = dto.getStatus().toUpperCase();
+        justification.setStatus(status);
+        justification.setResponse(dto.getResponse() == null ? null : dto.getResponse().trim());
+        justification.setResolvedBy(UtilidadesSeguridad.getCurrentUsername());
+        justification.setResolvedAt(LocalDateTime.now());
+
+        if ("APROBADA".equals(status)) {
+            Asistencia attendance = justification.getAttendance();
+            attendance.setStatus("JUSTIFICADO");
+            attendanceRepository.save(attendance);
+        }
+
+        JustificacionAsistencia saved = justificationRepository.save(justification);
+        auditService.log(UtilidadesSeguridad.getCurrentUsername(), AccionAuditoria.UPDATE, "ASISTENCIA",
+                "Justificación " + status.toLowerCase() + ": " + justification.getStudent().getCode(),
+                "/api/v1/portal/teacher/justifications/" + justificationId,
+                "PUT", clientIp, "SUCCESS", userAgent,
+                "tb_justificaciones_asistencia", saved.getId());
+
+        return justificationMapper.toDto(saved);
     }
 
     @Override

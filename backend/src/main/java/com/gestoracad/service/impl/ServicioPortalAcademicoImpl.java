@@ -4,6 +4,9 @@ import com.gestoracad.dto.DtoActaPreview;
 import com.gestoracad.dto.DtoPortalDocente;
 import com.gestoracad.dto.DtoPortalEstudiante;
 import com.gestoracad.dto.DtoAsistenciaEstudiante;
+import com.gestoracad.dto.DtoJustificacionAsistencia;
+import com.gestoracad.dto.DtoSolicitudJustificacion;
+import com.gestoracad.audit.AccionAuditoria;
 import com.gestoracad.entity.Acta;
 import com.gestoracad.entity.ActaDetalle;
 import com.gestoracad.entity.Asistencia;
@@ -12,13 +15,16 @@ import com.gestoracad.entity.Docente;
 import com.gestoracad.entity.Estudiante;
 import com.gestoracad.entity.Evaluacion;
 import com.gestoracad.entity.HorarioSeccion;
+import com.gestoracad.entity.JustificacionAsistencia;
 import com.gestoracad.entity.Matricula;
 import com.gestoracad.entity.ParametroSistema;
 import com.gestoracad.entity.PlanCurso;
 import com.gestoracad.entity.PlanEstudio;
 import com.gestoracad.entity.Seccion;
 import com.gestoracad.entity.Usuario;
+import com.gestoracad.exception.ExcepcionApi;
 import com.gestoracad.exception.ExcepcionRecursoNoEncontrado;
+import com.gestoracad.mapper.MapeadorJustificacionAsistencia;
 import com.gestoracad.repository.RepositorioActa;
 import com.gestoracad.repository.RepositorioActaDetalle;
 import com.gestoracad.repository.RepositorioAsistencia;
@@ -27,6 +33,7 @@ import com.gestoracad.repository.RepositorioDocente;
 import com.gestoracad.repository.RepositorioEstudiante;
 import com.gestoracad.repository.RepositorioEvaluacion;
 import com.gestoracad.repository.RepositorioHorarioSeccion;
+import com.gestoracad.repository.RepositorioJustificacionAsistencia;
 import com.gestoracad.repository.RepositorioMatricula;
 import com.gestoracad.repository.RepositorioParametroSistema;
 import com.gestoracad.repository.RepositorioPlanCurso;
@@ -34,7 +41,9 @@ import com.gestoracad.repository.RepositorioPlanEstudio;
 import com.gestoracad.repository.RepositorioSeccion;
 import com.gestoracad.repository.RepositorioUsuario;
 import com.gestoracad.security.UtilidadesSeguridad;
+import com.gestoracad.service.ServicioAuditoria;
 import com.gestoracad.service.ServicioPortalAcademico;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,6 +84,9 @@ public class ServicioPortalAcademicoImpl implements ServicioPortalAcademico {
     private final RepositorioParametroSistema parameterRepository;
     private final RepositorioPlanEstudio planRepository;
     private final RepositorioPlanCurso planCourseRepository;
+    private final RepositorioJustificacionAsistencia justificationRepository;
+    private final MapeadorJustificacionAsistencia justificationMapper;
+    private final ServicioAuditoria auditService;
 
     public ServicioPortalAcademicoImpl(RepositorioUsuario userRepository,
                                        RepositorioEstudiante studentRepository,
@@ -89,7 +101,10 @@ public class ServicioPortalAcademicoImpl implements ServicioPortalAcademico {
                                        RepositorioHorarioSeccion scheduleRepository,
                                        RepositorioParametroSistema parameterRepository,
                                        RepositorioPlanEstudio planRepository,
-                                       RepositorioPlanCurso planCourseRepository) {
+                                       RepositorioPlanCurso planCourseRepository,
+                                       RepositorioJustificacionAsistencia justificationRepository,
+                                       MapeadorJustificacionAsistencia justificationMapper,
+                                       ServicioAuditoria auditService) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
@@ -104,6 +119,9 @@ public class ServicioPortalAcademicoImpl implements ServicioPortalAcademico {
         this.parameterRepository = parameterRepository;
         this.planRepository = planRepository;
         this.planCourseRepository = planCourseRepository;
+        this.justificationRepository = justificationRepository;
+        this.justificationMapper = justificationMapper;
+        this.auditService = auditService;
     }
 
     @Override
@@ -170,9 +188,62 @@ public class ServicioPortalAcademicoImpl implements ServicioPortalAcademico {
                     item.setDate(attendance.getDate());
                     item.setStatus(attendance.getStatus());
                     item.setObservation(attendance.getObservation());
+                    JustificacionAsistencia justification = justificationRepository
+                            .findByAttendanceIdAndActiveTrue(attendance.getId())
+                            .orElse(null);
+                    if (justification != null) {
+                        item.setJustificationId(justification.getId());
+                        item.setJustificationStatus(justification.getStatus());
+                        item.setJustificationReason(justification.getReason());
+                        item.setJustificationResponse(justification.getResponse());
+                    }
+                    boolean justifiableStatus = "AUSENTE".equals(attendance.getStatus())
+                            || "TARDANZA".equals(attendance.getStatus());
+                    item.setCanJustify(justifiableStatus && justification == null);
                     return item;
                 })
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public DtoJustificacionAsistencia requestAttendanceJustification(Long attendanceId,
+                                                                     DtoSolicitudJustificacion dto,
+                                                                     String clientIp, String userAgent) {
+        Usuario user = currentUser();
+        Estudiante student = studentRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ExcepcionRecursoNoEncontrado(
+                        "Ficha de estudiante", "usuario", user.getUsername()));
+
+        Asistencia attendance = attendanceRepository.findById(attendanceId)
+                .orElseThrow(() -> new ExcepcionRecursoNoEncontrado("Asistencia", "id", attendanceId));
+        if (!attendance.getStudent().getId().equals(student.getId())) {
+            throw new ExcepcionApi("No puedes justificar la asistencia de otro estudiante",
+                    HttpStatus.FORBIDDEN);
+        }
+        if (!"AUSENTE".equals(attendance.getStatus()) && !"TARDANZA".equals(attendance.getStatus())) {
+            throw new ExcepcionApi("Solo se pueden justificar ausencias o tardanzas");
+        }
+        if (justificationRepository.findByAttendanceIdAndActiveTrue(attendanceId).isPresent()) {
+            throw new ExcepcionApi("Ya existe una justificación para este registro de asistencia");
+        }
+
+        JustificacionAsistencia entity = new JustificacionAsistencia();
+        entity.setAttendance(attendance);
+        entity.setStudent(student);
+        entity.setSection(attendance.getSection());
+        entity.setReason(dto.getReason().trim());
+        entity.setStatus("PENDIENTE");
+        entity.setActive(true);
+        JustificacionAsistencia saved = justificationRepository.save(entity);
+
+        auditService.log(user.getUsername(), AccionAuditoria.CREATE, "ASISTENCIA",
+                "Justificación enviada para la asistencia " + attendanceId,
+                "/api/v1/portal/student/attendance/" + attendanceId + "/justification",
+                "POST", clientIp, "SUCCESS", userAgent,
+                "tb_justificaciones_asistencia", saved.getId());
+
+        return justificationMapper.toDto(saved);
     }
 
     private DtoPortalEstudiante.Curso buildCourse(Matricula enrollment, Estudiante student) {

@@ -4,6 +4,8 @@ import com.gestoracad.dto.DtoActa;
 import com.gestoracad.dto.DtoAsistencia;
 import com.gestoracad.dto.DtoCalificacion;
 import com.gestoracad.dto.DtoEvaluacion;
+import com.gestoracad.dto.DtoJustificacionAsistencia;
+import com.gestoracad.dto.DtoResolucionJustificacion;
 import com.gestoracad.dto.DtoRespuestaApi;
 import com.gestoracad.dto.DtoSeccionDocente;
 import com.gestoracad.service.ServicioPortalDocente;
@@ -104,6 +106,26 @@ public class ControladorPortalDocente {
     public ResponseEntity<DtoRespuestaApi<List<DtoAsistencia>>> getAttendanceHistory(@PathVariable Long id) {
         return ResponseEntity.ok(DtoRespuestaApi.ok(
                 portalService.getAttendanceHistory(id), "Historial de asistencia obtenido"));
+    }
+
+    @GetMapping("/sections/{id}/justifications")
+    @Operation(summary = "Justificaciones de asistencia de una sección propia")
+    public ResponseEntity<DtoRespuestaApi<List<DtoJustificacionAsistencia>>> getJustifications(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(DtoRespuestaApi.ok(
+                portalService.getJustifications(id), "Justificaciones obtenidas"));
+    }
+
+    @PutMapping("/justifications/{id}")
+    @Operation(summary = "Aprobar o rechazar una justificación de asistencia")
+    public ResponseEntity<DtoRespuestaApi<DtoJustificacionAsistencia>> resolveJustification(
+            @PathVariable Long id,
+            @Valid @RequestBody DtoResolucionJustificacion dto,
+            HttpServletRequest request) {
+        return ResponseEntity.ok(DtoRespuestaApi.ok(
+                portalService.resolveJustification(id, dto,
+                        request.getRemoteAddr(), request.getHeader("User-Agent")),
+                "Justificación resuelta correctamente"));
     }
 
     @PutMapping("/sections/{id}/attendance")

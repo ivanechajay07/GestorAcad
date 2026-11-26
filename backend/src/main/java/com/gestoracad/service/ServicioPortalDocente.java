@@ -4,6 +4,8 @@ import com.gestoracad.dto.DtoActa;
 import com.gestoracad.dto.DtoAsistencia;
 import com.gestoracad.dto.DtoCalificacion;
 import com.gestoracad.dto.DtoEvaluacion;
+import com.gestoracad.dto.DtoJustificacionAsistencia;
+import com.gestoracad.dto.DtoResolucionJustificacion;
 import com.gestoracad.dto.DtoSeccionDocente;
 
 import java.time.LocalDate;
@@ -32,6 +34,12 @@ public interface ServicioPortalDocente {
     List<DtoAsistencia> getAttendance(Long sectionId, LocalDate date);
 
     List<DtoAsistencia> getAttendanceHistory(Long sectionId);
+
+    List<DtoJustificacionAsistencia> getJustifications(Long sectionId);
+
+    DtoJustificacionAsistencia resolveJustification(Long justificationId,
+                                                    DtoResolucionJustificacion dto,
+                                                    String clientIp, String userAgent);
 
     void saveAttendance(Long sectionId, LocalDate date, List<DtoAsistencia> attendance,
                         String clientIp, String userAgent);

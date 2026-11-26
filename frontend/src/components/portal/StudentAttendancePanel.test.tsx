@@ -28,4 +28,35 @@ describe('StudentAttendancePanel', () => {
     const html = renderToStaticMarkup(<StudentAttendancePanel records={[]} />);
     expect(html).toContain('Sin registros de asistencia');
   });
+
+  it('muestra la justificación y la acción para registros justificables', () => {
+    const html = renderToStaticMarkup(
+      <StudentAttendancePanel
+        onJustify={() => undefined}
+        records={[
+          {
+            id: 7,
+            date: '2026-11-24',
+            status: 'AUSENTE',
+            observation: '',
+            canJustify: true,
+          },
+          {
+            id: 8,
+            date: '2026-11-25',
+            status: 'TARDANZA',
+            observation: '',
+            justificationStatus: 'APROBADA',
+            justificationReason: 'Trámite personal',
+            justificationResponse: 'Justificación validada',
+          },
+        ]}
+      />
+    );
+
+    expect(html).toContain('Justificar');
+    expect(html).toContain('Justificación aprobada');
+    expect(html).toContain('Trámite personal');
+    expect(html).toContain('Justificación validada');
+  });
 });

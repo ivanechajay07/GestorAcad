@@ -7,6 +7,28 @@ export interface PortalAttendanceDto {
   date: string;
   status: string;
   observation?: string | null;
+  justificationId?: number | null;
+  justificationStatus?: string | null;
+  justificationReason?: string | null;
+  justificationResponse?: string | null;
+  canJustify?: boolean;
+}
+
+export interface TeacherJustificationDto {
+  id: number;
+  attendanceId: number;
+  sectionId: number;
+  studentId: number;
+  studentCode: string;
+  studentName: string;
+  date: string;
+  attendanceStatus: string;
+  reason: string;
+  status: string;
+  response?: string | null;
+  resolvedBy?: string | null;
+  resolvedAt?: string | null;
+  createdAt?: string | null;
 }
 
 export interface PortalGradeDto {
@@ -158,6 +180,17 @@ export const portalService = {
     return response.data;
   },
 
+  async requestAttendanceJustification(
+    attendanceId: number,
+    reason: string
+  ): Promise<ApiResponse<TeacherJustificationDto>> {
+    const response = await api.post<ApiResponse<TeacherJustificationDto>>(
+      `/v1/portal/student/attendance/${attendanceId}/justification`,
+      { reason }
+    );
+    return response.data;
+  },
+
   async getTeacherSummary(): Promise<ApiResponse<TeacherPortalDto>> {
     const response = await api.get<ApiResponse<TeacherPortalDto>>('/v1/portal/teacher/summary');
     return response.data;
@@ -201,6 +234,25 @@ export const portalService = {
       `/v1/portal/teacher/sections/${sectionId}/attendance/history`
     );
     return response.data;
+  },
+
+  async getTeacherJustifications(sectionId: number): Promise<ApiResponse<TeacherJustificationDto[]>> {
+    const response = await api.get<ApiResponse<TeacherJustificationDto[]>>(
+      `/v1/portal/teacher/sections/${sectionId}/justifications`
+    );
+    return response.data;
+  },
+
+  async resolveTeacherJustification(
+    justificationId: number,
+    status: 'APROBADA' | 'RECHAZADA',
+    response?: string
+  ): Promise<ApiResponse<TeacherJustificationDto>> {
+    const result = await api.put<ApiResponse<TeacherJustificationDto>>(
+      `/v1/portal/teacher/justifications/${justificationId}`,
+      { status, response }
+    );
+    return result.data;
   },
 
   async getTeacherGrades(evaluationId: number): Promise<ApiResponse<GradeDto[]>> {

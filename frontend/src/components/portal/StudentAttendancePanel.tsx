@@ -1,10 +1,12 @@
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, FileText } from 'lucide-react';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import type { PortalAttendanceDto } from '../../services/portalService';
 
 interface StudentAttendancePanelProps {
   records: PortalAttendanceDto[];
+  onJustify?: (record: PortalAttendanceDto) => void;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -21,6 +23,12 @@ const STATUS_VARIANTS = {
   JUSTIFICADO: 'info',
 } as const;
 
+const JUSTIFICATION_LABELS: Record<string, string> = {
+  PENDIENTE: 'pendiente de revisión',
+  APROBADA: 'aprobada',
+  RECHAZADA: 'rechazada',
+};
+
 const formatDate = (value?: string | null): string => {
   if (!value) return 'Sin fecha';
   const date = new Date(`${value}T00:00:00`);
@@ -29,8 +37,8 @@ const formatDate = (value?: string | null): string => {
     : date.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-/** Detalle diario de asistencia de un curso. */
-export const StudentAttendancePanel = ({ records }: StudentAttendancePanelProps) => {
+/** Detalle diario de asistencia de un curso, con sus justificaciones. */
+export const StudentAttendancePanel = ({ records, onJustify }: StudentAttendancePanelProps) => {
   if (records.length === 0) {
     return (
       <EmptyState
@@ -99,9 +107,40 @@ export const StudentAttendancePanel = ({ records }: StudentAttendancePanelProps)
             >
               {STATUS_LABELS[record.status] ?? record.status}
             </Badge>
-            <span className="student-attendance-item__observation">
-              {record.observation || 'Sin observación'}
-            </span>
+            <div className="student-attendance-item__body">
+              <span className="student-attendance-item__observation">
+                {record.observation || 'Sin observación'}
+              </span>
+              {record.canJustify && record.id != null && onJustify && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  leftIcon={<FileText size={13} />}
+                  onClick={() => onJustify(record)}
+                >
+                  Justificar
+                </Button>
+              )}
+            </div>
+            {record.justificationStatus && (
+              <div
+                className={`student-justification is-${record.justificationStatus.toLowerCase()}`}
+              >
+                <span className="student-justification__status">
+                  Justificación {JUSTIFICATION_LABELS[record.justificationStatus] ?? record.justificationStatus.toLowerCase()}
+                </span>
+                {record.justificationReason && (
+                  <span className="student-justification__reason">
+                    Motivo: {record.justificationReason}
+                  </span>
+                )}
+                {record.justificationResponse && (
+                  <span className="student-justification__reason">
+                    Respuesta del docente: {record.justificationResponse}
+                  </span>
+                )}
+              </div>
+            )}
           </li>
         ))}
       </ul>

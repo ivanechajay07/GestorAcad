@@ -15,7 +15,7 @@ import { portalService } from '../services/portalService';
 import { reportService } from '../services/reportService';
 import { academicInputStyle } from '../components/academic/AcademicUi';
 import { ArrowLeft, CheckCircle2, ClipboardList, Download, Pencil, Plus, Search, UserCheck } from 'lucide-react';
-import type { ActaPreviewDto, TeacherSectionDetailDto } from '../services/portalService';
+import type { ActaPreviewDto, TeacherJustificationDto, TeacherSectionDetailDto } from '../services/portalService';
 import type { ActaDto, AttendanceDto, EvaluationDto, GradeDto } from '../services/evaluationService';
 import { downloadCsv } from '../utils/csv';
 import { getApiErrorMessage } from '../utils/apiErrors';
@@ -29,6 +29,26 @@ const STATUS_LABELS: Record<string, string> = {
   AUSENTE: 'Ausente',
   TARDANZA: 'Tardanza',
   JUSTIFICADO: 'Justificado',
+};
+
+const JUSTIFICATION_LABELS: Record<string, string> = {
+  PENDIENTE: 'Pendiente',
+  APROBADA: 'Aprobada',
+  RECHAZADA: 'Rechazada',
+};
+
+const JUSTIFICATION_VARIANTS = {
+  PENDIENTE: 'warning',
+  APROBADA: 'success',
+  RECHAZADA: 'danger',
+} as const;
+
+const formatShortDate = (value?: string | null): string => {
+  if (!value) return 'Sin fecha';
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 const normalizeText = (value: string): string =>
@@ -61,6 +81,12 @@ export const TeacherSectionPage: React.FC = () => {
   const [preview, setPreview] = useState<ActaPreviewDto | null>(null);
   const [studentQuery, setStudentQuery] = useState('');
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceDto[]>([]);
+  const [justifications, setJustifications] = useState<TeacherJustificationDto[]>([]);
+  const [resolvingJustification, setResolvingJustification] = useState<TeacherJustificationDto | null>(null);
+  const [resolutionStatus, setResolutionStatus] = useState<'APROBADA' | 'RECHAZADA'>('APROBADA');
+  const [resolutionResponse, setResolutionResponse] = useState('');
+  const [resolutionError, setResolutionError] = useState<string | null>(null);
+  const [resolutionSaving, setResolutionSaving] = useState(false);
   const [gradesDirty, setGradesDirty] = useState(false);
   const [attendanceDirty, setAttendanceDirty] = useState(false);
   const [evaluationModalOpen, setEvaluationModalOpen] = useState(false);
@@ -100,13 +126,14 @@ export const TeacherSectionPage: React.FC = () => {
     if (!sectionId) return;
     setLoading(true);
     try {
-      const [sectionRes, evaluationRes, attendanceRes, actRes, previewRes, historyRes] = await Promise.all([
+      const [sectionRes, evaluationRes, attendanceRes, actRes, previewRes, historyRes, justificationRes] = await Promise.all([
         portalService.getTeacherSection(sectionId),
         portalService.getTeacherEvaluations(sectionId),
         portalService.getTeacherAttendance(sectionId, attendanceDate),
         portalService.getTeacherActa(sectionId),
         portalService.getTeacherActaPreview(sectionId),
         portalService.getTeacherAttendanceHistory(sectionId),
+        portalService.getTeacherJustifications(sectionId),
       ]);
       setSection(sectionRes.data);
       setEvaluations(evaluationRes.data);
@@ -119,6 +146,7 @@ export const TeacherSectionPage: React.FC = () => {
       setActa(actRes.data);
       setPreview(previewRes.data);
       setAttendanceHistory(historyRes.data);
+      setJustifications(justificationRes.data);
       setAttendanceDirty(false);
     } catch {
       toast.error('No se pudo cargar la sección o no tienes acceso');
@@ -139,6 +167,16 @@ export const TeacherSectionPage: React.FC = () => {
       setPreview(response.data);
     } catch {
       // La vista previa es complementaria; no bloquea la gestión de la sección.
+    }
+  }, [sectionId]);
+
+  const loadJustifications = useCallback(async () => {
+    if (!sectionId) return;
+    try {
+      const response = await portalService.getTeacherJustifications(sectionId);
+      setJustifications(response.data);
+    } catch {
+      // El listado de justificaciones no debe bloquear la gestión de asistencia.
     }
   }, [sectionId]);
 
@@ -180,6 +218,14 @@ export const TeacherSectionPage: React.FC = () => {
   const gradeTotals = useMemo(() => gradesSummary(grades), [grades]);
   const totalWeight = useMemo(() => evaluationWeight(evaluations), [evaluations]);
   const canCloseActa = !closed && evaluations.length > 0 && totalWeight === 100;
+  const pendingJustifications = useMemo(
+    () => justifications.filter((justification) => justification.status === 'PENDIENTE'),
+    [justifications]
+  );
+  const resolvedJustifications = useMemo(
+    () => justifications.filter((justification) => justification.status !== 'PENDIENTE'),
+    [justifications]
+  );
 
   const setAllAttendance = (status: string) => {
     setAttendance((items) => items.map((item) => ({ ...item, status })));
@@ -318,6 +364,45 @@ export const TeacherSectionPage: React.FC = () => {
       ]
     );
     toast.success('Asistencia exportada en CSV.');
+  };
+
+  const openResolution = (justification: TeacherJustificationDto, status: 'APROBADA' | 'RECHAZADA') => {
+    setResolvingJustification(justification);
+    setResolutionStatus(status);
+    setResolutionResponse('');
+    setResolutionError(null);
+  };
+
+  const submitResolution = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!resolvingJustification) return;
+    setResolutionSaving(true);
+    try {
+      const response = await portalService.resolveTeacherJustification(
+        resolvingJustification.id,
+        resolutionStatus,
+        resolutionResponse.trim() || undefined
+      );
+      setJustifications((items) => items.map((item) =>
+        item.id === response.data.id ? response.data : item
+      ));
+      if (resolutionStatus === 'APROBADA') {
+        setAttendance((items) => items.map((item) =>
+          item.studentId === response.data.studentId ? { ...item, status: 'JUSTIFICADO' } : item
+        ));
+      }
+      setResolvingJustification(null);
+      toast.success(
+        resolutionStatus === 'APROBADA'
+          ? 'Justificación aprobada y asistencia actualizada.'
+          : 'Justificación rechazada.'
+      );
+      await loadJustifications();
+    } catch (err) {
+      setResolutionError(getApiErrorMessage(err, 'No se pudo resolver la justificación.'));
+    } finally {
+      setResolutionSaving(false);
+    }
   };
 
   const saveGrades = async () => {
@@ -628,6 +713,11 @@ export const TeacherSectionPage: React.FC = () => {
               <>
                 <DatePicker style={{ ...academicInputStyle, width: 'auto' }} ariaLabel="Fecha de asistencia" value={attendanceDate} onChange={changeAttendanceDate} />
                 {attendanceDirty && <Badge variant="warning" size="sm">Sin guardar</Badge>}
+                {pendingJustifications.length > 0 && (
+                  <Badge variant="warning" size="sm" dot>
+                    {pendingJustifications.length} {pendingJustifications.length === 1 ? 'justificación' : 'justificaciones'}
+                  </Badge>
+                )}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -754,6 +844,70 @@ export const TeacherSectionPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {justifications.length > 0 && (
+            <section className="approval-panel" aria-label="Justificaciones de asistencia">
+              <div className="approval-panel__head">
+                <div>
+                  <h4 className="approval-panel__title">Justificaciones de asistencia</h4>
+                  <p className="approval-panel__subtitle">
+                    Solicitudes enviadas por los estudiantes para ausencias y tardanzas.
+                  </p>
+                </div>
+                <Badge variant={pendingJustifications.length > 0 ? 'warning' : 'outline'} size="sm">
+                  {pendingJustifications.length} {pendingJustifications.length === 1 ? 'pendiente' : 'pendientes'}
+                </Badge>
+              </div>
+
+              <ul className="approval-list">
+                {[...pendingJustifications, ...resolvedJustifications].map((justification) => (
+                  <li
+                    className={`approval-card is-${justification.status.toLowerCase()}`}
+                    key={justification.id}
+                  >
+                    <div className="approval-card__top">
+                      <span className="cell-mono">{justification.studentCode}</span>
+                      <strong>{justification.studentName}</strong>
+                      <Badge
+                        variant={JUSTIFICATION_VARIANTS[justification.status as keyof typeof JUSTIFICATION_VARIANTS] ?? 'outline'}
+                        size="sm"
+                      >
+                        {JUSTIFICATION_LABELS[justification.status] ?? justification.status}
+                      </Badge>
+                    </div>
+                    <p className="approval-card__meta">
+                      {formatShortDate(justification.date)} · Registro:{' '}
+                      {STATUS_LABELS[justification.attendanceStatus] ?? justification.attendanceStatus}
+                    </p>
+                    <p className="approval-card__reason">{justification.reason}</p>
+                    {justification.response && (
+                      <p className="approval-card__response">
+                        Respuesta: {justification.response}
+                      </p>
+                    )}
+                    {justification.status === 'PENDIENTE' && (
+                      <div className="approval-card__actions">
+                        <Button
+                          size="sm"
+                          leftIcon={<CheckCircle2 size={14} />}
+                          onClick={() => openResolution(justification, 'APROBADA')}
+                        >
+                          Aprobar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => openResolution(justification, 'RECHAZADA')}
+                        >
+                          Rechazar
+                        </Button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <details className="section-history">
             <summary>
@@ -1059,6 +1213,62 @@ export const TeacherSectionPage: React.FC = () => {
               </Button>
               <Button type="submit" isLoading={evaluationSaving}>
                 Guardar evaluación
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {resolvingJustification && (
+        <Modal
+          title={resolutionStatus === 'APROBADA' ? 'Aprobar justificación' : 'Rechazar justificación'}
+          subtitle={`${resolvingJustification.studentName} · ${formatShortDate(resolvingJustification.date)}`}
+          icon={<UserCheck size={20} />}
+          maxWidth="520px"
+          onClose={() => setResolvingJustification(null)}
+        >
+          <form className="modal-form" onSubmit={submitResolution}>
+            <p className="approval-card__reason" style={{ margin: 0 }}>
+              {resolvingJustification.reason}
+            </p>
+
+            <div className="field">
+              <label className="field-label" htmlFor="justification-resolution">
+                Respuesta para el estudiante (opcional)
+              </label>
+              <textarea
+                id="justification-resolution"
+                style={{ ...academicInputStyle, minHeight: '96px', resize: 'vertical' }}
+                value={resolutionResponse}
+                onChange={(event) => setResolutionResponse(event.target.value)}
+                maxLength={500}
+                rows={3}
+                placeholder={resolutionStatus === 'APROBADA'
+                  ? 'Indica la validación de la justificación.'
+                  : 'Explica brevemente el motivo del rechazo.'}
+                data-autofocus
+              />
+              <span className="field-hint">{resolutionResponse.length}/500 caracteres</span>
+            </div>
+
+            {resolutionStatus === 'APROBADA' && (
+              <p className="section-callout">
+                Al aprobar, la asistencia del estudiante cambiará a <strong>Justificado</strong>.
+              </p>
+            )}
+
+            {resolutionError && <p className="form-error" role="alert">{resolutionError}</p>}
+
+            <div className="modal-form-footer">
+              <Button type="button" variant="secondary" onClick={() => setResolvingJustification(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant={resolutionStatus === 'APROBADA' ? 'primary' : 'danger'}
+                isLoading={resolutionSaving}
+              >
+                {resolutionStatus === 'APROBADA' ? 'Aprobar' : 'Rechazar'}
               </Button>
             </div>
           </form>

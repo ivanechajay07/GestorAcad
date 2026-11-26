@@ -2,15 +2,18 @@ package com.gestoracad.controller;
 
 import com.gestoracad.dto.DtoActaPreview;
 import com.gestoracad.dto.DtoAsistenciaEstudiante;
+import com.gestoracad.dto.DtoJustificacionAsistencia;
 import com.gestoracad.dto.DtoPortalDocente;
 import com.gestoracad.dto.DtoPortalEstudiante;
 import com.gestoracad.dto.DtoReporteExportacion;
 import com.gestoracad.dto.DtoRespuestaApi;
+import com.gestoracad.dto.DtoSolicitudJustificacion;
 import com.gestoracad.service.ServicioPortalAcademico;
 import com.gestoracad.service.ServicioReportesPdf;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +22,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -69,6 +74,20 @@ public class ControladorPortalAcademico {
             @PathVariable Long sectionId) {
         return ResponseEntity.ok(DtoRespuestaApi.ok(
                 portalService.getStudentAttendance(sectionId), "Asistencia obtenida"));
+    }
+
+    @PostMapping("/student/attendance/{attendanceId}/justification")
+    @PreAuthorize("hasRole('ESTUDIANTE')")
+    @Operation(summary = "Solicitar justificación de una inasistencia",
+            description = "El estudiante justifica una ausencia o tardanza propia")
+    public ResponseEntity<DtoRespuestaApi<DtoJustificacionAsistencia>> requestJustification(
+            @PathVariable Long attendanceId,
+            @Valid @RequestBody DtoSolicitudJustificacion dto,
+            HttpServletRequest request) {
+        return ResponseEntity.ok(DtoRespuestaApi.ok(
+                portalService.requestAttendanceJustification(attendanceId, dto,
+                        request.getRemoteAddr(), request.getHeader("User-Agent")),
+                "Justificación enviada correctamente"));
     }
 
     @GetMapping("/teacher/summary")

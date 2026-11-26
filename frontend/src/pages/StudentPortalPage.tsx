@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Download,
+  FileText,
   GraduationCap,
   History,
   Layers,
@@ -29,6 +30,8 @@ import type { StudentScheduleEntry } from '../components/portal/StudentScheduleP
 import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
 import { reportService } from '../services/reportService';
+import { academicInputStyle } from '../components/academic/AcademicUi';
+import { getApiErrorMessage } from '../utils/apiErrors';
 import type { PortalAttendanceDto, PortalCourseDto, StudentPortalDto } from '../services/portalService';
 import {
   attendanceRate,
@@ -64,6 +67,10 @@ export const StudentPortalPage: React.FC = () => {
   const [attendanceCourse, setAttendanceCourse] = useState<PortalCourseDto | null>(null);
   const [attendanceRecords, setAttendanceRecords] = useState<PortalAttendanceDto[]>([]);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [justifyRecord, setJustifyRecord] = useState<PortalAttendanceDto | null>(null);
+  const [justifyReason, setJustifyReason] = useState('');
+  const [justifyError, setJustifyError] = useState<string | null>(null);
+  const [justifySaving, setJustifySaving] = useState(false);
 
   useEffect(() => {
     portalService
@@ -154,6 +161,37 @@ export const StudentPortalPage: React.FC = () => {
       toast.error('No se pudo cargar la asistencia del curso.');
     } finally {
       setAttendanceLoading(false);
+    }
+  };
+
+  const openJustification = (record: PortalAttendanceDto) => {
+    setJustifyRecord(record);
+    setJustifyReason('');
+    setJustifyError(null);
+  };
+
+  const submitJustification = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!justifyRecord?.id) return;
+    const reason = justifyReason.trim();
+    if (reason.length < 10) {
+      setJustifyError('Describe el motivo con al menos 10 caracteres.');
+      return;
+    }
+
+    setJustifySaving(true);
+    try {
+      await portalService.requestAttendanceJustification(justifyRecord.id, reason);
+      toast.success('Justificación enviada. El docente la revisará.');
+      setJustifyRecord(null);
+      if (attendanceCourse) {
+        const response = await portalService.getStudentAttendance(attendanceCourse.sectionId);
+        setAttendanceRecords(response.data);
+      }
+    } catch (err) {
+      setJustifyError(getApiErrorMessage(err, 'No se pudo enviar la justificación.'));
+    } finally {
+      setJustifySaving(false);
     }
   };
 
@@ -656,8 +694,46 @@ export const StudentPortalPage: React.FC = () => {
           {attendanceLoading ? (
             <LoadingSpinner message="Consultando asistencia..." />
           ) : (
-            <StudentAttendancePanel records={attendanceRecords} />
+            <StudentAttendancePanel records={attendanceRecords} onJustify={openJustification} />
           )}
+        </Modal>
+      )}
+      {justifyRecord && (
+        <Modal
+          title="Justificar inasistencia"
+          subtitle={`${formatDate(justifyRecord.date)} · ${attendanceCourse?.courseName ?? 'Curso'}`}
+          icon={<FileText size={20} />}
+          maxWidth="520px"
+          onClose={() => setJustifyRecord(null)}
+        >
+          <form className="modal-form" onSubmit={submitJustification}>
+            <div className="field">
+              <label className="field-label" htmlFor="justification-reason">Motivo de la justificación</label>
+              <textarea
+                id="justification-reason"
+                style={{ ...academicInputStyle, minHeight: '110px', resize: 'vertical' }}
+                value={justifyReason}
+                onChange={(event) => setJustifyReason(event.target.value)}
+                maxLength={500}
+                rows={4}
+                placeholder="Explica brevemente por qué no pudiste asistir o llegaste tarde."
+                data-autofocus
+                required
+              />
+              <span className="field-hint">{justifyReason.length}/500 caracteres</span>
+            </div>
+
+            {justifyError && <p className="form-error" role="alert">{justifyError}</p>}
+
+            <div className="modal-form-footer">
+              <Button type="button" variant="secondary" onClick={() => setJustifyRecord(null)}>
+                Cancelar
+              </Button>
+              <Button type="submit" isLoading={justifySaving}>
+                Enviar justificación
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>
