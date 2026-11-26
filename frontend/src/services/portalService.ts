@@ -2,6 +2,13 @@ import api from './api';
 import type { ApiResponse } from './healthService';
 import type { ActaDto, AttendanceDto, EvaluationDto, GradeDto } from './evaluationService';
 
+export interface PortalAttendanceDto {
+  id?: number;
+  date: string;
+  status: string;
+  observation?: string | null;
+}
+
 export interface PortalGradeDto {
   evaluationName: string;
   type: string;
@@ -110,6 +117,13 @@ export const portalService = {
 
   async getStudentHistory(): Promise<ApiResponse<PortalCourseDto[]>> {
     const response = await api.get<ApiResponse<PortalCourseDto[]>>('/v1/portal/student/history');
+    return response.data;
+  },
+
+  async getStudentAttendance(sectionId: number): Promise<ApiResponse<PortalAttendanceDto[]>> {
+    const response = await api.get<ApiResponse<PortalAttendanceDto[]>>(
+      `/v1/portal/student/sections/${sectionId}/attendance`
+    );
     return response.data;
   },
 

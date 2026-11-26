@@ -2,6 +2,7 @@ package com.gestoracad.service.impl;
 
 import com.gestoracad.dto.DtoPortalDocente;
 import com.gestoracad.dto.DtoPortalEstudiante;
+import com.gestoracad.dto.DtoAsistenciaEstudiante;
 import com.gestoracad.entity.Acta;
 import com.gestoracad.entity.ActaDetalle;
 import com.gestoracad.entity.Asistencia;
@@ -138,6 +139,35 @@ public class ServicioPortalAcademicoImpl implements ServicioPortalAcademico {
         return enrollmentRepository.findAllByStudentIdDetailed(student.getId())
                 .stream()
                 .map(enrollment -> buildCourse(enrollment, student))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DtoAsistenciaEstudiante> getStudentAttendance(Long sectionId) {
+        Usuario user = currentUser();
+        Estudiante student = studentRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ExcepcionRecursoNoEncontrado(
+                        "Ficha de estudiante", "usuario", user.getUsername()));
+
+        boolean enrolled = enrollmentRepository.findAllByStudentIdDetailed(student.getId())
+                .stream()
+                .anyMatch(enrollment -> enrollment.getSection().getId().equals(sectionId));
+        if (!enrolled) {
+            throw new ExcepcionRecursoNoEncontrado("Sección", "id", sectionId);
+        }
+
+        return attendanceRepository
+                .findBySectionIdAndStudentIdAndActiveTrueOrderByDateDesc(sectionId, student.getId())
+                .stream()
+                .map(attendance -> {
+                    DtoAsistenciaEstudiante item = new DtoAsistenciaEstudiante();
+                    item.setId(attendance.getId());
+                    item.setDate(attendance.getDate());
+                    item.setStatus(attendance.getStatus());
+                    item.setObservation(attendance.getObservation());
+                    return item;
+                })
                 .toList();
     }
 

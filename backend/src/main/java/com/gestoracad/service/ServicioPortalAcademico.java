@@ -1,5 +1,6 @@
 package com.gestoracad.service;
 
+import com.gestoracad.dto.DtoAsistenciaEstudiante;
 import com.gestoracad.dto.DtoPortalDocente;
 import com.gestoracad.dto.DtoPortalEstudiante;
 
@@ -15,6 +16,8 @@ public interface ServicioPortalAcademico {
     DtoPortalEstudiante getStudentSummary();
 
     List<DtoPortalEstudiante.Curso> getStudentHistory();
+
+    List<DtoAsistenciaEstudiante> getStudentAttendance(Long sectionId);
 
     DtoPortalDocente getTeacherSummary();
 }

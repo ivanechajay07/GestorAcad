@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  AlertTriangle,
   BookOpen,
   CalendarDays,
+  CheckCircle2,
   ClipboardCheck,
   Download,
   GraduationCap,
@@ -19,6 +21,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Select } from '../components/ui/Select';
 import { CourseDetailPanel } from '../components/portal/CourseDetailPanel';
+import { StudentAttendancePanel } from '../components/portal/StudentAttendancePanel';
 import { StudentEvaluationsPanel } from '../components/portal/StudentEvaluationsPanel';
 import { StudentPlanPanel } from '../components/portal/StudentPlanPanel';
 import { StudentSchedulePanel } from '../components/portal/StudentSchedulePanel';
@@ -26,10 +29,11 @@ import type { StudentScheduleEntry } from '../components/portal/StudentScheduleP
 import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
 import { reportService } from '../services/reportService';
-import type { PortalCourseDto, StudentPortalDto } from '../services/portalService';
+import type { PortalAttendanceDto, PortalCourseDto, StudentPortalDto } from '../services/portalService';
 import {
   attendanceRate,
   averageByPeriod,
+  buildStudentAlerts,
   conditionLabel,
   courseAverage,
   courseAverageStatus,
@@ -57,6 +61,9 @@ export const StudentPortalPage: React.FC = () => {
   const [historyQuery, setHistoryQuery] = useState('');
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
+  const [attendanceCourse, setAttendanceCourse] = useState<PortalCourseDto | null>(null);
+  const [attendanceRecords, setAttendanceRecords] = useState<PortalAttendanceDto[]>([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
 
   useEffect(() => {
     portalService
@@ -73,6 +80,10 @@ export const StudentPortalPage: React.FC = () => {
   }, [toast]);
 
   const currentAttendance = useMemo(() => globalAttendance(data?.courses ?? []), [data]);
+  const alerts = useMemo(
+    () => buildStudentAlerts(data?.courses ?? [], data?.minimumGrade ?? 12),
+    [data]
+  );
 
   const historyPeriods = useMemo(
     () => Array.from(new Set(history.map((course) => course.periodCode))).sort((a, b) => b.localeCompare(a)),
@@ -129,6 +140,20 @@ export const StudentPortalPage: React.FC = () => {
       toast.error('No se pudo generar el reporte de avance.');
     } finally {
       setDownloadingReport(false);
+    }
+  };
+
+  const openAttendance = async (course: PortalCourseDto) => {
+    setAttendanceCourse(course);
+    setAttendanceRecords([]);
+    setAttendanceLoading(true);
+    try {
+      const response = await portalService.getStudentAttendance(course.sectionId);
+      setAttendanceRecords(response.data);
+    } catch {
+      toast.error('No se pudo cargar la asistencia del curso.');
+    } finally {
+      setAttendanceLoading(false);
     }
   };
 
@@ -190,6 +215,46 @@ export const StudentPortalPage: React.FC = () => {
           },
         ]}
       />
+
+      {data.courses.length > 0 && (
+        alerts.length > 0 ? (
+          <section className="glass-panel student-panel" aria-label="Alertas académicas">
+            <SectionHeader
+              compact
+              icon={<AlertTriangle size={18} />}
+              eyebrow="Atención"
+              title="Alertas académicas"
+              description="Aspectos del periodo que conviene revisar."
+              aside={
+                <Badge
+                  variant={alerts.some((alert) => alert.tone === 'danger')
+                    ? 'danger'
+                    : alerts.some((alert) => alert.tone === 'warning') ? 'warning' : 'info'}
+                  size="sm"
+                >
+                  {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'}
+                </Badge>
+              }
+            />
+            <ul className="student-alert-list">
+              {alerts.map((alert) => (
+                <li className={`student-alert is-${alert.tone}`} key={alert.id}>
+                  <strong>{alert.title}</strong>
+                  <span>{alert.detail}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : (
+          <div className="student-alert-success glass-panel">
+            <CheckCircle2 size={20} aria-hidden="true" />
+            <div>
+              <strong>Sin alertas académicas</strong>
+              <span>Tu promedio y asistencia están dentro de los parámetros esperados.</span>
+            </div>
+          </div>
+        )
+      )}
 
       <section className="glass-panel student-panel" aria-label="Cursos del periodo">
         <SectionHeader
@@ -287,15 +352,26 @@ export const StudentPortalPage: React.FC = () => {
                     <span className="student-course-card__count">
                       {course.grades.length} {course.grades.length === 1 ? 'evaluación' : 'evaluaciones'}
                     </span>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      leftIcon={<ClipboardCheck size={14} />}
-                      onClick={() => setSelected(course)}
-                      aria-label={`Ver evaluaciones de ${course.courseName}`}
-                    >
-                      Ver evaluaciones
-                    </Button>
+                    <div className="student-course-card__actions">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        leftIcon={<CalendarDays size={14} />}
+                        onClick={() => openAttendance(course)}
+                        aria-label={`Ver asistencia de ${course.courseName}`}
+                      >
+                        Asistencia
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        leftIcon={<ClipboardCheck size={14} />}
+                        onClick={() => setSelected(course)}
+                        aria-label={`Ver evaluaciones de ${course.courseName}`}
+                      >
+                        Ver evaluaciones
+                      </Button>
+                    </div>
                   </div>
                 </article>
               );
@@ -567,6 +643,21 @@ export const StudentPortalPage: React.FC = () => {
             downloading={downloadingPdf}
             minimumGrade={data.minimumGrade ?? 12}
           />
+        </Modal>
+      )}
+      {attendanceCourse && (
+        <Modal
+          title={`Asistencia · ${attendanceCourse.courseName}`}
+          subtitle={`${attendanceCourse.periodCode} · Sección ${attendanceCourse.sectionCode}`}
+          icon={<CalendarDays size={20} />}
+          maxWidth="640px"
+          onClose={() => setAttendanceCourse(null)}
+        >
+          {attendanceLoading ? (
+            <LoadingSpinner message="Consultando asistencia..." />
+          ) : (
+            <StudentAttendancePanel records={attendanceRecords} />
+          )}
         </Modal>
       )}
     </div>

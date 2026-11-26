@@ -1,5 +1,6 @@
 package com.gestoracad.controller;
 
+import com.gestoracad.dto.DtoAsistenciaEstudiante;
 import com.gestoracad.dto.DtoPortalDocente;
 import com.gestoracad.dto.DtoPortalEstudiante;
 import com.gestoracad.dto.DtoReporteExportacion;
@@ -57,6 +58,16 @@ public class ControladorPortalAcademico {
     public ResponseEntity<DtoRespuestaApi<List<DtoPortalEstudiante.Curso>>> studentHistory() {
         return ResponseEntity.ok(DtoRespuestaApi.ok(
                 portalService.getStudentHistory(), "Historial académico obtenido"));
+    }
+
+    @GetMapping("/student/sections/{sectionId}/attendance")
+    @PreAuthorize("hasRole('ESTUDIANTE')")
+    @Operation(summary = "Asistencia detallada del estudiante en una sección",
+            description = "Devuelve los registros diarios de asistencia del estudiante autenticado")
+    public ResponseEntity<DtoRespuestaApi<List<DtoAsistenciaEstudiante>>> studentAttendance(
+            @PathVariable Long sectionId) {
+        return ResponseEntity.ok(DtoRespuestaApi.ok(
+                portalService.getStudentAttendance(sectionId), "Asistencia obtenida"));
     }
 
     @GetMapping("/teacher/summary")

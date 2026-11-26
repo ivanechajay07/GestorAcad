@@ -21,4 +21,6 @@ public interface RepositorioAsistencia extends JpaRepository<Asistencia, Long> {
     Optional<Asistencia> findBySectionIdAndStudentIdAndDate(Long sectionId, Long studentId, LocalDate date);
 
     List<Asistencia> findBySectionIdAndStudentIdAndActiveTrue(Long sectionId, Long studentId);
+
+    List<Asistencia> findBySectionIdAndStudentIdAndActiveTrueOrderByDateDesc(Long sectionId, Long studentId);
 }

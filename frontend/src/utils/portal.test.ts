@@ -3,6 +3,7 @@ import type { PortalCourseDto, PortalGradeDto } from '../services/portalService'
 import {
   attendanceRate,
   averageByPeriod,
+  buildStudentAlerts,
   conditionLabel,
   courseAverage,
   courseAverageStatus,
@@ -152,5 +153,35 @@ describe('utilidades del portal del estudiante', () => {
     expect(requiredPendingAverage(simulatorCourse, 14)).toBe(12.67);
     expect(requiredPendingAverage(simulatorCourse, 18)).toBe(19.33);
     expect(requiredPendingAverage(course({ grades: [grade({ score: 15 })] }), 14)).toBeNull();
+  });
+
+  it('genera alertas por asistencia, promedio y evaluaciones pendientes', () => {
+    const atRisk = course({
+      present: 6,
+      absent: 4,
+      late: 0,
+      average: null,
+      approved: null,
+      grades: [grade({ score: 8 })],
+    });
+    const alerts = buildStudentAlerts([atRisk], 12);
+
+    expect(alerts.some((alert) => alert.title.includes('Asistencia baja'))).toBe(true);
+    expect(alerts.some((alert) => alert.title.includes('Promedio bajo'))).toBe(true);
+
+    const noGrades = course({
+      courseCode: 'COM-101',
+      courseName: 'Comunicación I',
+      present: 2,
+      absent: 0,
+      late: 0,
+      grades: [],
+    });
+    expect(buildStudentAlerts([noGrades], 12)[0].title).toContain('Sin evaluaciones');
+
+    const pending = course({
+      grades: [grade({ score: null })],
+    });
+    expect(buildStudentAlerts([pending], 12).some((alert) => alert.title.includes('evaluación pendiente'))).toBe(true);
   });
 });

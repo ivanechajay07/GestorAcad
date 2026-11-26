@@ -30,6 +30,13 @@ export interface PeriodAveragePoint {
   average: number;
 }
 
+export interface StudentAlert {
+  id: string;
+  tone: 'danger' | 'warning' | 'info';
+  title: string;
+  detail: string;
+}
+
 const normalizeText = (value: string): string =>
   value
     .toLocaleLowerCase()
@@ -135,6 +142,59 @@ export const courseAverageStatus = (
   return course.approved
     ? { label: 'Aprobado', tone: 'success' }
     : { label: 'Desaprobado', tone: 'danger' };
+};
+
+/** Alertas académicas calculadas con el avance y la asistencia vigentes. */
+export const buildStudentAlerts = (
+  courses: PortalCourseDto[],
+  minimumGrade: number
+): StudentAlert[] => {
+  const alerts: StudentAlert[] = [];
+  let pending = 0;
+
+  courses.forEach((course) => {
+    const rate = attendanceRate(course);
+    if (rate != null && rate < 75) {
+      alerts.push({
+        id: `asistencia-${course.courseCode}`,
+        tone: rate < 60 ? 'danger' : 'warning',
+        title: `Asistencia baja en ${course.courseName}`,
+        detail: `Registras ${rate}% de asistencia. El mínimo recomendado es 75%.`,
+      });
+    }
+
+    const summary = courseAverage(course);
+    if (summary.value != null && summary.value < minimumGrade) {
+      alerts.push({
+        id: `promedio-${course.courseCode}`,
+        tone: 'danger',
+        title: `Promedio bajo en ${course.courseName}`,
+        detail: `Tu promedio ${summary.kind === 'partial' ? 'parcial' : 'final'} es ${summary.value}; la nota mínima es ${minimumGrade}.`,
+      });
+    }
+
+    const coursePending = course.grades.filter((grade) => grade.score == null).length;
+    pending += coursePending;
+    if (course.grades.length === 0) {
+      alerts.push({
+        id: `sin-evaluaciones-${course.courseCode}`,
+        tone: 'info',
+        title: `Sin evaluaciones registradas en ${course.courseName}`,
+        detail: 'El docente todavía no publicó evaluaciones para esta sección.',
+      });
+    }
+  });
+
+  if (pending > 0) {
+    alerts.push({
+      id: 'evaluaciones-pendientes',
+      tone: 'info',
+      title: `${pending} ${pending === 1 ? 'evaluación pendiente' : 'evaluaciones pendientes'}`,
+      detail: 'Revisa el calendario de evaluaciones y el simulador de nota.',
+    });
+  }
+
+  return alerts;
 };
 
 /** Promedio de los cursos de un periodo que ya tienen nota final o parcial. */
