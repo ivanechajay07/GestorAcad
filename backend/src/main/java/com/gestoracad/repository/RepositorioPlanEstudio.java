@@ -19,5 +19,7 @@ public interface RepositorioPlanEstudio extends JpaRepository<PlanEstudio, Long>
 
     Optional<PlanEstudio> findByCode(String code);
 
+    Optional<PlanEstudio> findFirstByCareerIdAndActiveTrueOrderByIdDesc(Long careerId);
+
     boolean existsByCodeIgnoreCase(String code);
 }

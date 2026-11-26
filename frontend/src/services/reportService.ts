@@ -48,4 +48,6 @@ export const reportService = {
       'constancia.pdf',
       'application/pdf'
     ),
+  exportStudentReport: (): Promise<string> =>
+    downloadReport('/v1/portal/student/report.pdf', 'reporte-avance.pdf', 'application/pdf'),
 };

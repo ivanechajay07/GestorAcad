@@ -21,6 +21,8 @@ public class DtoPortalEstudiante {
     private Integer approvedCredits;
     private BigDecimal weightedAverage;
     private String condition;
+    private BigDecimal minimumGrade;
+    private Plan plan;
     private List<Curso> courses = new ArrayList<>();
 
     public String getCode() { return code; }
@@ -41,6 +43,10 @@ public class DtoPortalEstudiante {
     public void setWeightedAverage(BigDecimal weightedAverage) { this.weightedAverage = weightedAverage; }
     public String getCondition() { return condition; }
     public void setCondition(String condition) { this.condition = condition; }
+    public BigDecimal getMinimumGrade() { return minimumGrade; }
+    public void setMinimumGrade(BigDecimal minimumGrade) { this.minimumGrade = minimumGrade; }
+    public Plan getPlan() { return plan; }
+    public void setPlan(Plan plan) { this.plan = plan; }
     public List<Curso> getCourses() { return courses; }
     public void setCourses(List<Curso> courses) { this.courses = courses; }
 
@@ -52,6 +58,8 @@ public class DtoPortalEstudiante {
         private Long sectionId;
         private String teacherName;
         private String schedule;
+        private String classroom;
+        private List<Horario> scheduleBlocks = new ArrayList<>();
         private LocalDate enrollmentDate;
         private int credits;
         private String status;
@@ -77,6 +85,10 @@ public class DtoPortalEstudiante {
         public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
         public String getSchedule() { return schedule; }
         public void setSchedule(String schedule) { this.schedule = schedule; }
+        public String getClassroom() { return classroom; }
+        public void setClassroom(String classroom) { this.classroom = classroom; }
+        public List<Horario> getScheduleBlocks() { return scheduleBlocks; }
+        public void setScheduleBlocks(List<Horario> scheduleBlocks) { this.scheduleBlocks = scheduleBlocks; }
         public LocalDate getEnrollmentDate() { return enrollmentDate; }
         public void setEnrollmentDate(LocalDate enrollmentDate) { this.enrollmentDate = enrollmentDate; }
         public int getCredits() { return credits; }
@@ -105,6 +117,7 @@ public class DtoPortalEstudiante {
         private BigDecimal weight;
         private BigDecimal score;
         private BigDecimal maxScore;
+        private LocalDate date;
 
         public String getEvaluationName() { return evaluationName; }
         public void setEvaluationName(String evaluationName) { this.evaluationName = evaluationName; }
@@ -116,5 +129,67 @@ public class DtoPortalEstudiante {
         public void setScore(BigDecimal score) { this.score = score; }
         public BigDecimal getMaxScore() { return maxScore; }
         public void setMaxScore(BigDecimal maxScore) { this.maxScore = maxScore; }
+        public LocalDate getDate() { return date; }
+        public void setDate(LocalDate date) { this.date = date; }
+    }
+
+    public static class Horario {
+        private String day;
+        private String startTime;
+        private String endTime;
+        private String classroom;
+
+        public String getDay() { return day; }
+        public void setDay(String day) { this.day = day; }
+        public String getStartTime() { return startTime; }
+        public void setStartTime(String startTime) { this.startTime = startTime; }
+        public String getEndTime() { return endTime; }
+        public void setEndTime(String endTime) { this.endTime = endTime; }
+        public String getClassroom() { return classroom; }
+        public void setClassroom(String classroom) { this.classroom = classroom; }
+    }
+
+    public static class Plan {
+        private String code;
+        private String name;
+        private int totalCredits;
+        private int approvedCredits;
+        private int progressPercent;
+        private List<PlanCourse> courses = new ArrayList<>();
+
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public int getTotalCredits() { return totalCredits; }
+        public void setTotalCredits(int totalCredits) { this.totalCredits = totalCredits; }
+        public int getApprovedCredits() { return approvedCredits; }
+        public void setApprovedCredits(int approvedCredits) { this.approvedCredits = approvedCredits; }
+        public int getProgressPercent() { return progressPercent; }
+        public void setProgressPercent(int progressPercent) { this.progressPercent = progressPercent; }
+        public List<PlanCourse> getCourses() { return courses; }
+        public void setCourses(List<PlanCourse> courses) { this.courses = courses; }
+    }
+
+    public static class PlanCourse {
+        private String courseCode;
+        private String courseName;
+        private int cycle;
+        private int credits;
+        private boolean mandatory;
+        private String status;
+
+        public String getCourseCode() { return courseCode; }
+        public void setCourseCode(String courseCode) { this.courseCode = courseCode; }
+        public String getCourseName() { return courseName; }
+        public void setCourseName(String courseName) { this.courseName = courseName; }
+        public int getCycle() { return cycle; }
+        public void setCycle(int cycle) { this.cycle = cycle; }
+        public int getCredits() { return credits; }
+        public void setCredits(int credits) { this.credits = credits; }
+        public boolean isMandatory() { return mandatory; }
+        public void setMandatory(boolean mandatory) { this.mandatory = mandatory; }
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
     }
 }

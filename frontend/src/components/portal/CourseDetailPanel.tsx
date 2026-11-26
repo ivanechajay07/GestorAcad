@@ -1,3 +1,4 @@
+import { CourseSimulator } from './CourseSimulator';
 import { ClipboardCheck, Clock3, Download, UserRound } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -16,13 +17,19 @@ interface CourseDetailPanelProps {
   course: PortalCourseDto;
   onDownload?: () => void;
   downloading?: boolean;
+  minimumGrade?: number;
 }
 
 /**
  * Detalle académico de un curso: resumen del acta, asistencia y evaluaciones.
  * Se usa tanto en la matrícula vigente como en el historial del estudiante.
  */
-export const CourseDetailPanel = ({ course, onDownload, downloading = false }: CourseDetailPanelProps) => {
+export const CourseDetailPanel = ({
+  course,
+  onDownload,
+  downloading = false,
+  minimumGrade = 12,
+}: CourseDetailPanelProps) => {
   const rate = attendanceRate(course);
   const summary = courseAverage(course);
   const status = courseAverageStatus(course, summary);
@@ -149,6 +156,8 @@ export const CourseDetailPanel = ({ course, onDownload, downloading = false }: C
           })}
         </ul>
       )}
+
+      <CourseSimulator course={course} minimumGrade={minimumGrade} />
 
       <div className="course-detail__footer">
         <div className="course-detail__footer-info">

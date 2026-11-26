@@ -75,6 +75,20 @@ public class ControladorPortalAcademico {
                                                     HttpServletRequest request) {
         DtoReporteExportacion report = reportPdfService.exportarConstanciaEstudiante(
                 sectionId, clientIp(request), request.getHeader("User-Agent"));
+        return pdfResponse(report);
+    }
+
+    @GetMapping("/student/report.pdf")
+    @PreAuthorize("hasRole('ESTUDIANTE')")
+    @Operation(summary = "Reporte de avance académico del estudiante autenticado",
+            description = "Genera un PDF con el resumen, la malla curricular y la matrícula vigente")
+    public ResponseEntity<byte[]> studentReport(HttpServletRequest request) {
+        DtoReporteExportacion report = reportPdfService.exportarReporteAvance(
+                clientIp(request), request.getHeader("User-Agent"));
+        return pdfResponse(report);
+    }
+
+    private ResponseEntity<byte[]> pdfResponse(DtoReporteExportacion report) {
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(report.nombreArchivo(), StandardCharsets.UTF_8)
                 .build();

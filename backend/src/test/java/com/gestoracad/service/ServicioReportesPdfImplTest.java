@@ -21,6 +21,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -159,5 +160,71 @@ class ServicioReportesPdfImplTest {
                 eq("JUnit"),
                 eq("tb_secciones"),
                 eq(3L));
+    }
+
+    @Test
+    @DisplayName("Debe generar el reporte de avance académico del estudiante")
+    void generatesStudentProgressReportPdf() {
+        DtoUniversidad university = new DtoUniversidad();
+        university.setName("Universidad Tecnológica del Perú");
+
+        DtoPortalEstudiante student = new DtoPortalEstudiante();
+        student.setCode("2023-010482");
+        student.setFirstName("Lucía");
+        student.setLastName("Vega Cárdenas");
+        student.setCareer("Ingeniería de Sistemas e Informática");
+        student.setFaculty("Facultad de Ingeniería y Arquitectura");
+        student.setCurrentCycle(6);
+        student.setCondition("REGULAR");
+        student.setApprovedCredits(118);
+        student.setWeightedAverage(new BigDecimal("17.85"));
+        student.setMinimumGrade(new BigDecimal("12"));
+
+        DtoPortalEstudiante.Curso course = new DtoPortalEstudiante.Curso();
+        course.setPeriodCode("2026-II");
+        course.setCourseCode("MAT-101");
+        course.setCourseName("Matemática I");
+        course.setSectionCode("A");
+        course.setCredits(4);
+        course.setTeacherName("Carlos Santana");
+        course.setActaStatus("ABIERTA");
+        student.getCourses().add(course);
+
+        DtoPortalEstudiante.Plan plan = new DtoPortalEstudiante.Plan();
+        plan.setCode("PLAN-IS-2026");
+        plan.setName("Plan de Estudios Ingeniería de Sistemas 2026");
+        plan.setTotalCredits(11);
+        plan.setApprovedCredits(0);
+        plan.setProgressPercent(0);
+        DtoPortalEstudiante.PlanCourse planCourse = new DtoPortalEstudiante.PlanCourse();
+        planCourse.setCourseCode("MAT-101");
+        planCourse.setCourseName("Matemática I");
+        planCourse.setCycle(1);
+        planCourse.setCredits(4);
+        planCourse.setMandatory(true);
+        planCourse.setStatus("EN_CURSO");
+        plan.getCourses().add(planCourse);
+        student.setPlan(plan);
+
+        when(portalService.getStudentSummary()).thenReturn(student);
+        when(universityService.getActiveUniversity()).thenReturn(university);
+
+        DtoReporteExportacion result = pdfService.exportarReporteAvance("127.0.0.1", "JUnit");
+
+        assertThat(result.nombreArchivo()).startsWith("reporte_avance_2023-010482_").endsWith(".pdf");
+        assertThat(result.contenido().length).isGreaterThan(1000);
+        assertThat(new String(result.contenido(), 0, 4, StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+        verify(auditService).log(
+                any(),
+                eq(AccionAuditoria.EXPORT),
+                eq("PORTALES"),
+                any(String.class),
+                eq("/api/v1/portal/student/report.pdf"),
+                eq("GET"),
+                eq("127.0.0.1"),
+                eq("SUCCESS"),
+                eq("JUnit"),
+                eq("tb_estudiantes"),
+                isNull());
     }
 }

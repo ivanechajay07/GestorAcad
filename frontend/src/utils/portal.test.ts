@@ -11,6 +11,8 @@ import {
   globalAttendance,
   gradeProgress,
   periodAverage,
+  projectedCourseAverage,
+  requiredPendingAverage,
   totalEvaluationWeight,
 } from './portal';
 
@@ -136,5 +138,19 @@ describe('utilidades del portal del estudiante', () => {
       { period: '2025-II', average: 18 },
       { period: '2026-II', average: 15 },
     ]);
+  });
+
+  it('calcula el promedio proyectado y la nota pendiente necesaria', () => {
+    const simulatorCourse = course({
+      grades: [
+        grade({ evaluationName: 'Parcial', weight: 40, score: 16, maxScore: 20 }),
+        grade({ evaluationName: 'Final', weight: 60, score: null, maxScore: 20 }),
+      ],
+    });
+
+    expect(projectedCourseAverage(simulatorCourse, { 1: 14 })).toBe(14.8);
+    expect(requiredPendingAverage(simulatorCourse, 14)).toBe(12.67);
+    expect(requiredPendingAverage(simulatorCourse, 18)).toBe(19.33);
+    expect(requiredPendingAverage(course({ grades: [grade({ score: 15 })] }), 14)).toBeNull();
   });
 });

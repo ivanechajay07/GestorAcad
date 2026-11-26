@@ -49,6 +49,7 @@ describe('CourseDetailPanel', () => {
     expect(html).toContain('aria-valuenow="80"');
     expect(html).toContain('Registrada');
     expect(html).toContain('<strong>100%</strong>');
+    expect(html).toContain('Simulador de nota');
   });
 
   it('muestra el botón de descarga de constancia cuando está disponible', () => {

@@ -146,6 +146,60 @@ export const periodAverage = (courses: PortalCourseDto[]): number | null => {
   return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 100) / 100;
 };
 
+/** Promedio proyectado con notas hipotéticas para las evaluaciones pendientes. */
+export const projectedCourseAverage = (
+  course: PortalCourseDto,
+  hypothetical: Record<number, number | null>
+): number | null => {
+  let weighted = 0;
+  let usedWeight = 0;
+
+  course.grades.forEach((grade, index) => {
+    const score = grade.score ?? hypothetical[index] ?? null;
+    if (
+      score == null
+      || !Number.isFinite(grade.maxScore)
+      || grade.maxScore <= 0
+      || !Number.isFinite(grade.weight)
+      || grade.weight <= 0
+    ) {
+      return;
+    }
+    const normalized = Math.min(Math.max(score, 0), grade.maxScore) / grade.maxScore;
+    weighted += normalized * 20 * (grade.weight / 100);
+    usedWeight += grade.weight;
+  });
+
+  if (usedWeight <= 0) return null;
+  return Math.round((weighted / (usedWeight / 100)) * 100) / 100;
+};
+
+/** Nota promedio necesaria en las evaluaciones pendientes para alcanzar un objetivo. */
+export const requiredPendingAverage = (
+  course: PortalCourseDto,
+  target: number
+): number | null => {
+  const pending = course.grades.filter(
+    (grade) => grade.score == null && grade.weight > 0 && grade.maxScore > 0
+  );
+  if (pending.length === 0) {
+    return null;
+  }
+
+  const totalWeight = course.grades.reduce((sum, grade) => sum + (grade.weight ?? 0), 0);
+  if (totalWeight <= 0) return null;
+
+  const currentContribution = course.grades.reduce((sum, grade) => {
+    if (grade.score == null || grade.maxScore <= 0) return sum;
+    return sum + (grade.score / grade.maxScore) * 20 * (grade.weight / 100);
+  }, 0);
+  const pendingWeight = pending.reduce((sum, grade) => sum + grade.weight, 0);
+  if (pendingWeight <= 0) return null;
+
+  const required = ((target * totalWeight) / 100 - currentContribution) / (pendingWeight / 100);
+  return Math.round(required * 100) / 100;
+};
+
 /** Filtra el historial por periodo y por código o nombre del curso. */
 export const filterHistory = (
   history: PortalCourseDto[],

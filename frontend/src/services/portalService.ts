@@ -8,6 +8,32 @@ export interface PortalGradeDto {
   weight: number;
   score: number | null;
   maxScore: number;
+  date?: string | null;
+}
+
+export interface PortalScheduleBlockDto {
+  day: string;
+  startTime: string;
+  endTime: string;
+  classroom?: string | null;
+}
+
+export interface PortalPlanCourseDto {
+  courseCode: string;
+  courseName: string;
+  cycle: number;
+  credits: number;
+  mandatory: boolean;
+  status: 'APROBADO' | 'EN_CURSO' | 'PENDIENTE';
+}
+
+export interface PortalPlanDto {
+  code: string;
+  name: string;
+  totalCredits: number;
+  approvedCredits: number;
+  progressPercent: number;
+  courses: PortalPlanCourseDto[];
 }
 
 export interface PortalCourseDto {
@@ -18,6 +44,8 @@ export interface PortalCourseDto {
   sectionId: number;
   teacherName?: string | null;
   schedule?: string | null;
+  classroom?: string | null;
+  scheduleBlocks?: PortalScheduleBlockDto[];
   enrollmentDate?: string | null;
   credits: number;
   status: string;
@@ -40,6 +68,8 @@ export interface StudentPortalDto {
   approvedCredits: number;
   weightedAverage: number;
   condition: string;
+  minimumGrade?: number | null;
+  plan?: PortalPlanDto | null;
   courses: PortalCourseDto[];
 }
 

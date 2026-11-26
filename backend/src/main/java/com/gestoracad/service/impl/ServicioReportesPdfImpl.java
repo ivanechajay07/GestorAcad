@@ -126,6 +126,171 @@ public class ServicioReportesPdfImpl implements ServicioReportesPdf {
         return new DtoReporteExportacion(filename, content);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public DtoReporteExportacion exportarReporteAvance(String clientIp, String userAgent) {
+        DtoPortalEstudiante student = portalService.getStudentSummary();
+        byte[] content = renderReporteAvance(student);
+        auditService.log(
+                UtilidadesSeguridad.getCurrentUsername(),
+                AccionAuditoria.EXPORT,
+                "PORTALES",
+                "Exportación del reporte de avance académico del estudiante " + student.getCode(),
+                "/api/v1/portal/student/report.pdf",
+                "GET",
+                clientIp,
+                "SUCCESS",
+                userAgent,
+                "tb_estudiantes",
+                null);
+        String filename = "reporte_avance_" + safe(student.getCode())
+                + "_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".pdf";
+        return new DtoReporteExportacion(filename, content);
+    }
+
+    private byte[] renderReporteAvance(DtoPortalEstudiante student) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4, 42, 42, 42, 56);
+        PdfWriter writer = PdfWriter.getInstance(document, output);
+        writer.setPageEvent(new PdfPageEventHelper() {
+            @Override
+            public void onEndPage(PdfWriter pdfWriter, Document pdfDocument) {
+                Phrase footer = new Phrase(
+                        "Documento generado automáticamente por el Gestor Académico Virtual · "
+                                + LocalDateTime.now().format(DATE_TIME),
+                        NOTE);
+                ColumnText.showTextAligned(pdfWriter.getDirectContent(), Element.ALIGN_CENTER,
+                        footer, PageSize.A4.getWidth() / 2, 24, 0);
+            }
+        });
+        document.open();
+
+        DtoUniversidad university = activeUniversity();
+        String institution = university != null && university.getName() != null
+                ? university.getName()
+                : "Institución académica";
+        String taxId = university != null && university.getTaxId() != null
+                ? "RUC " + university.getTaxId()
+                : "";
+
+        Paragraph brand = new Paragraph(institution, BRAND);
+        brand.setSpacingAfter(2);
+        document.add(brand);
+        Paragraph legend = new Paragraph("Sistema de Gestión Académica" + (taxId.isBlank() ? "" : " · " + taxId), SUBTITLE);
+        legend.setSpacingAfter(14);
+        document.add(legend);
+
+        Paragraph title = new Paragraph("REPORTE DE AVANCE ACADÉMICO", TITLE);
+        title.setSpacingAfter(2);
+        document.add(title);
+        Paragraph subtitle = new Paragraph("Resumen del estudiante y de su matrícula vigente", SUBTITLE);
+        subtitle.setSpacingAfter(14);
+        document.add(subtitle);
+
+        String fullName = ((student.getFirstName() == null ? "" : student.getFirstName()) + " "
+                + (student.getLastName() == null ? "" : student.getLastName())).trim();
+        PdfPTable meta = new PdfPTable(new float[]{1.1f, 2.4f, 1.1f, 2.4f});
+        meta.setWidthPercentage(100);
+        meta.setSpacingAfter(10);
+        addMeta(meta, "Estudiante", value(fullName));
+        addMeta(meta, "Código", value(student.getCode()));
+        addMeta(meta, "Carrera", value(student.getCareer()));
+        addMeta(meta, "Facultad", value(student.getFaculty()));
+        addMeta(meta, "Ciclo", student.getCurrentCycle() == null ? "—" : String.valueOf(student.getCurrentCycle()));
+        addMeta(meta, "Condición", value(student.getCondition()));
+        addMeta(meta, "Promedio ponderado", average(student.getWeightedAverage()));
+        addMeta(meta, "Créditos aprobados", student.getApprovedCredits() == null ? "—" : String.valueOf(student.getApprovedCredits()));
+        document.add(meta);
+
+        if (student.getPlan() != null) {
+            DtoPortalEstudiante.Plan plan = student.getPlan();
+            Paragraph planTitle = new Paragraph("AVANCE DE MALLA CURRICULAR", LABEL);
+            planTitle.setSpacingBefore(4);
+            planTitle.setSpacingAfter(4);
+            document.add(planTitle);
+            PdfPTable planSummary = new PdfPTable(new float[]{1.4f, 1.4f, 1.4f, 1.4f});
+            planSummary.setWidthPercentage(100);
+            planSummary.setSpacingAfter(10);
+            addMeta(planSummary, "Plan", value(plan.getName()));
+            addMeta(planSummary, "Créditos aprobados", plan.getApprovedCredits() + " / " + plan.getTotalCredits());
+            addMeta(planSummary, "Avance", plan.getProgressPercent() + "%");
+            addMeta(planSummary, "Nota mínima", average(student.getMinimumGrade()));
+            document.add(planSummary);
+
+            PdfPTable planTable = new PdfPTable(new float[]{1.1f, 3.6f, 1f, 1.4f, 1.4f});
+            planTable.setWidthPercentage(100);
+            planTable.setHeaderRows(1);
+            header(planTable, "Ciclo");
+            header(planTable, "Curso");
+            header(planTable, "Créditos");
+            header(planTable, "Tipo");
+            header(planTable, "Estado");
+            boolean alternate = false;
+            for (DtoPortalEstudiante.PlanCourse course : plan.getCourses()) {
+                cell(planTable, String.valueOf(course.getCycle()), alternate, Element.ALIGN_CENTER);
+                cell(planTable, value(course.getCourseCode()) + " · " + value(course.getCourseName()), alternate, Element.ALIGN_LEFT);
+                cell(planTable, String.valueOf(course.getCredits()), alternate, Element.ALIGN_CENTER);
+                cell(planTable, course.isMandatory() ? "Obligatorio" : "Electivo", alternate, Element.ALIGN_CENTER);
+                cell(planTable, statusLabel(course.getStatus()), alternate, Element.ALIGN_CENTER);
+                alternate = !alternate;
+            }
+            document.add(planTable);
+            Paragraph space = new Paragraph(" ", NOTE);
+            space.setSpacingAfter(6);
+            document.add(space);
+        }
+
+        Paragraph coursesTitle = new Paragraph("MATRÍCULA VIGENTE", LABEL);
+        coursesTitle.setSpacingBefore(6);
+        coursesTitle.setSpacingAfter(4);
+        document.add(coursesTitle);
+
+        PdfPTable courses = new PdfPTable(new float[]{1f, 2.7f, .8f, .8f, 1.8f, 1.2f, 1.1f});
+        courses.setWidthPercentage(100);
+        courses.setHeaderRows(1);
+        header(courses, "Periodo");
+        header(courses, "Curso");
+        header(courses, "Secc.");
+        header(courses, "Créd.");
+        header(courses, "Docente");
+        header(courses, "Promedio");
+        header(courses, "Acta");
+
+        if (student.getCourses().isEmpty()) {
+            PdfPCell empty = new PdfPCell(new Phrase("Sin cursos matriculados en el periodo vigente.", TABLE_CELL));
+            empty.setColspan(7);
+            empty.setPadding(12);
+            empty.setBorderColor(BORDER);
+            empty.setHorizontalAlignment(Element.ALIGN_CENTER);
+            courses.addCell(empty);
+        } else {
+            boolean alternate = false;
+            for (DtoPortalEstudiante.Curso course : student.getCourses()) {
+                cell(courses, value(course.getPeriodCode()), alternate, Element.ALIGN_LEFT);
+                cell(courses, value(course.getCourseCode()) + " · " + value(course.getCourseName()), alternate, Element.ALIGN_LEFT);
+                cell(courses, value(course.getSectionCode()), alternate, Element.ALIGN_CENTER);
+                cell(courses, String.valueOf(course.getCredits()), alternate, Element.ALIGN_CENTER);
+                cell(courses, value(course.getTeacherName()), alternate, Element.ALIGN_LEFT);
+                cell(courses, course.getAverage() == null ? "En curso" : average(course.getAverage()), alternate, Element.ALIGN_CENTER);
+                cell(courses, statusLabel(course.getActaStatus()), alternate, Element.ALIGN_CENTER);
+                alternate = !alternate;
+            }
+        }
+        document.add(courses);
+
+        Paragraph note = new Paragraph(
+                "Reporte informativo generado desde el portal del estudiante. "
+                        + "El avance de malla se calcula con los cursos aprobados del plan activo. "
+                        + "La nota mínima aprobatoria configurada es "
+                        + average(student.getMinimumGrade()) + ".",
+                NOTE);
+        note.setSpacingBefore(10);
+        document.add(note);
+
+        document.close();
+        return output.toByteArray();
+    }
+
     private byte[] renderConstancia(DtoPortalEstudiante student, DtoPortalEstudiante.Curso course) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 42, 42, 42, 56);
@@ -411,6 +576,18 @@ public class ServicioReportesPdfImpl implements ServicioReportesPdf {
             case "FINAL" -> "Final";
             case "OTRO" -> "Otra";
             default -> type;
+        };
+    }
+
+    private String statusLabel(String status) {
+        if (status == null || status.isBlank()) return "—";
+        return switch (status.trim().toUpperCase()) {
+            case "APROBADO" -> "Aprobado";
+            case "EN_CURSO" -> "En curso";
+            case "PENDIENTE" -> "Pendiente";
+            case "ABIERTA" -> "Abierta";
+            case "CERRADA" -> "Cerrada";
+            default -> status;
         };
     }
 

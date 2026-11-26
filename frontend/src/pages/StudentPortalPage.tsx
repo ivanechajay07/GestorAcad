@@ -1,5 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, ClipboardCheck, GraduationCap, History, Search, TrendingUp } from 'lucide-react';
+import {
+  BookOpen,
+  CalendarDays,
+  ClipboardCheck,
+  Download,
+  GraduationCap,
+  History,
+  Layers,
+  Search,
+  TrendingUp,
+} from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -9,6 +19,10 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Select } from '../components/ui/Select';
 import { CourseDetailPanel } from '../components/portal/CourseDetailPanel';
+import { StudentEvaluationsPanel } from '../components/portal/StudentEvaluationsPanel';
+import { StudentPlanPanel } from '../components/portal/StudentPlanPanel';
+import { StudentSchedulePanel } from '../components/portal/StudentSchedulePanel';
+import type { StudentScheduleEntry } from '../components/portal/StudentSchedulePanel';
 import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
 import { reportService } from '../services/reportService';
@@ -42,6 +56,7 @@ export const StudentPortalPage: React.FC = () => {
   const [historyPeriod, setHistoryPeriod] = useState('ALL');
   const [historyQuery, setHistoryQuery] = useState('');
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
 
   useEffect(() => {
     portalService
@@ -79,6 +94,20 @@ export const StudentPortalPage: React.FC = () => {
 
   const evolution = useMemo(() => averageByPeriod(history), [history]);
 
+  const scheduleEntries = useMemo<StudentScheduleEntry[]>(() => {
+    const entries: StudentScheduleEntry[] = [];
+    (data?.courses ?? []).forEach((course) => {
+      (course.scheduleBlocks ?? []).forEach((block) => {
+        entries.push({
+          ...block,
+          courseCode: course.courseCode,
+          courseName: course.courseName,
+        });
+      });
+    });
+    return entries;
+  }, [data]);
+
   const downloadConstancia = async (course: PortalCourseDto) => {
     setDownloadingPdf(true);
     try {
@@ -88,6 +117,18 @@ export const StudentPortalPage: React.FC = () => {
       toast.error('No se pudo generar la constancia de notas.');
     } finally {
       setDownloadingPdf(false);
+    }
+  };
+
+  const downloadReport = async () => {
+    setDownloadingReport(true);
+    try {
+      const filename = await reportService.exportStudentReport();
+      toast.success(`Reporte generado: ${filename}`);
+    } catch {
+      toast.error('No se pudo generar el reporte de avance.');
+    } finally {
+      setDownloadingReport(false);
     }
   };
 
@@ -107,6 +148,8 @@ export const StudentPortalPage: React.FC = () => {
     );
   }
 
+  const evaluationCount = data.courses.reduce((sum, course) => sum + course.grades.length, 0);
+
   return (
     <div className="page-stack">
       <PageHeader
@@ -122,6 +165,17 @@ export const StudentPortalPage: React.FC = () => {
               {conditionLabel(data.condition)}
             </Badge>
           </>
+        }
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Download size={15} />}
+            isLoading={downloadingReport}
+            onClick={downloadReport}
+          >
+            Reporte PDF
+          </Button>
         }
         stats={[
           { label: 'Promedio ponderado', value: data.weightedAverage },
@@ -249,6 +303,54 @@ export const StudentPortalPage: React.FC = () => {
           </div>
         )}
       </section>
+
+      <div className="student-insights-grid">
+        <section className="glass-panel student-panel" aria-label="Horario semanal">
+          <SectionHeader
+            compact
+            icon={<CalendarDays size={18} />}
+            eyebrow="Semana"
+            title="Horario semanal"
+            description="Clases programadas para el periodo vigente."
+            aside={
+              <Badge variant="outline" size="sm">
+                {scheduleEntries.length} {scheduleEntries.length === 1 ? 'bloque' : 'bloques'}
+              </Badge>
+            }
+          />
+          <StudentSchedulePanel entries={scheduleEntries} />
+        </section>
+
+        <section className="glass-panel student-panel" aria-label="Evaluaciones del periodo">
+          <SectionHeader
+            compact
+            icon={<ClipboardCheck size={18} />}
+            eyebrow="Evaluaciones"
+            title="Calendario de evaluaciones"
+            description="Fechas, pesos y estado de las evaluaciones."
+            aside={
+              <Badge variant="outline" size="sm">
+                {evaluationCount} {evaluationCount === 1 ? 'evaluación' : 'evaluaciones'}
+              </Badge>
+            }
+          />
+          <StudentEvaluationsPanel courses={data.courses} />
+        </section>
+      </div>
+
+      {data.plan && (
+        <section className="glass-panel student-panel" aria-label="Malla curricular">
+          <SectionHeader
+            compact
+            icon={<Layers size={18} />}
+            eyebrow="Plan de estudios"
+            title="Malla curricular"
+            description={data.plan.name}
+            aside={<Badge variant="outline" size="sm">{data.plan.progressPercent}% de avance</Badge>}
+          />
+          <StudentPlanPanel plan={data.plan} />
+        </section>
+      )}
 
       {evolution.length > 0 && (
         <section className="glass-panel student-panel" aria-label="Evolución del promedio">
@@ -463,6 +565,7 @@ export const StudentPortalPage: React.FC = () => {
             course={selected}
             onDownload={() => downloadConstancia(selected)}
             downloading={downloadingPdf}
+            minimumGrade={data.minimumGrade ?? 12}
           />
         </Modal>
       )}
