@@ -518,22 +518,6 @@ El pipeline de integración continua ejecuta `mvn verify` en el backend y `npm c
 
 ---
 
-## Guion de demostración para el docente
-
-1. **Iniciar sesión** con `admin` / `gestor123` en <http://localhost:3010>.
-2. **Panel institucional:** revisar indicadores, periodo vigente y pendientes de gestión.
-3. **Universidad:** recorrer facultades y carreras, y mostrar el alta de una carrera.
-4. **Estructura académica:** abrir el periodo `2026-II`, revisar cursos, planes y secciones.
-5. **Sección `MAT-101-A`:** mostrar horario, cupo, docente asignado y estudiantes matriculados.
-6. **Estudiantes:** abrir una ficha y mostrar cómo se vincula o crea su cuenta de acceso.
-7. **Docentes:** abrir una ficha y mostrar especialidades y asignaciones.
-8. **Evaluación:** seleccionar una sección, crear una evaluación, registrar notas y asistencia, y generar el acta en PDF.
-9. **Portal docente:** iniciar sesión con `carlos` / `docente123`, abrir `Mis secciones` y probar los accesos rápidos a notas, asistencia y acta.
-10. **Portal estudiante:** iniciar sesión con `lucia` / `alumno123`, abrir `Mi avance`, filtrar el historial y descargar la constancia de notas.
-11. **Roles y auditoría:** mostrar el catálogo de permisos y la bitácora de las operaciones realizadas.
-
----
-
 ## Consideraciones
 
 - Las cuentas de demostración deben cambiarse antes de usar el sistema en un entorno real.
