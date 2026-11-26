@@ -118,6 +118,14 @@ public class ServicioPortalAcademicoImpl implements ServicioPortalAcademico {
         course.setCourseCode(section.getCourse().getCode());
         course.setCourseName(section.getCourse().getName());
         course.setSectionCode(section.getCode());
+        course.setSectionId(section.getId());
+        course.setSchedule(section.getSchedule());
+        Docente teacher = section.getTeacher();
+        if (teacher != null) {
+            String firstName = teacher.getFirstName() == null ? "" : teacher.getFirstName();
+            String lastName = teacher.getLastName() == null ? "" : teacher.getLastName();
+            course.setTeacherName((firstName + " " + lastName).trim());
+        }
         course.setCredits(section.getCourse().getCredits());
         course.setStatus(enrollment.getStatus());
         course.setEnrollmentDate(enrollment.getEnrollmentDate());

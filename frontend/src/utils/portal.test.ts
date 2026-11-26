@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { PortalCourseDto, PortalGradeDto } from '../services/portalService';
 import {
   attendanceRate,
+  averageByPeriod,
   conditionLabel,
   courseAverage,
   courseAverageStatus,
   evaluationTypeLabel,
+  filterHistory,
   globalAttendance,
   gradeProgress,
   periodAverage,
@@ -17,6 +19,7 @@ const course = (overrides: Partial<PortalCourseDto> = {}): PortalCourseDto => ({
   courseCode: 'MAT-101',
   courseName: 'Matemática I',
   sectionCode: 'A',
+  sectionId: 1,
   credits: 4,
   status: 'MATRICULADO',
   actaStatus: 'ABIERTA',
@@ -105,5 +108,33 @@ describe('utilidades del portal del estudiante', () => {
       label: 'Desaprobado',
       tone: 'danger',
     });
+  });
+
+  it('filtra el historial por periodo y por nombre o código del curso', () => {
+    const history = [
+      course({ periodCode: '2025-II', courseCode: 'MAT-101', courseName: 'Matemática I' }),
+      course({ periodCode: '2026-I', courseCode: 'COM-101', courseName: 'Comunicación I' }),
+      course({ periodCode: '2026-II', courseCode: 'SIS-201', courseName: 'Algoritmos' }),
+    ];
+
+    expect(filterHistory(history, '2026-I', '')).toHaveLength(1);
+    expect(filterHistory(history, 'ALL', 'comunicacion')).toHaveLength(1);
+    expect(filterHistory(history, 'ALL', 'matematica')).toHaveLength(1);
+    expect(filterHistory(history, '2026-II', 'matematica')).toHaveLength(0);
+    expect(filterHistory(history, 'ALL', '')).toHaveLength(3);
+  });
+
+  it('ordena y limita la serie de promedio por periodo', () => {
+    const history = [
+      course({ periodCode: '2026-II', average: 15, approved: true }),
+      course({ periodCode: '2025-I', average: 12, approved: true }),
+      course({ periodCode: '2025-II', average: null, approved: null, grades: [grade({ score: 18 })] }),
+    ];
+
+    expect(averageByPeriod(history)).toEqual([
+      { period: '2025-I', average: 12 },
+      { period: '2025-II', average: 18 },
+      { period: '2026-II', average: 15 },
+    ]);
   });
 });

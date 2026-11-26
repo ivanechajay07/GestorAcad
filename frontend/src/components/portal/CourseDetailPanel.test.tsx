@@ -8,6 +8,9 @@ const baseCourse: PortalCourseDto = {
   courseCode: 'MAT-101',
   courseName: 'Matemática I',
   sectionCode: 'A',
+  sectionId: 3,
+  teacherName: 'Carlos Santana',
+  schedule: 'LUN-MIE 08:00-10:00',
   credits: 4,
   status: 'MATRICULADO',
   actaStatus: 'CERRADA',
@@ -32,6 +35,8 @@ describe('CourseDetailPanel', () => {
     const html = renderToStaticMarkup(<CourseDetailPanel course={baseCourse} />);
 
     expect(html).toContain('Matemática I');
+    expect(html).toContain('Carlos Santana');
+    expect(html).toContain('LUN-MIE 08:00-10:00');
     expect(html).toContain('Examen final');
     expect(html).toContain('Práctica');
     expect(html).not.toContain('PRACTICA');
@@ -44,6 +49,15 @@ describe('CourseDetailPanel', () => {
     expect(html).toContain('aria-valuenow="80"');
     expect(html).toContain('Registrada');
     expect(html).toContain('<strong>100%</strong>');
+  });
+
+  it('muestra el botón de descarga de constancia cuando está disponible', () => {
+    const html = renderToStaticMarkup(
+      <CourseDetailPanel course={baseCourse} onDownload={() => undefined} />
+    );
+
+    expect(html).toContain('Constancia PDF');
+    expect(html).toContain('Constancia PDF de Matemática I');
   });
 
   it('calcula y muestra el promedio parcial cuando el acta está abierta', () => {

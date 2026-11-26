@@ -1,8 +1,11 @@
 package com.gestoracad.service.impl;
 
 import com.gestoracad.dto.DtoNotificacion;
+import com.gestoracad.entity.Estudiante;
 import com.gestoracad.entity.ParametroSistema;
 import com.gestoracad.entity.Universidad;
+import com.gestoracad.entity.Usuario;
+import com.gestoracad.repository.RepositorioCalificacion;
 import com.gestoracad.repository.RepositorioDocente;
 import com.gestoracad.repository.RepositorioEstudiante;
 import com.gestoracad.repository.RepositorioParametroSistema;
@@ -10,6 +13,7 @@ import com.gestoracad.repository.RepositorioRegistroAuditoria;
 import com.gestoracad.repository.RepositorioUniversidad;
 import com.gestoracad.repository.RepositorioUsuario;
 import com.gestoracad.security.EvaluadorPermisos;
+import com.gestoracad.security.UtilidadesSeguridad;
 import com.gestoracad.service.ServicioNotificaciones;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -38,6 +43,7 @@ public class ServicioNotificacionesImpl implements ServicioNotificaciones {
 
     static final String PARAMETRO_PERIODO = "PERIODO_ACADEMICO_ACTUAL";
     static final int DIAS_ACTIVIDAD_AUDITORIA = 7;
+    static final int DIAS_NOTAS_RECIENTES = 7;
 
     static final String TIPO_ADVERTENCIA = "advertencia";
     static final String TIPO_INFO = "info";
@@ -54,6 +60,7 @@ public class ServicioNotificacionesImpl implements ServicioNotificaciones {
     private static final String ENLACE_USUARIOS = "/users";
     private static final String ENLACE_AUDITORIA = "/audit";
     private static final String ENLACE_UNIVERSIDAD = "/university";
+    private static final String ENLACE_AVANCE = "/my-progress";
 
     /** Prioridad visual: primero las advertencias, luego información y logros. */
     private static final Map<String, Integer> ORDEN_TIPO = Map.of(
@@ -67,6 +74,7 @@ public class ServicioNotificacionesImpl implements ServicioNotificaciones {
     private final RepositorioRegistroAuditoria auditRepository;
     private final RepositorioUniversidad universityRepository;
     private final RepositorioParametroSistema parameterRepository;
+    private final RepositorioCalificacion gradeRepository;
     private final EvaluadorPermisos permissionEvaluator;
 
     public ServicioNotificacionesImpl(RepositorioEstudiante studentRepository,
@@ -75,6 +83,7 @@ public class ServicioNotificacionesImpl implements ServicioNotificaciones {
                                       RepositorioRegistroAuditoria auditRepository,
                                       RepositorioUniversidad universityRepository,
                                       RepositorioParametroSistema parameterRepository,
+                                      RepositorioCalificacion gradeRepository,
                                       EvaluadorPermisos permissionEvaluator) {
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
@@ -82,6 +91,7 @@ public class ServicioNotificacionesImpl implements ServicioNotificaciones {
         this.auditRepository = auditRepository;
         this.universityRepository = universityRepository;
         this.parameterRepository = parameterRepository;
+        this.gradeRepository = gradeRepository;
         this.permissionEvaluator = permissionEvaluator;
     }
 
@@ -95,6 +105,7 @@ public class ServicioNotificacionesImpl implements ServicioNotificaciones {
         addInactiveTeachers(notifications, now);
         addInactiveUsers(notifications, now);
         addAcademicPeriod(notifications, now);
+        addRecentStudentGrades(notifications, now);
         addRecentAuditActivity(notifications, now);
         addLicensingStatus(notifications, now);
 
@@ -164,6 +175,38 @@ public class ServicioNotificacionesImpl implements ServicioNotificaciones {
                         "El periodo académico vigente se encuentra configurado en el sistema.",
                         permissionEvaluator.tiene(PERMISO_UNIVERSIDAD) ? ENLACE_UNIVERSIDAD : null,
                         now)));
+    }
+
+    private void addRecentStudentGrades(List<DtoNotificacion> notifications, Instant now) {
+        String username = UtilidadesSeguridad.getCurrentUsername();
+        if (username == null || username.isBlank() || "SISTEMA".equalsIgnoreCase(username)) {
+            return;
+        }
+        Usuario user = userRepository.findByUsernameWithRolesAndPermissions(username).orElse(null);
+        if (user == null || user.getRoles().stream()
+                .noneMatch(role -> "ROLE_ESTUDIANTE".equalsIgnoreCase(role.getName()))) {
+            return;
+        }
+        Estudiante student = studentRepository.findByUserId(user.getId()).orElse(null);
+        if (student == null) {
+            return;
+        }
+
+        LocalDateTime since = LocalDateTime.now().minusDays(DIAS_NOTAS_RECIENTES);
+        long recent = gradeRepository.countRecentByStudentId(student.getId(), since);
+        if (recent <= 0) {
+            return;
+        }
+        LocalDateTime latest = gradeRepository.findLatestUpdateByStudentId(student.getId(), since);
+        Instant date = latest == null ? now : latest.atZone(ZoneId.systemDefault()).toInstant();
+
+        notifications.add(new DtoNotificacion(
+                "notas-recientes-" + recent,
+                TIPO_INFO,
+                countLabel(recent, "nota publicada", "notas publicadas"),
+                "Revisa tus calificaciones y el avance de tus cursos.",
+                ENLACE_AVANCE,
+                date));
     }
 
     private void addRecentAuditActivity(List<DtoNotificacion> notifications, Instant now) {

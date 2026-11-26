@@ -2,6 +2,7 @@ package com.gestoracad.service;
 
 import com.gestoracad.audit.AccionAuditoria;
 import com.gestoracad.dto.DtoActa;
+import com.gestoracad.dto.DtoPortalEstudiante;
 import com.gestoracad.dto.DtoReporteExportacion;
 import com.gestoracad.dto.DtoUniversidad;
 import com.gestoracad.service.impl.ServicioReportesPdfImpl;
@@ -15,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,6 +35,9 @@ class ServicioReportesPdfImplTest {
 
     @Mock
     private ServicioAuditoria auditService;
+
+    @Mock
+    private ServicioPortalAcademico portalService;
 
     @InjectMocks
     private ServicioReportesPdfImpl pdfService;
@@ -95,5 +100,64 @@ class ServicioReportesPdfImplTest {
                 eq("JUnit"),
                 eq("tb_actas"),
                 eq(10L));
+    }
+
+    @Test
+    @DisplayName("Debe generar la constancia de notas del estudiante y registrar la exportación")
+    void generatesStudentRecordPdf() {
+        DtoUniversidad university = new DtoUniversidad();
+        university.setName("Universidad Tecnológica del Perú");
+        university.setTaxId("20462509236");
+
+        DtoPortalEstudiante student = new DtoPortalEstudiante();
+        student.setCode("2023-010482");
+        student.setFirstName("Lucía");
+        student.setLastName("Vega Cárdenas");
+        student.setCareer("Ingeniería de Sistemas e Informática");
+        student.setFaculty("Facultad de Ingeniería y Arquitectura");
+
+        DtoPortalEstudiante.Curso course = new DtoPortalEstudiante.Curso();
+        course.setSectionId(3L);
+        course.setPeriodCode("2026-II");
+        course.setCourseCode("MAT-101");
+        course.setCourseName("Matemática I");
+        course.setSectionCode("A");
+        course.setCredits(4);
+        course.setTeacherName("Carlos Santana");
+        course.setSchedule("LUN-MIE 08:00-10:00");
+        course.setActaStatus("ABIERTA");
+        course.setPresent(8);
+        course.setAbsent(2);
+        course.setLate(0);
+
+        DtoPortalEstudiante.Nota grade = new DtoPortalEstudiante.Nota();
+        grade.setEvaluationName("Examen final");
+        grade.setType("PRACTICA");
+        grade.setWeight(new BigDecimal("100"));
+        grade.setScore(new BigDecimal("15"));
+        grade.setMaxScore(new BigDecimal("20"));
+        course.getGrades().add(grade);
+
+        when(portalService.getStudentSummary()).thenReturn(student);
+        when(portalService.getStudentHistory()).thenReturn(List.of(course));
+        when(universityService.getActiveUniversity()).thenReturn(university);
+
+        DtoReporteExportacion result = pdfService.exportarConstanciaEstudiante(3L, "127.0.0.1", "JUnit");
+
+        assertThat(result.nombreArchivo()).startsWith("constancia_notas_MAT-101-A_").endsWith(".pdf");
+        assertThat(result.contenido().length).isGreaterThan(1000);
+        assertThat(new String(result.contenido(), 0, 4, StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+        verify(auditService).log(
+                any(),
+                eq(AccionAuditoria.EXPORT),
+                eq("PORTALES"),
+                any(String.class),
+                eq("/api/v1/portal/student/sections/3/constancia.pdf"),
+                eq("GET"),
+                eq("127.0.0.1"),
+                eq("SUCCESS"),
+                eq("JUnit"),
+                eq("tb_secciones"),
+                eq(3L));
     }
 }

@@ -15,6 +15,9 @@ export interface PortalCourseDto {
   courseCode: string;
   courseName: string;
   sectionCode: string;
+  sectionId: number;
+  teacherName?: string | null;
+  schedule?: string | null;
   enrollmentDate?: string | null;
   credits: number;
   status: string;

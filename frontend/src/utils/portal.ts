@@ -25,6 +25,17 @@ export interface CourseAverageSummary {
   totalWeight: number;
 }
 
+export interface PeriodAveragePoint {
+  period: string;
+  average: number;
+}
+
+const normalizeText = (value: string): string =>
+  value
+    .toLocaleLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
 /** Traduce los códigos de evaluación del backend a etiquetas legibles. */
 export const evaluationTypeLabel = (type: string): string => {
   const key = (type ?? '').trim().toUpperCase();
@@ -133,4 +144,33 @@ export const periodAverage = (courses: PortalCourseDto[]): number | null => {
     .filter((value): value is number => value != null && Number.isFinite(value));
   if (values.length === 0) return null;
   return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 100) / 100;
+};
+
+/** Filtra el historial por periodo y por código o nombre del curso. */
+export const filterHistory = (
+  history: PortalCourseDto[],
+  period: string,
+  query: string
+): PortalCourseDto[] => {
+  const term = normalizeText(query.trim());
+  return history.filter((course) => {
+    const matchesPeriod = !period || period === 'ALL' || course.periodCode === period;
+    const matchesQuery = !term
+      || normalizeText(`${course.courseCode} ${course.courseName}`).includes(term);
+    return matchesPeriod && matchesQuery;
+  });
+};
+
+/** Serie de promedio por periodo para el gráfico de evolución. */
+export const averageByPeriod = (history: PortalCourseDto[]): PeriodAveragePoint[] => {
+  const groups = new Map<string, PortalCourseDto[]>();
+  history.forEach((course) => {
+    groups.set(course.periodCode, [...(groups.get(course.periodCode) ?? []), course]);
+  });
+
+  return Array.from(groups.entries())
+    .map(([period, courses]) => ({ period, average: periodAverage(courses) }))
+    .filter((point): point is PeriodAveragePoint => point.average != null)
+    .sort((a, b) => a.period.localeCompare(b.period))
+    .slice(-8);
 };

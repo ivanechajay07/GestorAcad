@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, ClipboardCheck, GraduationCap, History } from 'lucide-react';
+import { BookOpen, ClipboardCheck, GraduationCap, History, Search, TrendingUp } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -7,15 +7,19 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { SectionHeader } from '../components/ui/SectionHeader';
+import { Select } from '../components/ui/Select';
 import { CourseDetailPanel } from '../components/portal/CourseDetailPanel';
 import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
+import { reportService } from '../services/reportService';
 import type { PortalCourseDto, StudentPortalDto } from '../services/portalService';
 import {
   attendanceRate,
+  averageByPeriod,
   conditionLabel,
   courseAverage,
   courseAverageStatus,
+  filterHistory,
   globalAttendance,
   periodAverage,
 } from '../utils/portal';
@@ -35,6 +39,9 @@ export const StudentPortalPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [selected, setSelected] = useState<PortalCourseDto | null>(null);
+  const [historyPeriod, setHistoryPeriod] = useState('ALL');
+  const [historyQuery, setHistoryQuery] = useState('');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     portalService
@@ -52,13 +59,37 @@ export const StudentPortalPage: React.FC = () => {
 
   const currentAttendance = useMemo(() => globalAttendance(data?.courses ?? []), [data]);
 
+  const historyPeriods = useMemo(
+    () => Array.from(new Set(history.map((course) => course.periodCode))).sort((a, b) => b.localeCompare(a)),
+    [history]
+  );
+
+  const filteredHistory = useMemo(
+    () => filterHistory(history, historyPeriod, historyQuery),
+    [history, historyPeriod, historyQuery]
+  );
+
   const historyByPeriod = useMemo(() => {
     const groups = new Map<string, PortalCourseDto[]>();
-    history.forEach((course) => {
+    filteredHistory.forEach((course) => {
       groups.set(course.periodCode, [...(groups.get(course.periodCode) ?? []), course]);
     });
     return Array.from(groups.entries());
-  }, [history]);
+  }, [filteredHistory]);
+
+  const evolution = useMemo(() => averageByPeriod(history), [history]);
+
+  const downloadConstancia = async (course: PortalCourseDto) => {
+    setDownloadingPdf(true);
+    try {
+      const filename = await reportService.exportStudentConstancia(course.sectionId);
+      toast.success(`Constancia generada: ${filename}`);
+    } catch {
+      toast.error('No se pudo generar la constancia de notas.');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   if (loading) {
     return <LoadingSpinner message="Consultando tu avance académico..." />;
@@ -152,6 +183,13 @@ export const StudentPortalPage: React.FC = () => {
                       <p className="student-course-card__meta">
                         Sección {course.sectionCode} · {course.credits} créditos
                       </p>
+                      {(course.teacherName || course.schedule) && (
+                        <p className="student-course-card__meta student-course-card__meta--muted">
+                          {course.teacherName && <span>{course.teacherName}</span>}
+                          {course.teacherName && course.schedule && <span aria-hidden="true">·</span>}
+                          {course.schedule && <span>{course.schedule}</span>}
+                        </p>
+                      )}
                     </div>
                     <Badge variant={closed ? 'success' : 'warning'} size="sm" dot>
                       {closed ? 'Acta cerrada' : 'Acta abierta'}
@@ -212,6 +250,35 @@ export const StudentPortalPage: React.FC = () => {
         )}
       </section>
 
+      {evolution.length > 0 && (
+        <section className="glass-panel student-panel" aria-label="Evolución del promedio">
+          <SectionHeader
+            compact
+            icon={<TrendingUp size={18} />}
+            eyebrow="Rendimiento"
+            title="Evolución del promedio"
+            description="Promedio de los cursos con nota registrada en cada periodo."
+            aside={<Badge variant="outline" size="sm">{evolution.length} {evolution.length === 1 ? 'periodo' : 'periodos'}</Badge>}
+          />
+          <div className="student-evolution" role="list">
+            {evolution.map((point) => (
+              <div className="student-evolution__item" role="listitem" key={point.period}>
+                <span className="student-evolution__value">{point.average}</span>
+                <div className="student-evolution__track" aria-hidden="true">
+                  <span style={{ height: `${Math.min(100, (point.average / 20) * 100)}%` }} />
+                </div>
+                <span className="student-evolution__period">{point.period}</span>
+              </div>
+            ))}
+          </div>
+          <p className="student-evolution__caption">
+            {evolution.length === 1
+              ? 'Aún no hay periodos anteriores con nota para comparar.'
+              : 'Escala de 0 a 20 · Se muestran los últimos periodos con nota.'}
+          </p>
+        </section>
+      )}
+
       <section className="glass-panel student-panel" aria-label="Historial académico">
         <SectionHeader
           compact
@@ -226,13 +293,67 @@ export const StudentPortalPage: React.FC = () => {
           }
         />
 
+        {history.length > 0 && (
+          <div className="history-toolbar">
+            <div className="search-box">
+              <Search size={15} color="var(--text-muted)" aria-hidden="true" />
+              <input
+                type="search"
+                value={historyQuery}
+                onChange={(event) => setHistoryQuery(event.target.value)}
+                placeholder="Buscar por curso o código..."
+                aria-label="Buscar curso en el historial"
+              />
+            </div>
+            <Select
+              className="field-select"
+              aria-label="Filtrar historial por periodo"
+              value={historyPeriod}
+              onChange={(event) => setHistoryPeriod(event.target.value)}
+            >
+              <option value="ALL">Todos los periodos</option>
+              {historyPeriods.map((period) => (
+                <option key={period} value={period}>{period}</option>
+              ))}
+            </Select>
+            {(historyPeriod !== 'ALL' || historyQuery) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setHistoryPeriod('ALL');
+                  setHistoryQuery('');
+                }}
+              >
+                Limpiar filtros
+              </Button>
+            )}
+          </div>
+        )}
+
         {historyLoading ? (
           <LoadingSpinner message="Consultando historial académico..." />
-        ) : historyByPeriod.length === 0 ? (
+        ) : history.length === 0 ? (
           <div className="history-empty">
             <History size={22} aria-hidden="true" />
             <strong>Sin historial registrado</strong>
             <span>Aún no tienes matrículas en el sistema.</span>
+          </div>
+        ) : historyByPeriod.length === 0 ? (
+          <div className="history-empty">
+            <Search size={22} aria-hidden="true" />
+            <strong>Sin coincidencias</strong>
+            <span>Prueba con otro periodo o término de búsqueda.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setHistoryPeriod('ALL');
+                setHistoryQuery('');
+              }}
+            >
+              Limpiar filtros
+            </Button>
           </div>
         ) : (
           historyByPeriod.map(([period, courses]) => {
@@ -280,42 +401,47 @@ export const StudentPortalPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {courses.map((course) => (
-                        <tr key={`${course.periodCode}-${course.courseCode}-${course.sectionCode}-${course.status}`}>
-                          <td><span className="cell-mono">{course.courseCode}</span> · {course.courseName}</td>
-                          <td>{course.sectionCode}</td>
-                          <td>{formatDate(course.enrollmentDate)}</td>
-                          <td>{course.credits}</td>
-                          <td>
-                            <Badge variant={course.status === 'MATRICULADO' ? 'success' : 'outline'} size="sm">
-                              {course.status === 'MATRICULADO' ? 'Matriculado' : 'Retirado'}
-                            </Badge>
-                          </td>
-                          <td>
-                            <Badge variant={course.actaStatus === 'CERRADA' ? 'success' : 'warning'} size="sm" dot>
-                              {course.actaStatus === 'CERRADA' ? 'Cerrada' : 'Abierta'}
-                            </Badge>
-                          </td>
-                          <td>
-                            {course.average == null ? '—' : (
-                              <Badge variant={course.approved ? 'success' : 'danger'} size="sm">
-                                {course.average} · {course.approved ? 'Aprobado' : 'Desaprobado'}
+                      {courses.map((course) => {
+                        const summary = courseAverage(course);
+                        const status = courseAverageStatus(course, summary);
+
+                        return (
+                          <tr key={`${course.periodCode}-${course.courseCode}-${course.sectionCode}-${course.status}`}>
+                            <td><span className="cell-mono">{course.courseCode}</span> · {course.courseName}</td>
+                            <td>{course.sectionCode}</td>
+                            <td>{formatDate(course.enrollmentDate)}</td>
+                            <td>{course.credits}</td>
+                            <td>
+                              <Badge variant={course.status === 'MATRICULADO' ? 'success' : 'outline'} size="sm">
+                                {course.status === 'MATRICULADO' ? 'Matriculado' : 'Retirado'}
                               </Badge>
-                            )}
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <button
-                              type="button"
-                              className="action-btn primary"
-                              title="Ver notas"
-                              aria-label={`Ver notas de ${course.courseCode}`}
-                              onClick={() => setSelected(course)}
-                            >
-                              <ClipboardCheck size={15} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td>
+                              <Badge variant={course.actaStatus === 'CERRADA' ? 'success' : 'warning'} size="sm" dot>
+                                {course.actaStatus === 'CERRADA' ? 'Cerrada' : 'Abierta'}
+                              </Badge>
+                            </td>
+                            <td>
+                              {summary.value == null ? '—' : (
+                                <Badge variant={status.tone === 'danger' ? 'danger' : status.tone === 'success' ? 'success' : 'primary'} size="sm">
+                                  {summary.value} · {status.label}
+                                </Badge>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                className="action-btn primary"
+                                title="Ver notas"
+                                aria-label={`Ver notas de ${course.courseCode}`}
+                                onClick={() => setSelected(course)}
+                              >
+                                <ClipboardCheck size={15} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -333,7 +459,11 @@ export const StudentPortalPage: React.FC = () => {
           maxWidth="780px"
           onClose={() => setSelected(null)}
         >
-          <CourseDetailPanel course={selected} />
+          <CourseDetailPanel
+            course={selected}
+            onDownload={() => downloadConstancia(selected)}
+            downloading={downloadingPdf}
+          />
         </Modal>
       )}
     </div>

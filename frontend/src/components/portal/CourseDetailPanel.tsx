@@ -1,5 +1,6 @@
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, Clock3, Download, UserRound } from 'lucide-react';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import type { PortalCourseDto } from '../../services/portalService';
 import {
@@ -13,13 +14,15 @@ import {
 
 interface CourseDetailPanelProps {
   course: PortalCourseDto;
+  onDownload?: () => void;
+  downloading?: boolean;
 }
 
 /**
  * Detalle académico de un curso: resumen del acta, asistencia y evaluaciones.
  * Se usa tanto en la matrícula vigente como en el historial del estudiante.
  */
-export const CourseDetailPanel = ({ course }: CourseDetailPanelProps) => {
+export const CourseDetailPanel = ({ course, onDownload, downloading = false }: CourseDetailPanelProps) => {
   const rate = attendanceRate(course);
   const summary = courseAverage(course);
   const status = courseAverageStatus(course, summary);
@@ -31,6 +34,23 @@ export const CourseDetailPanel = ({ course }: CourseDetailPanelProps) => {
 
   return (
     <div className="course-detail">
+      {(course.teacherName || course.schedule) && (
+        <div className="course-detail__meta">
+          {course.teacherName && (
+            <span>
+              <UserRound size={13} aria-hidden="true" />
+              Docente: <strong>{course.teacherName}</strong>
+            </span>
+          )}
+          {course.schedule && (
+            <span>
+              <Clock3 size={13} aria-hidden="true" />
+              Horario: <strong>{course.schedule}</strong>
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="course-detail__stats">
         <div className="course-detail__stat">
           <span className="course-detail__label">Promedio</span>
@@ -131,11 +151,25 @@ export const CourseDetailPanel = ({ course }: CourseDetailPanelProps) => {
       )}
 
       <div className="course-detail__footer">
-        <span>Peso acumulado: <strong>{totalWeight}%</strong></span>
-        <span>
-          {summary.kind === 'partial' ? 'Promedio parcial' : 'Promedio final'}:{' '}
-          <strong>{summary.value == null ? 'En curso' : summary.value}</strong>
-        </span>
+        <div className="course-detail__footer-info">
+          <span>Peso acumulado: <strong>{totalWeight}%</strong></span>
+          <span>
+            {summary.kind === 'partial' ? 'Promedio parcial' : 'Promedio final'}:{' '}
+            <strong>{summary.value == null ? 'En curso' : summary.value}</strong>
+          </span>
+        </div>
+        {onDownload && (
+          <Button
+            size="sm"
+            variant="secondary"
+            leftIcon={<Download size={14} />}
+            onClick={onDownload}
+            isLoading={downloading}
+            aria-label={`Constancia PDF de ${course.courseName}`}
+          >
+            Constancia PDF
+          </Button>
+        )}
       </div>
     </div>
   );

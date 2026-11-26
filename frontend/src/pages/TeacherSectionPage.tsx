@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Select } from '../components/ui/Select';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
@@ -25,6 +25,7 @@ export const TeacherSectionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const sectionId = Number(id);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
   const { confirm } = useConfirm();
 
@@ -35,10 +36,27 @@ export const TeacherSectionPage: React.FC = () => {
   const [attendance, setAttendance] = useState<AttendanceDto[]>([]);
   const [attendanceDate, setAttendanceDate] = useState(TODAY);
   const [acta, setActa] = useState<ActaDto | null>(null);
-  const [tab, setTab] = useState<TabKey>('grades');
+  const initialTab = searchParams.get('tab');
+  const [tab, setTab] = useState<TabKey>(
+    initialTab === 'attendance' || initialTab === 'act' ? initialTab : 'grades'
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [exportingActa, setExportingActa] = useState(false);
+
+  const changeTab = (next: TabKey) => {
+    setTab(next);
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', next);
+    setSearchParams(params, { replace: true });
+  };
+
+  useEffect(() => {
+    const next = searchParams.get('tab');
+    if (next === 'grades' || next === 'attendance' || next === 'act') {
+      setTab(next);
+    }
+  }, [searchParams]);
 
   const load = useCallback(async () => {
     if (!sectionId) return;
@@ -165,6 +183,20 @@ export const TeacherSectionPage: React.FC = () => {
         subtitle={`${section.courseName} · ${section.periodCode} · ${section.students.length} estudiantes`}
         icon={<ClipboardList size={26} color="#ffffff" />}
         breadcrumbs={[{ label: 'Mi espacio' }, { label: 'Mis secciones' }, { label: section.courseCode }]}
+        stats={[
+          {
+            label: section.students.length === 1 ? 'Estudiante' : 'Estudiantes',
+            value: section.students.length,
+          },
+          {
+            label: evaluations.length === 1 ? 'Evaluación' : 'Evaluaciones',
+            value: evaluations.length,
+          },
+          {
+            label: 'Acta',
+            value: acta?.status === 'CERRADA' ? 'Cerrada' : acta?.status === 'ABIERTA' ? 'Abierta' : '—',
+          },
+        ]}
         actions={
           <Button variant="secondary" size="sm" onClick={() => navigate('/my-sections')} leftIcon={<ArrowLeft size={15} />}>
             Volver
@@ -173,19 +205,49 @@ export const TeacherSectionPage: React.FC = () => {
       />
 
       <div className="academic-tabs" role="tablist" aria-label="Gestión de la sección">
-        <button type="button" role="tab" aria-selected={tab === 'grades'} className={`academic-tab${tab === 'grades' ? ' active' : ''}`} onClick={() => setTab('grades')}>
+        <button
+          type="button"
+          role="tab"
+          id="section-tab-grades"
+          aria-controls="section-panel-grades"
+          aria-selected={tab === 'grades'}
+          className={`academic-tab${tab === 'grades' ? ' active' : ''}`}
+          onClick={() => changeTab('grades')}
+        >
           <Pencil size={15} /> Notas
         </button>
-        <button type="button" role="tab" aria-selected={tab === 'attendance'} className={`academic-tab${tab === 'attendance' ? ' active' : ''}`} onClick={() => setTab('attendance')}>
+        <button
+          type="button"
+          role="tab"
+          id="section-tab-attendance"
+          aria-controls="section-panel-attendance"
+          aria-selected={tab === 'attendance'}
+          className={`academic-tab${tab === 'attendance' ? ' active' : ''}`}
+          onClick={() => changeTab('attendance')}
+        >
           <UserCheck size={15} /> Asistencia
         </button>
-        <button type="button" role="tab" aria-selected={tab === 'act'} className={`academic-tab${tab === 'act' ? ' active' : ''}`} onClick={() => setTab('act')}>
+        <button
+          type="button"
+          role="tab"
+          id="section-tab-act"
+          aria-controls="section-panel-act"
+          aria-selected={tab === 'act'}
+          className={`academic-tab${tab === 'act' ? ' active' : ''}`}
+          onClick={() => changeTab('act')}
+        >
           <CheckCircle2 size={15} /> Acta
         </button>
       </div>
 
       {tab === 'grades' && (
-        <div className="glass-panel" style={{ padding: '18px' }}>
+        <div
+          className="glass-panel"
+          id="section-panel-grades"
+          role="tabpanel"
+          aria-labelledby="section-tab-grades"
+          style={{ padding: '18px' }}
+        >
           <SectionHeader
             compact
             icon={<Pencil size={18} />}
@@ -251,7 +313,13 @@ export const TeacherSectionPage: React.FC = () => {
       )}
 
       {tab === 'attendance' && (
-        <div className="glass-panel" style={{ padding: '18px' }}>
+        <div
+          className="glass-panel"
+          id="section-panel-attendance"
+          role="tabpanel"
+          aria-labelledby="section-tab-attendance"
+          style={{ padding: '18px' }}
+        >
           <SectionHeader
             compact
             icon={<UserCheck size={18} />}
@@ -303,7 +371,13 @@ export const TeacherSectionPage: React.FC = () => {
       )}
 
       {tab === 'act' && (
-        <div className="glass-panel" style={{ padding: '18px' }}>
+        <div
+          className="glass-panel"
+          id="section-panel-act"
+          role="tabpanel"
+          aria-labelledby="section-tab-act"
+          style={{ padding: '18px' }}
+        >
           <SectionHeader
             compact
             icon={<CheckCircle2 size={18} />}

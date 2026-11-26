@@ -10,4 +10,6 @@ import com.gestoracad.dto.DtoReporteExportacion;
 public interface ServicioReportesPdf {
 
     DtoReporteExportacion exportarActa(Long sectionId, String clientIp, String userAgent);
+
+    DtoReporteExportacion exportarConstanciaEstudiante(Long sectionId, String clientIp, String userAgent);
 }
