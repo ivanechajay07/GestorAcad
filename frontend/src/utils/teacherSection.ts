@@ -54,3 +54,41 @@ export const gradesSummary = (grades: GradeDto[]): GradesSummary => {
 /** Peso acumulado de las evaluaciones activas de la sección. */
 export const evaluationWeight = (evaluations: EvaluationDto[]): number =>
   round(evaluations.reduce((sum, evaluation) => sum + (evaluation.weight ?? 0), 0));
+
+export interface StudentAttendanceSummary {
+  studentId: number;
+  studentCode: string;
+  studentName: string;
+  present: number;
+  absent: number;
+  late: number;
+  justified: number;
+  total: number;
+  rate: number | null;
+}
+
+/** Resume el historial de asistencia por estudiante. */
+export const attendanceHistorySummary = (records: AttendanceDto[]): StudentAttendanceSummary[] => {
+  const groups = new Map<number, AttendanceDto[]>();
+  records.forEach((record) => {
+    groups.set(record.studentId, [...(groups.get(record.studentId) ?? []), record]);
+  });
+
+  return Array.from(groups.values())
+    .map((studentRecords) => {
+      const summary = attendanceSummary(studentRecords);
+      const first = studentRecords[0];
+      return {
+        studentId: first.studentId,
+        studentCode: first.studentCode ?? '',
+        studentName: first.studentName ?? '',
+        present: summary.present,
+        absent: summary.absent,
+        late: summary.late,
+        justified: summary.justified,
+        total: summary.total,
+        rate: summary.rate,
+      };
+    })
+    .sort((a, b) => a.studentName.localeCompare(b.studentName));
+};

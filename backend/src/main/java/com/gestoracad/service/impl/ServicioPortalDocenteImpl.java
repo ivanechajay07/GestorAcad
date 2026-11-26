@@ -13,6 +13,8 @@ import com.gestoracad.entity.Seccion;
 import com.gestoracad.entity.Usuario;
 import com.gestoracad.exception.ExcepcionApi;
 import com.gestoracad.exception.ExcepcionRecursoNoEncontrado;
+import com.gestoracad.mapper.MapeadorAsistencia;
+import com.gestoracad.repository.RepositorioAsistencia;
 import com.gestoracad.repository.RepositorioDocente;
 import com.gestoracad.repository.RepositorioEvaluacion;
 import com.gestoracad.repository.RepositorioMatricula;
@@ -41,6 +43,8 @@ public class ServicioPortalDocenteImpl implements ServicioPortalDocente {
     private final RepositorioSeccion sectionRepository;
     private final RepositorioMatricula enrollmentRepository;
     private final RepositorioEvaluacion evaluationRepository;
+    private final RepositorioAsistencia attendanceRepository;
+    private final MapeadorAsistencia attendanceMapper;
     private final ServicioEvaluacionAcademica evaluationService;
 
     public ServicioPortalDocenteImpl(RepositorioUsuario userRepository,
@@ -48,12 +52,16 @@ public class ServicioPortalDocenteImpl implements ServicioPortalDocente {
                                      RepositorioSeccion sectionRepository,
                                      RepositorioMatricula enrollmentRepository,
                                      RepositorioEvaluacion evaluationRepository,
+                                     RepositorioAsistencia attendanceRepository,
+                                     MapeadorAsistencia attendanceMapper,
                                      ServicioEvaluacionAcademica evaluationService) {
         this.userRepository = userRepository;
         this.teacherRepository = teacherRepository;
         this.sectionRepository = sectionRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.evaluationRepository = evaluationRepository;
+        this.attendanceRepository = attendanceRepository;
+        this.attendanceMapper = attendanceMapper;
         this.evaluationService = evaluationService;
     }
 
@@ -87,6 +95,26 @@ public class ServicioPortalDocenteImpl implements ServicioPortalDocente {
     }
 
     @Override
+    @Transactional
+    public DtoEvaluacion createEvaluation(Long sectionId, DtoEvaluacion dto,
+                                          String clientIp, String userAgent) {
+        ownedSection(sectionId);
+        dto.setSectionId(sectionId);
+        dto.setActive(true);
+        return evaluationService.createEvaluation(sectionId, dto, clientIp, userAgent);
+    }
+
+    @Override
+    @Transactional
+    public DtoEvaluacion updateEvaluation(Long evaluationId, DtoEvaluacion dto,
+                                          String clientIp, String userAgent) {
+        Evaluacion evaluation = ownedEvaluation(evaluationId);
+        dto.setSectionId(evaluation.getSection().getId());
+        dto.setActive(true);
+        return evaluationService.updateEvaluation(evaluationId, dto, clientIp, userAgent);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<DtoCalificacion> getGrades(Long evaluationId) {
         ownedEvaluation(evaluationId);
@@ -105,6 +133,16 @@ public class ServicioPortalDocenteImpl implements ServicioPortalDocente {
     public List<DtoAsistencia> getAttendance(Long sectionId, LocalDate date) {
         ownedSection(sectionId);
         return evaluationService.getAttendance(sectionId, date);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DtoAsistencia> getAttendanceHistory(Long sectionId) {
+        ownedSection(sectionId);
+        return attendanceRepository.findBySectionIdAndActiveTrueOrderByDateDesc(sectionId)
+                .stream()
+                .map(attendanceMapper::toDto)
+                .toList();
     }
 
     @Override

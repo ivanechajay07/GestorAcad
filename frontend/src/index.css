@@ -14942,6 +14942,13 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   border-left: 1px solid var(--border-light);
 }
 
+.grade-item__observation {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+
 .grade-item__score {
   display: grid;
   grid-template-columns: auto auto;
@@ -15480,6 +15487,51 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   color: var(--primary-hover);
   background: var(--primary-glow);
   border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.section-history {
+  margin-top: 14px;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-surface-elevated);
+}
+
+.section-history summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  color: var(--text-main);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.section-history summary::-webkit-details-marker {
+  display: none;
+}
+
+.section-history[open] summary {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.section-history .data-table-wrap {
+  border: 0;
+  border-radius: 0 0 12px 12px;
+}
+
+.section-history .empty-state {
+  padding: 14px;
+}
+
+.section-history .is-warning-text {
+  color: var(--status-warn-text);
+}
+
+.section-history .is-success-text {
+  color: var(--status-up-text);
 }
 
 /* Horario, evaluaciones y malla del estudiante */

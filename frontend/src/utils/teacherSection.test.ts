@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AttendanceDto, EvaluationDto, GradeDto } from '../services/evaluationService';
-import { attendanceSummary, evaluationWeight, gradesSummary } from './teacherSection';
+import { attendanceHistorySummary, attendanceSummary, evaluationWeight, gradesSummary } from './teacherSection';
 
 const attendance = (status: string): AttendanceDto => ({
   studentId: 1,
@@ -59,5 +59,38 @@ describe('utilidades de la sección docente', () => {
   it('calcula el peso acumulado de las evaluaciones', () => {
     expect(evaluationWeight([evaluation(40), evaluation(35), evaluation(25)])).toBe(100);
     expect(evaluationWeight([])).toBe(0);
+  });
+
+  it('resume el historial de asistencia por estudiante', () => {
+    const records: AttendanceDto[] = [
+      { ...attendance('PRESENTE'), studentId: 1, studentName: 'Ana Torres' },
+      { ...attendance('AUSENTE'), studentId: 1, studentName: 'Ana Torres' },
+      { ...attendance('TARDANZA'), studentId: 2, studentName: 'Luis Gómez' },
+    ];
+
+    expect(attendanceHistorySummary(records)).toEqual([
+      {
+        studentId: 1,
+        studentCode: '2026-0001',
+        studentName: 'Ana Torres',
+        present: 1,
+        absent: 1,
+        late: 0,
+        justified: 0,
+        total: 2,
+        rate: 50,
+      },
+      {
+        studentId: 2,
+        studentCode: '2026-0001',
+        studentName: 'Luis Gómez',
+        present: 0,
+        absent: 0,
+        late: 1,
+        justified: 0,
+        total: 1,
+        rate: 100,
+      },
+    ]);
   });
 });

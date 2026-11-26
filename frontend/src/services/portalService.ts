@@ -16,6 +16,7 @@ export interface PortalGradeDto {
   score: number | null;
   maxScore: number;
   date?: string | null;
+  observation?: string | null;
 }
 
 export interface PortalScheduleBlockDto {
@@ -131,6 +132,14 @@ export interface ActaPreviewDto {
   students: ActaPreviewStudentDto[];
 }
 
+export interface EvaluationPayload {
+  name: string;
+  type: string;
+  weight: number;
+  date?: string | null;
+  maxScore: number;
+}
+
 export const portalService = {
   async getStudentSummary(): Promise<ApiResponse<StudentPortalDto>> {
     const response = await api.get<ApiResponse<StudentPortalDto>>('/v1/portal/student/summary');
@@ -168,6 +177,29 @@ export const portalService = {
 
   async getTeacherEvaluations(sectionId: number): Promise<ApiResponse<EvaluationDto[]>> {
     const response = await api.get<ApiResponse<EvaluationDto[]>>(`/v1/portal/teacher/sections/${sectionId}/evaluations`);
+    return response.data;
+  },
+
+  async createTeacherEvaluation(sectionId: number, payload: EvaluationPayload): Promise<ApiResponse<EvaluationDto>> {
+    const response = await api.post<ApiResponse<EvaluationDto>>(
+      `/v1/portal/teacher/sections/${sectionId}/evaluations`,
+      payload
+    );
+    return response.data;
+  },
+
+  async updateTeacherEvaluation(evaluationId: number, payload: EvaluationPayload): Promise<ApiResponse<EvaluationDto>> {
+    const response = await api.put<ApiResponse<EvaluationDto>>(
+      `/v1/portal/teacher/evaluations/${evaluationId}`,
+      payload
+    );
+    return response.data;
+  },
+
+  async getTeacherAttendanceHistory(sectionId: number): Promise<ApiResponse<AttendanceDto[]>> {
+    const response = await api.get<ApiResponse<AttendanceDto[]>>(
+      `/v1/portal/teacher/sections/${sectionId}/attendance/history`
+    );
     return response.data;
   },
 

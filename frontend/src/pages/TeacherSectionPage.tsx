@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { Modal } from '../components/ui/Modal';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EmptyState } from '../components/ui/EmptyState';
 import { SectionHeader } from '../components/ui/SectionHeader';
@@ -13,11 +14,12 @@ import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
 import { reportService } from '../services/reportService';
 import { academicInputStyle } from '../components/academic/AcademicUi';
-import { ArrowLeft, CheckCircle2, ClipboardList, Download, Pencil, Search, UserCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ClipboardList, Download, Pencil, Plus, Search, UserCheck } from 'lucide-react';
 import type { ActaPreviewDto, TeacherSectionDetailDto } from '../services/portalService';
 import type { ActaDto, AttendanceDto, EvaluationDto, GradeDto } from '../services/evaluationService';
 import { downloadCsv } from '../utils/csv';
-import { attendanceSummary, evaluationWeight, gradesSummary } from '../utils/teacherSection';
+import { getApiErrorMessage } from '../utils/apiErrors';
+import { attendanceHistorySummary, attendanceSummary, evaluationWeight, gradesSummary } from '../utils/teacherSection';
 
 type TabKey = 'grades' | 'attendance' | 'act';
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -58,6 +60,20 @@ export const TeacherSectionPage: React.FC = () => {
   const [acta, setActa] = useState<ActaDto | null>(null);
   const [preview, setPreview] = useState<ActaPreviewDto | null>(null);
   const [studentQuery, setStudentQuery] = useState('');
+  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceDto[]>([]);
+  const [gradesDirty, setGradesDirty] = useState(false);
+  const [attendanceDirty, setAttendanceDirty] = useState(false);
+  const [evaluationModalOpen, setEvaluationModalOpen] = useState(false);
+  const [editingEvaluationId, setEditingEvaluationId] = useState<number | null>(null);
+  const [evaluationForm, setEvaluationForm] = useState({
+    name: '',
+    type: 'PRACTICA',
+    weight: '100',
+    date: TODAY,
+    maxScore: '20',
+  });
+  const [evaluationError, setEvaluationError] = useState<string | null>(null);
+  const [evaluationSaving, setEvaluationSaving] = useState(false);
   const initialTab = searchParams.get('tab');
   const [tab, setTab] = useState<TabKey>(
     initialTab === 'attendance' || initialTab === 'act' ? initialTab : 'grades'
@@ -84,12 +100,13 @@ export const TeacherSectionPage: React.FC = () => {
     if (!sectionId) return;
     setLoading(true);
     try {
-      const [sectionRes, evaluationRes, attendanceRes, actRes, previewRes] = await Promise.all([
+      const [sectionRes, evaluationRes, attendanceRes, actRes, previewRes, historyRes] = await Promise.all([
         portalService.getTeacherSection(sectionId),
         portalService.getTeacherEvaluations(sectionId),
         portalService.getTeacherAttendance(sectionId, attendanceDate),
         portalService.getTeacherActa(sectionId),
         portalService.getTeacherActaPreview(sectionId),
+        portalService.getTeacherAttendanceHistory(sectionId),
       ]);
       setSection(sectionRes.data);
       setEvaluations(evaluationRes.data);
@@ -101,6 +118,8 @@ export const TeacherSectionPage: React.FC = () => {
       setAttendance(attendanceRes.data);
       setActa(actRes.data);
       setPreview(previewRes.data);
+      setAttendanceHistory(historyRes.data);
+      setAttendanceDirty(false);
     } catch {
       toast.error('No se pudo cargar la sección o no tienes acceso');
       navigate('/my-sections', { replace: true });
@@ -131,6 +150,7 @@ export const TeacherSectionPage: React.FC = () => {
     try {
       const response = await portalService.getTeacherGrades(selectedEvaluationId);
       setGrades(response.data);
+      setGradesDirty(false);
     } catch {
       toast.error('No se pudieron cargar las notas');
     }
@@ -140,15 +160,121 @@ export const TeacherSectionPage: React.FC = () => {
     loadGrades();
   }, [loadGrades]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!gradesDirty && !attendanceDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [gradesDirty, attendanceDirty]);
+
   const selectedEvaluation = evaluations.find((evaluation) => evaluation.id === selectedEvaluationId);
   const closed = acta?.status === 'CERRADA';
   const attendanceTotals = useMemo(() => attendanceSummary(attendance), [attendance]);
+  const attendanceHistoryTotals = useMemo(
+    () => attendanceHistorySummary(attendanceHistory),
+    [attendanceHistory]
+  );
   const gradeTotals = useMemo(() => gradesSummary(grades), [grades]);
   const totalWeight = useMemo(() => evaluationWeight(evaluations), [evaluations]);
   const canCloseActa = !closed && evaluations.length > 0 && totalWeight === 100;
 
   const setAllAttendance = (status: string) => {
     setAttendance((items) => items.map((item) => ({ ...item, status })));
+    setAttendanceDirty(true);
+  };
+
+  const changeEvaluation = async (evaluationId: number) => {
+    if (gradesDirty) {
+      const ok = await confirm({
+        title: 'Cambiar de evaluación',
+        message: 'Hay notas sin guardar. Si cambias de evaluación, se perderán los cambios.',
+        confirmLabel: 'Cambiar',
+        variant: 'danger',
+      });
+      if (!ok) return;
+    }
+    setSelectedEvaluationId(evaluationId);
+  };
+
+  const changeAttendanceDate = async (value: string) => {
+    if (value === attendanceDate) return;
+    if (attendanceDirty) {
+      const ok = await confirm({
+        title: 'Cambiar de fecha',
+        message: 'Hay asistencia sin guardar. Si cambias de fecha, se perderán los cambios.',
+        confirmLabel: 'Cambiar',
+        variant: 'danger',
+      });
+      if (!ok) return;
+    }
+    setAttendanceDate(value);
+  };
+
+  const openEvaluationModal = (evaluation?: EvaluationDto) => {
+    setEvaluationError(null);
+    setEditingEvaluationId(evaluation?.id ?? null);
+    setEvaluationForm(evaluation ? {
+      name: evaluation.name,
+      type: evaluation.type || 'PRACTICA',
+      weight: String(evaluation.weight ?? 0),
+      date: evaluation.date ?? TODAY,
+      maxScore: String(evaluation.maxScore ?? 20),
+    } : {
+      name: '',
+      type: 'PRACTICA',
+      weight: String(Math.max(0, Math.round((100 - totalWeight) * 100) / 100)),
+      date: TODAY,
+      maxScore: '20',
+    });
+    setEvaluationModalOpen(true);
+  };
+
+  const saveEvaluation = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setEvaluationError(null);
+    const name = evaluationForm.name.trim();
+    const weight = Number(evaluationForm.weight);
+    const maxScore = Number(evaluationForm.maxScore);
+
+    if (!name) {
+      setEvaluationError('El nombre de la evaluación es obligatorio.');
+      return;
+    }
+    if (!Number.isFinite(weight) || weight < 0 || weight > 100) {
+      setEvaluationError('El peso debe estar entre 0 y 100.');
+      return;
+    }
+    if (!Number.isFinite(maxScore) || maxScore <= 0 || maxScore > 20) {
+      setEvaluationError('La nota máxima debe estar entre 0.01 y 20.');
+      return;
+    }
+
+    setEvaluationSaving(true);
+    try {
+      const payload = {
+        name,
+        type: evaluationForm.type,
+        weight,
+        date: evaluationForm.date || null,
+        maxScore,
+      };
+      const response = editingEvaluationId
+        ? await portalService.updateTeacherEvaluation(editingEvaluationId, payload)
+        : await portalService.createTeacherEvaluation(sectionId, payload);
+      const evaluationsResponse = await portalService.getTeacherEvaluations(sectionId);
+      setEvaluations(evaluationsResponse.data);
+      setSelectedEvaluationId(response.data.id ?? evaluationsResponse.data[0]?.id ?? 0);
+      await loadPreview();
+      setEvaluationModalOpen(false);
+      toast.success(editingEvaluationId ? 'Evaluación actualizada.' : 'Evaluación creada.');
+    } catch (err) {
+      setEvaluationError(getApiErrorMessage(err, 'No se pudo guardar la evaluación.'));
+    } finally {
+      setEvaluationSaving(false);
+    }
   };
 
   const filteredGrades = useMemo(
@@ -199,6 +325,7 @@ export const TeacherSectionPage: React.FC = () => {
     setSaving(true);
     try {
       await portalService.saveTeacherGrades(selectedEvaluationId, grades);
+      setGradesDirty(false);
       toast.success('Notas guardadas correctamente.');
       await loadGrades();
       await loadPreview();
@@ -213,6 +340,7 @@ export const TeacherSectionPage: React.FC = () => {
     setSaving(true);
     try {
       await portalService.saveTeacherAttendance(sectionId, attendanceDate, attendance);
+      setAttendanceDirty(false);
       toast.success('Asistencia guardada correctamente.');
       await load();
     } catch {
@@ -343,10 +471,31 @@ export const TeacherSectionPage: React.FC = () => {
             description="Selecciona una evaluación y registra la nota de cada estudiante."
             aside={
               <>
-                <Select style={{ ...academicInputStyle, width: 'auto' }} value={selectedEvaluationId || ''} onChange={(event) => setSelectedEvaluationId(Number(event.target.value))}>
+                <Select style={{ ...academicInputStyle, width: 'auto' }} value={selectedEvaluationId || ''} onChange={(event) => changeEvaluation(Number(event.target.value))}>
                   <option value="">— Evaluación —</option>
                   {evaluations.map((evaluation) => <option key={evaluation.id} value={evaluation.id}>{evaluation.name} ({evaluation.weight}%)</option>)}
                 </Select>
+                {!closed && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    leftIcon={<Plus size={14} />}
+                    onClick={() => openEvaluationModal()}
+                  >
+                    Nueva evaluación
+                  </Button>
+                )}
+                {selectedEvaluation && !closed && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    leftIcon={<Pencil size={14} />}
+                    onClick={() => openEvaluationModal(selectedEvaluation)}
+                  >
+                    Editar
+                  </Button>
+                )}
+                {gradesDirty && <Badge variant="warning" size="sm">Sin guardar</Badge>}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -430,6 +579,7 @@ export const TeacherSectionPage: React.FC = () => {
                         onChange={(event) => {
                           const value = event.target.value === '' ? null : Number(event.target.value);
                           setGrades((items) => items.map((item) => item.studentId === grade.studentId ? { ...item, score: value } : item));
+                          setGradesDirty(true);
                         }} />
                     </td>
                     <td>
@@ -476,7 +626,8 @@ export const TeacherSectionPage: React.FC = () => {
             description="Registra la asistencia de la sección para la fecha seleccionada."
             aside={
               <>
-                <DatePicker style={{ ...academicInputStyle, width: 'auto' }} ariaLabel="Fecha de asistencia" value={attendanceDate} onChange={setAttendanceDate} />
+                <DatePicker style={{ ...academicInputStyle, width: 'auto' }} ariaLabel="Fecha de asistencia" value={attendanceDate} onChange={changeAttendanceDate} />
+                {attendanceDirty && <Badge variant="warning" size="sm">Sin guardar</Badge>}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -575,7 +726,10 @@ export const TeacherSectionPage: React.FC = () => {
                         value={record.status}
                         disabled={closed}
                         aria-label={`Estado de asistencia de ${record.studentName}`}
-                        onChange={(event) => setAttendance((items) => items.map((item) => item.studentId === record.studentId ? { ...item, status: event.target.value } : item))}
+                        onChange={(event) => {
+                          setAttendance((items) => items.map((item) => item.studentId === record.studentId ? { ...item, status: event.target.value } : item));
+                          setAttendanceDirty(true);
+                        }}
                       >
                         {STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status] ?? status}</option>)}
                       </Select>
@@ -600,6 +754,54 @@ export const TeacherSectionPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          <details className="section-history">
+            <summary>
+              <span>Resumen acumulado de asistencia</span>
+              <Badge variant="outline" size="sm">
+                {attendanceHistory.length} {attendanceHistory.length === 1 ? 'registro' : 'registros'}
+              </Badge>
+            </summary>
+            {attendanceHistoryTotals.length === 0 ? (
+              <EmptyState
+                compact
+                icon={<UserCheck size={22} />}
+                title="Sin historial de asistencia"
+                description="Aún no hay asistencias registradas en esta sección."
+              />
+            ) : (
+              <div className="data-table-wrap">
+                <table className="data-table data-table--stack">
+                  <thead>
+                    <tr>
+                      <th>Estudiante</th>
+                      <th>P</th>
+                      <th>A</th>
+                      <th>T</th>
+                      <th>J</th>
+                      <th>Asistencia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceHistoryTotals.map((student) => (
+                      <tr key={student.studentId}>
+                        <td><span className="cell-mono">{student.studentCode}</span> · {student.studentName}</td>
+                        <td>{student.present}</td>
+                        <td>{student.absent}</td>
+                        <td>{student.late}</td>
+                        <td>{student.justified}</td>
+                        <td>
+                          <strong className={student.rate != null && student.rate < 75 ? 'is-warning-text' : 'is-success-text'}>
+                            {student.rate == null ? '—' : `${student.rate}%`}
+                          </strong>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </details>
         </div>
       )}
 
@@ -773,6 +975,94 @@ export const TeacherSectionPage: React.FC = () => {
             </p>
           )}
         </div>
+      )}
+
+      {evaluationModalOpen && (
+        <Modal
+          title={editingEvaluationId ? 'Editar evaluación' : 'Nueva evaluación'}
+          subtitle={`${section.courseCode}-${section.sectionCode} · ${section.periodCode}`}
+          icon={<Pencil size={20} />}
+          maxWidth="560px"
+          onClose={() => setEvaluationModalOpen(false)}
+        >
+          <form className="modal-form" onSubmit={saveEvaluation}>
+            <div className="modal-field-grid">
+              <div className="field">
+                <label className="field-label" htmlFor="section-evaluation-name">Nombre</label>
+                <input
+                  id="section-evaluation-name"
+                  style={academicInputStyle}
+                  value={evaluationForm.name}
+                  onChange={(event) => setEvaluationForm((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="Ej. Examen parcial"
+                  required
+                />
+              </div>
+              <div className="field">
+                <label className="field-label" htmlFor="section-evaluation-type">Tipo</label>
+                <Select
+                  id="section-evaluation-type"
+                  style={academicInputStyle}
+                  value={evaluationForm.type}
+                  onChange={(event) => setEvaluationForm((current) => ({ ...current, type: event.target.value }))}
+                >
+                  <option value="PRACTICA">Práctica</option>
+                  <option value="PARCIAL">Parcial</option>
+                  <option value="FINAL">Final</option>
+                  <option value="OTRO">Otro</option>
+                </Select>
+              </div>
+              <div className="field">
+                <label className="field-label" htmlFor="section-evaluation-weight">Peso (%)</label>
+                <input
+                  id="section-evaluation-weight"
+                  style={academicInputStyle}
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  value={evaluationForm.weight}
+                  onChange={(event) => setEvaluationForm((current) => ({ ...current, weight: event.target.value }))}
+                  required
+                />
+              </div>
+              <div className="field">
+                <label className="field-label" htmlFor="section-evaluation-max">Nota máxima</label>
+                <input
+                  id="section-evaluation-max"
+                  style={academicInputStyle}
+                  type="number"
+                  min={0.01}
+                  max={20}
+                  step={0.01}
+                  value={evaluationForm.maxScore}
+                  onChange={(event) => setEvaluationForm((current) => ({ ...current, maxScore: event.target.value }))}
+                  required
+                />
+              </div>
+              <div className="field">
+                <label className="field-label">Fecha</label>
+                <DatePicker
+                  style={academicInputStyle}
+                  ariaLabel="Fecha de la evaluación"
+                  value={evaluationForm.date}
+                  onChange={(value) => setEvaluationForm((current) => ({ ...current, date: value }))}
+                />
+              </div>
+            </div>
+
+            {evaluationError && <p className="form-error" role="alert">{evaluationError}</p>}
+
+            <div className="modal-form-footer">
+              <Button type="button" variant="secondary" onClick={() => setEvaluationModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" isLoading={evaluationSaving}>
+                Guardar evaluación
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

@@ -10,6 +10,7 @@ import com.gestoracad.service.ServicioPortalDocente;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -54,6 +55,28 @@ public class ControladorPortalDocente {
         return ResponseEntity.ok(DtoRespuestaApi.ok(portalService.getEvaluations(id), "Evaluaciones obtenidas"));
     }
 
+    @PostMapping("/sections/{id}/evaluations")
+    @Operation(summary = "Crear una evaluación en una sección propia")
+    public ResponseEntity<DtoRespuestaApi<DtoEvaluacion>> createEvaluation(
+            @PathVariable Long id,
+            @Valid @RequestBody DtoEvaluacion dto,
+            HttpServletRequest request) {
+        return ResponseEntity.ok(DtoRespuestaApi.ok(
+                portalService.createEvaluation(id, dto, request.getRemoteAddr(), request.getHeader("User-Agent")),
+                "Evaluación creada correctamente"));
+    }
+
+    @PutMapping("/evaluations/{id}")
+    @Operation(summary = "Actualizar una evaluación propia")
+    public ResponseEntity<DtoRespuestaApi<DtoEvaluacion>> updateEvaluation(
+            @PathVariable Long id,
+            @Valid @RequestBody DtoEvaluacion dto,
+            HttpServletRequest request) {
+        return ResponseEntity.ok(DtoRespuestaApi.ok(
+                portalService.updateEvaluation(id, dto, request.getRemoteAddr(), request.getHeader("User-Agent")),
+                "Evaluación actualizada correctamente"));
+    }
+
     @GetMapping("/evaluations/{id}/grades")
     @Operation(summary = "Notas de una evaluación propia")
     public ResponseEntity<DtoRespuestaApi<List<DtoCalificacion>>> getGrades(@PathVariable Long id) {
@@ -74,6 +97,13 @@ public class ControladorPortalDocente {
             @PathVariable Long id,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ResponseEntity.ok(DtoRespuestaApi.ok(portalService.getAttendance(id, date), "Asistencia obtenida"));
+    }
+
+    @GetMapping("/sections/{id}/attendance/history")
+    @Operation(summary = "Historial acumulado de asistencia de una sección propia")
+    public ResponseEntity<DtoRespuestaApi<List<DtoAsistencia>>> getAttendanceHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(DtoRespuestaApi.ok(
+                portalService.getAttendanceHistory(id), "Historial de asistencia obtenido"));
     }
 
     @PutMapping("/sections/{id}/attendance")

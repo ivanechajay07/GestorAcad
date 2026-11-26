@@ -26,6 +26,7 @@ const baseCourse: PortalCourseDto = {
       weight: 100,
       score: 15,
       maxScore: 20,
+      observation: 'Buen desempeño en el examen final.',
     },
   ],
 };
@@ -50,6 +51,7 @@ describe('CourseDetailPanel', () => {
     expect(html).toContain('Registrada');
     expect(html).toContain('<strong>100%</strong>');
     expect(html).toContain('Simulador de nota');
+    expect(html).toContain('Buen desempeño en el examen final.');
   });
 
   it('muestra el botón de descarga de constancia cuando está disponible', () => {

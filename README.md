@@ -16,7 +16,7 @@ Plataforma web para la **gestión académica universitaria**. Centraliza la estr
 | **Problema** | La información académica suele estar dispersa entre hojas de cálculo y procesos manuales, sin trazabilidad ni control de acceso. |
 | **Solución** | Una plataforma integrada con una API REST, base de datos normalizada y una interfaz web común para estudiantes, docentes y administradores. |
 | **Alcance** | Universidad, facultades y carreras; periodos, cursos, planes, secciones y matrículas; evaluaciones, notas, asistencia y actas; portales de docente y estudiante; usuarios, roles, permisos y auditoría. |
-| **Resultado** | Aplicación funcional, con 340 pruebas automatizadas, integración continua y auditoría de accesibilidad sin hallazgos. |
+| **Resultado** | Aplicación funcional, con 341 pruebas automatizadas, integración continua y auditoría de accesibilidad sin hallazgos. |
 
 > **Estado actual:** el sistema está implementado y operativo de extremo a extremo. Los flujos principales están cubiertos por pruebas automatizadas y el proyecto cuenta con integración continua.
 
@@ -53,10 +53,10 @@ La aplicación aplica el modelo de permisos `MODULO_ACCION` y distingue tres per
 
 | Indicador | Valor |
 | :--- | :--- |
-| Operaciones REST | 161 |
+| Operaciones REST | 164 |
 | Controladores | 30 |
 | Roles base / permisos | 3 / 90 |
-| Pruebas automatizadas | 340 (207 backend + 133 frontend) |
+| Pruebas automatizadas | 341 (207 backend + 134 frontend) |
 | Cobertura de líneas del backend | 62,2 % (umbral mínimo: 55 %) |
 | Accesibilidad | 0 violaciones detectadas con axe |
 
@@ -104,7 +104,7 @@ Los puertos son configurables en el archivo `.env` (`FRONTEND_PORT`, `BACKEND_PO
 | Roles y permisos | `/roles` | Roles, permisos por módulo, duplicado y protección de roles base. |
 | Auditoría | `/audit` | Bitácora de operaciones, filtros, métricas y tendencias de actividad. |
 | Asistente académico | `/assistant` | Consultas sobre normativa y procesos, con base de conocimiento administrable. |
-| Portal docente | `/my-sections` | Secciones en tarjetas, vista previa del acta, búsqueda de estudiantes, exportación CSV, filtros y acciones masivas. |
+| Portal docente | `/my-sections` | Secciones en tarjetas, gestión de evaluaciones, historial de asistencia, vista previa del acta, búsqueda de estudiantes, exportación CSV y acciones masivas. |
 | Portal estudiante | `/my-progress` | Cursos en tarjetas, promedio, asistencia detallada, alertas, horario semanal, evaluaciones, simulador, malla curricular y reporte PDF. |
 | Perfil | `/profile` | Datos personales, avatar y cambio de contraseña. |
 
@@ -140,7 +140,7 @@ Los puertos son configurables en el archivo `.env` (`FRONTEND_PORT`, `BACKEND_PO
 
 ### Portales de consulta
 
-- **Portal docente:** secciones en tarjetas, filtros por periodo y acta, pendientes de gestión, resumen de notas/asistencia, vista previa del acta, búsqueda de estudiantes, exportación CSV, acciones masivas y validación del peso.
+- **Portal docente:** secciones en tarjetas, filtros por periodo y acta, pendientes de gestión, creación y edición de evaluaciones, resumen de notas/asistencia, historial acumulado de asistencia, vista previa del acta, búsqueda de estudiantes, exportación CSV, aviso de cambios sin guardar, acciones masivas y validación del peso.
 - **Portal estudiante:** cursos en tarjetas, promedio final o parcial, horario semanal, calendario de evaluaciones, simulador de nota, malla curricular, asistencia detallada, alertas académicas, filtros del historial, evolución y constancia/reporte PDF.
 - Ambos portales se limitan automáticamente a la cuenta autenticada.
 
@@ -468,6 +468,10 @@ Todas las respuestas **JSON** usan una estructura uniforme:
 - `GET /api/v1/portal/student/sections/{id}/constancia.pdf`: constancia de notas del estudiante en PDF.
 - `GET /api/v1/portal/student/report.pdf`: reporte de avance académico y malla curricular en PDF.
 - `GET /api/v1/portal/student/sections/{id}/attendance`: asistencia diaria del estudiante en una sección.
+- `GET /api/v1/portal/teacher/sections/{id}/evaluations`: evaluaciones de una sección propia.
+- `POST /api/v1/portal/teacher/sections/{id}/evaluations`: crea una evaluación en una sección propia.
+- `PUT /api/v1/portal/teacher/evaluations/{id}`: actualiza una evaluación propia.
+- `GET /api/v1/portal/teacher/sections/{id}/attendance/history`: historial acumulado de asistencia de la sección.
 - `GET /api/v1/portal/teacher/sections/{id}/acta/preview`: vista previa del acta con promedios preliminares.
 
 ---
@@ -493,7 +497,7 @@ Todas las respuestas **JSON** usan una estructura uniforme:
 | Ámbito | Herramientas | Resultado |
 | :--- | :--- | :--- |
 | Backend | JUnit 5, Mockito, MockMvc, `@DataJpaTest`, ArchUnit | 207 pruebas, 0 fallos |
-| Frontend | Vitest 5, jsdom, oxlint | 133 pruebas, 0 fallos |
+| Frontend | Vitest 5, jsdom, oxlint | 134 pruebas, 0 fallos |
 | Cobertura | JaCoCo, umbral obligatorio del 55 % | 62,2 % de líneas |
 | Accesibilidad | axe-core | 0 violaciones en vistas principales, modales y móvil |
 | Integración continua | GitHub Actions | Java 21 y Node 24 en cada push o pull request a `main` y `develop` |

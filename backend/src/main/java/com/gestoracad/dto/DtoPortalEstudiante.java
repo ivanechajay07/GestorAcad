@@ -118,6 +118,7 @@ public class DtoPortalEstudiante {
         private BigDecimal score;
         private BigDecimal maxScore;
         private LocalDate date;
+        private String observation;
 
         public String getEvaluationName() { return evaluationName; }
         public void setEvaluationName(String evaluationName) { this.evaluationName = evaluationName; }
@@ -131,6 +132,8 @@ public class DtoPortalEstudiante {
         public void setMaxScore(BigDecimal maxScore) { this.maxScore = maxScore; }
         public LocalDate getDate() { return date; }
         public void setDate(LocalDate date) { this.date = date; }
+        public String getObservation() { return observation; }
+        public void setObservation(String observation) { this.observation = observation; }
     }
 
     public static class Horario {

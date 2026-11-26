@@ -204,10 +204,11 @@ public class ServicioPortalAcademicoImpl implements ServicioPortalAcademico {
             grade.setWeight(evaluation.getWeight());
             grade.setMaxScore(evaluation.getMaxScore());
             grade.setDate(evaluation.getDate());
-            grade.setScore(gradeRepository
-                    .findByEvaluationIdAndStudentId(evaluation.getId(), student.getId())
-                    .map(Calificacion::getScore)
-                    .orElse(null));
+            gradeRepository.findByEvaluationIdAndStudentId(evaluation.getId(), student.getId())
+                    .ifPresent(calificacion -> {
+                        grade.setScore(calificacion.getScore());
+                        grade.setObservation(calificacion.getObservation());
+                    });
             course.getGrades().add(grade);
         }
 

@@ -138,6 +138,11 @@ export const CourseDetailPanel = ({
                     <span>{evaluationTypeLabel(grade.type)}</span>
                     <span>Peso {grade.weight}%</span>
                   </span>
+                  {grade.observation && (
+                    <span className="grade-item__observation">
+                      Observación: {grade.observation}
+                    </span>
+                  )}
                 </div>
 
                 <div className="grade-item__score">

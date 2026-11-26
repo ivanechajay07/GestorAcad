@@ -21,11 +21,17 @@ public interface ServicioPortalDocente {
 
     List<DtoEvaluacion> getEvaluations(Long sectionId);
 
+    DtoEvaluacion createEvaluation(Long sectionId, DtoEvaluacion dto, String clientIp, String userAgent);
+
+    DtoEvaluacion updateEvaluation(Long evaluationId, DtoEvaluacion dto, String clientIp, String userAgent);
+
     List<DtoCalificacion> getGrades(Long evaluationId);
 
     void saveGrades(Long evaluationId, List<DtoCalificacion> grades, String clientIp, String userAgent);
 
     List<DtoAsistencia> getAttendance(Long sectionId, LocalDate date);
+
+    List<DtoAsistencia> getAttendanceHistory(Long sectionId);
 
     void saveAttendance(Long sectionId, LocalDate date, List<DtoAsistencia> attendance,
                         String clientIp, String userAgent);
