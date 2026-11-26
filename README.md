@@ -106,7 +106,7 @@ Los puertos son configurables en el archivo `.env` (`FRONTEND_PORT`, `BACKEND_PO
 | Auditoría | `/audit` | Bitácora de operaciones, filtros, métricas y tendencias de actividad. |
 | Asistente académico | `/assistant` | Consultas sobre normativa y procesos, con base de conocimiento administrable. |
 | Portal docente | `/my-sections` | Secciones asignadas, estudiantes, evaluaciones, notas, asistencia y estado del acta. |
-| Portal estudiante | `/my-progress` | Cursos matriculados, notas, asistencia, avance y acta. |
+| Portal estudiante | `/my-progress` | Cursos en tarjetas, promedio final o parcial, asistencia, evaluaciones y acta. |
 | Perfil | `/profile` | Datos personales, avatar y cambio de contraseña. |
 
 ### Autenticación y control de acceso
@@ -142,7 +142,7 @@ Los puertos son configurables en el archivo `.env` (`FRONTEND_PORT`, `BACKEND_PO
 ### Portales de consulta
 
 - **Portal docente:** secciones asignadas, estudiantes, evaluaciones y gestión de notas, asistencia y acta.
-- **Portal estudiante:** cursos matriculados, calificaciones, asistencia, avance y estado del acta.
+- **Portal estudiante:** cursos en tarjetas, promedio final o parcial, calificaciones, asistencia, avance y estado del acta.
 - Ambos portales se limitan automáticamente a la cuenta autenticada.
 
 ### Administración y trazabilidad
