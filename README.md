@@ -1,206 +1,521 @@
+
 # Gestor Académico Virtual
 
-Plataforma académica modular y escalable para la gestión universitaria integral, construida por fases con altos estándares de arquitectura, seguridad y buenas prácticas de ingeniería.
+Plataforma web para la **gestión académica universitaria**. Centraliza la estructura académica, el padrón de estudiantes, el claustro docente, las evaluaciones, los portales de consulta y la administración de usuarios, con control de acceso por roles, auditoría de operaciones y reportes institucionales.
+
+### Resumen del proyecto
+
+| Aspecto | Detalle |
+| :--- | :--- |
+| **Problema** | La información académica suele estar dispersa entre hojas de cálculo y procesos manuales, sin trazabilidad ni control de acceso. |
+| **Solución** | Una plataforma integrada con una API REST, base de datos normalizada y una interfaz web común para estudiantes, docentes y administradores. |
+| **Alcance** | Universidad, facultades y carreras; periodos, cursos, planes, secciones y matrículas; evaluaciones, notas, asistencia y actas; portales de docente y estudiante; usuarios, roles, permisos y auditoría. |
+| **Resultado** | Aplicación funcional, con 308 pruebas automatizadas, integración continua y auditoría de accesibilidad sin hallazgos. |
+
+> **Estado actual:** el sistema está implementado y operativo de extremo a extremo. Los flujos principales están cubiertos por pruebas automatizadas y el proyecto cuenta con integración continua.
 
 ---
 
-## Estructura del Repositorio
+## Contenido
 
+- [Descripción general](#descripción-general)
+- [Acceso rápido](#acceso-rápido)
+- [Módulos y funcionalidades](#módulos-y-funcionalidades)
+- [Roles y permisos](#roles-y-permisos)
+- [Arquitectura](#arquitectura)
+- [Tecnologías](#tecnologías)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Puesta en marcha](#puesta-en-marcha)
+- [Configuración](#configuración)
+- [Base de datos](#base-de-datos)
+- [API REST](#api-rest)
+- [Seguridad](#seguridad)
+- [Calidad y pruebas](#calidad-y-pruebas)
+- [Guion de demostración para el docente](#guion-de-demostración-para-el-docente)
+- [Consideraciones](#consideraciones)
+
+---
+
+## Descripción general
+
+El proyecto resuelve la gestión académica de una universidad mediante tres capas bien separadas:
+
+- **Frontend SPA** desarrollado con React y TypeScript, servido por Nginx.
+- **Backend REST** desarrollado con Spring Boot y Java 21, con autenticación JWT sin estado.
+- **Base de datos MySQL 8** normalizada en tercera forma normal, con funciones, procedimientos, vistas y triggers de auditoría.
+
+La aplicación aplica el modelo de permisos `MODULO_ACCION` y distingue tres perfiles: administración institucional, docentes y estudiantes. Cada operación relevante queda registrada en la bitácora de auditoría.
+
+| Indicador | Valor |
+| :--- | :--- |
+| Operaciones REST | 157 |
+| Controladores | 30 |
+| Roles base / permisos | 3 / 90 |
+| Pruebas automatizadas | 308 (204 backend + 104 frontend) |
+| Cobertura de líneas del backend | 59,9 % (umbral mínimo: 55 %) |
+| Accesibilidad | 0 violaciones detectadas con axe |
+
+> Los valores corresponden al estado actual del repositorio y a la última ejecución local de pruebas y reportes.
+
+---
+
+## Acceso rápido
+
+Con el entorno levantado mediante Docker Compose:
+
+| Servicio | URL |
+| :--- | :--- |
+| Aplicación web | <http://localhost:3010> |
+| API REST | <http://localhost:8094/api/v1> |
+| Documentación Swagger | <http://localhost:8094/swagger-ui.html> |
+| phpMyAdmin | <http://localhost:8095> |
+| MySQL | `localhost:3310` |
+
+### Cuentas de demostración
+
+| Usuario | Contraseña | Rol | Uso principal |
+| :--- | :--- | :--- | :--- |
+| `admin` | `gestor123` | `ROLE_UNIVERSIDAD` | Administración completa del sistema |
+| `carlos` | `docente123` | `ROLE_DOCENTE` | Secciones asignadas, notas, asistencia y actas |
+| `lucia` | `alumno123` | `ROLE_ESTUDIANTE` | Avance académico, notas, asistencia y acta |
+
+> Estas cuentas se crean con los scripts de inicialización y son únicamente para demostración. En un entorno real deben reemplazarse por credenciales que cumplan la política de contraseñas.
+
+Los puertos son configurables en el archivo `.env` (`FRONTEND_PORT`, `BACKEND_PORT`, `PHPMYADMIN_PORT`, `MYSQL_PORT`).
+
+---
+
+## Módulos y funcionalidades
+
+| Módulo | Ruta | Funcionalidad principal |
+| :--- | :--- | :--- |
+| Panel institucional | `/dashboard` | Indicadores del periodo, pendientes de gestión, resumen por rol y gráficos interactivos. |
+| Universidad | `/university` | Datos institucionales, sedes, autoridades, parámetros, facultades y carreras. |
+| Estructura académica | `/academic` | Periodos, cursos, planes de estudio, prerrequisitos, secciones, horarios y matrículas. |
+| Evaluación académica | `/evaluation` | Evaluaciones, planilla de notas, asistencia por fecha, promedio ponderado y actas. |
+| Claustro docente | `/teachers` | Fichas docentes, especialidades, asignaciones lectivas y cuentas de acceso. |
+| Padrón estudiantil | `/students` | Fichas de estudiantes, admisión, condición académica, matrícula y cuentas de acceso. |
+| Usuarios | `/users` | Altas, edición, roles, estado de la cuenta y avatares. |
+| Roles y permisos | `/roles` | Roles, permisos por módulo, duplicado y protección de roles base. |
+| Auditoría | `/audit` | Bitácora de operaciones, filtros, métricas y tendencias de actividad. |
+| Asistente académico | `/assistant` | Consultas sobre normativa y procesos, con base de conocimiento administrable. |
+| Portal docente | `/my-sections` | Secciones asignadas, estudiantes, evaluaciones, notas, asistencia y estado del acta. |
+| Portal estudiante | `/my-progress` | Cursos matriculados, notas, asistencia, avance y acta. |
+| Perfil | `/profile` | Datos personales, avatar y cambio de contraseña. |
+
+### Autenticación y control de acceso
+
+- Inicio de sesión institucional con correo o usuario y contraseña.
+- Token de acceso JWT y token de refresco con rotación y revocación.
+- Recuperación de acceso y cierre de sesión auditado.
+- Bloqueo temporal de la cuenta tras 5 intentos fallidos durante 15 minutos.
+- Límite de intentos por dirección IP para mitigar ataques de fuerza bruta.
+- Sesión en `sessionStorage` por defecto; opción de mantenerla activa en `localStorage`.
+- Rutas y acciones protegidas por permisos, tanto en el frontend como en el backend.
+
+### Gestión académica
+
+- Catálogo de facultades y carreras con relaciones obligatorias y borrado lógico protegido.
+- Periodos académicos con periodo vigente, cursos, planes de estudio y malla curricular.
+- Prerrequisitos entre cursos y validación de matrícula.
+- Secciones con cupos, turno, aula y horarios estructurados.
+- Detección de choques de horario por docente y por aula.
+- Matrícula de estudiantes con control de créditos y cupos.
+- Fichas de estudiantes y docentes con datos personales, académicos y de contacto.
+- Vinculación de una cuenta de usuario a cada ficha, con opción de crearla desde el mismo formulario.
+
+### Evaluación y actas
+
+- Evaluaciones por sección con tipo, peso y nota máxima.
+- Planilla de notas con cálculo de promedio ponderado y créditos aprobados.
+- Asistencia por fecha, con estados por estudiante.
+- Cierre de acta por sección; una vez cerrada, se bloquean notas y asistencia.
+- Exportación del acta en PDF con cabecera institucional y espacio de firmas.
+- Registro auditado de cada operación académica.
+
+### Portales de consulta
+
+- **Portal docente:** secciones asignadas, estudiantes, evaluaciones y gestión de notas, asistencia y acta.
+- **Portal estudiante:** cursos matriculados, calificaciones, asistencia, avance y estado del acta.
+- Ambos portales se limitan automáticamente a la cuenta autenticada.
+
+### Administración y trazabilidad
+
+- Gestión de usuarios con edición de datos, rol, estado y avatar.
+- Roles y permisos editables, con duplicado de roles y protección de los roles base.
+- Bitácora de auditoría con acción, usuario, IP, dispositivo, detalle, resultado y fecha.
+- Conversión de fechas a `America/Lima` y resolución de la IP real detrás del proxy.
+- Panel de actividad con tendencias, tasa de éxito y distribución por acción.
+- Notificaciones agregadas en el encabezado, filtradas por permisos y sin datos personales.
+
+### Asistente académico y reportes
+
+- Asistente con base de conocimiento local sobre normativa y procesos académicos.
+- Modo local por defecto; integración opcional con OpenAI mediante variables de entorno.
+- Administración de fuentes de conocimiento desde la interfaz.
+- Exportaciones CSV del padrón de estudiantes, docentes y usuarios.
+- Exportación PDF del acta de evaluación.
+
+### Experiencia de usuario
+
+- Diseño responsive para escritorio, tablet y móvil.
+- Tema claro y oscuro con preferencia persistente.
+- Selectores con búsqueda en todos los formularios y filtros del sistema.
+- Tablas con búsqueda, filtros, paginación y vistas de tarjetas.
+- Componentes accesibles: foco visible, navegación por teclado, etiquetas ARIA y mensajes de estado.
+- Notificaciones toast, diálogos de confirmación, estados vacíos y de carga.
+- Carga diferida de rutas y captura global de errores de renderizado.
+
+---
+
+## Roles y permisos
+
+| Rol | Alcance |
+| :--- | :--- |
+| `ROLE_UNIVERSIDAD` | Administración institucional: usuarios, roles, permisos, catálogos académicos y auditoría. |
+| `ROLE_DOCENTE` | Acceso a las secciones asignadas, evaluaciones, notas, asistencia y actas. |
+| `ROLE_ESTUDIANTE` | Consulta de su avance, cursos, notas, asistencia y acta. |
+
+El control de acceso se basa en permisos con el formato `MODULO_ACCION` (por ejemplo, `ESTUDIANTE_VIEW`, `DOCENTE_EDIT`, `EVALUACION_CREATE`). Los permisos se agrupan por módulo y se asignan a los roles.
+
+- El catálogo inicial contiene **90 permisos** distribuidos en los módulos del sistema.
+- Los roles base están protegidos y no pueden eliminarse.
+- Los roles con usuarios asignados tampoco pueden eliminarse.
+- Cada cambio de rol o permiso queda registrado en la auditoría.
+
+---
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+    U[Navegador]
+    subgraph Docker[Docker Compose]
+        F[Frontend<br/>React 19 + Nginx]
+        B[Backend<br/>Spring Boot 3 · Java 21]
+        D[(MySQL 8)]
+        P[phpMyAdmin]
+    end
+    U -->|HTTP| F
+    F -->|REST /api/v1 · JWT| B
+    B -->|JPA / Hibernate| D
+    P --> D
 ```
+
+### Capas del backend
+
+1. **Controladores REST:** exponen los recursos versionados en `/api/v1` y aplican autorización por permisos.
+2. **Servicios:** concentran las reglas de negocio, validaciones y transacciones.
+3. **Repositorios:** acceso a datos con Spring Data JPA y consultas JPQL.
+4. **Entidades y DTOs:** modelo de dominio auditado y contratos de entrada/salida desacoplados.
+5. **Seguridad transversal:** Spring Security, filtros JWT, límite de intentos y cabeceras HTTP.
+6. **Auditoría:** registro automático de operaciones y consulta desde el módulo de bitácora.
+
+### Capas del frontend
+
+1. **Rutas protegidas:** validación de sesión y permisos antes de renderizar cada módulo.
+2. **Páginas y componentes:** interfaz modular con componentes reutilizables y sistema de diseño propio.
+3. **Contextos:** autenticación, tema, notificaciones y confirmaciones.
+4. **Servicios:** cliente Axios con interceptores para el token y manejo centralizado de errores.
+
+### Flujo de una petición
+
+1. El usuario inicia sesión y recibe un token de acceso y un token de refresco.
+2. El frontend adjunta el token de acceso en la cabecera `Authorization: Bearer ...`.
+3. Spring Security valida el token y carga los permisos del usuario.
+4. El controlador verifica el permiso requerido y delega en el servicio.
+5. El servicio aplica las reglas de negocio y persiste los cambios.
+6. La operación se registra en la auditoría y se devuelve una respuesta JSON uniforme.
+
+---
+
+## Tecnologías
+
+| Capa | Tecnologías |
+| :--- | :--- |
+| **Backend** | Java 21, Spring Boot 3.4.3, Spring Security, Spring Data JPA, Bean Validation, Actuator, JJWT 0.12.6, OpenPDF, Springdoc OpenAPI 2.8.5 |
+| **Frontend** | React 19, TypeScript 6, Vite 8, React Router 7, Axios, Lucide |
+| **Base de datos** | MySQL 8, SQL normalizado, Flyway (esquema base) |
+| **Infraestructura** | Docker Compose, Nginx, phpMyAdmin |
+| **Pruebas backend** | JUnit 5, Mockito, MockMvc, `@DataJpaTest`, ArchUnit, JaCoCo |
+| **Pruebas frontend** | Vitest 5, jsdom, oxlint |
+| **Accesibilidad** | axe-core |
+
+---
+
+## Estructura del repositorio
+
+```text
 /
-├── backend/            # API REST desarrollada en Spring Boot 3.4 / Java 21
+├── backend/
 │   ├── src/main/java/com/gestoracad/
-│   │   ├── audit/      # Auditoría JPA y tracking
-│   │   ├── config/     # CORS, OpenAPI, Security, JPA Config
-│   │   ├── controller/ # Controladores REST
-│   │   ├── dto/        # DTOs de petición y respuesta
-│   │   ├── entity/     # Entidades de dominio (BaseEntity auditada)
-│   │   ├── exception/  # GlobalExceptionHandler centralizado
-│   │   ├── mapper/     # Mappers manuales entidad → DTO
-│   │   ├── repository/ # Capa DAO (Spring Data JPA + JPQL)
-│   │   ├── security/   # Utilidades JWT y filtros
-│   │   └── service/    # Lógica de negocio por capas
+│   │   ├── audit/          # Registro y consulta de auditoría
+│   │   ├── config/         # CORS, OpenAPI, seguridad y JPA
+│   │   ├── controller/     # API REST
+│   │   ├── dto/            # Contratos de entrada y salida
+│   │   ├── entity/         # Modelo de dominio
+│   │   ├── exception/      # Manejo centralizado de errores
+│   │   ├── mapper/         # Conversión entidad → DTO
+│   │   ├── repository/     # Acceso a datos
+│   │   ├── security/       # JWT, filtros y utilidades de seguridad
+│   │   └── service/        # Reglas de negocio
+│   ├── src/test/java/      # Pruebas unitarias, de integración y arquitectura
 │   └── pom.xml
-├── frontend/           # Aplicación Web SPA en React 19 + TypeScript + Vite
+├── frontend/
 │   ├── src/
-│   │   ├── assets/     # Recursos estáticos
-│   │   ├── components/ # Componentes reutilizables UI (Button, Card, Badge, Header, Sidebar, ErrorBoundary, ThemeToggle)
-│   │   ├── contexts/   # AuthContext, ThemeContext (claro/oscuro), ToastContext y ConfirmContext
-│   │   ├── hooks/      # useAuth, useHealth
-│   │   ├── layouts/    # MainLayout responsivo
-│   │   ├── pages/      # Dashboard, módulos académicos, administración y seguridad
-│   │   ├── routes/     # AppRouter (carga diferida) y ProtectedRoute
-│   │   ├── services/   # Cliente Axios con interceptores JWT
-│   │   └── utils/      # Utilidades y formateadores
+│   │   ├── components/     # Componentes reutilizables y sistema de diseño
+│   │   ├── contexts/       # Autenticación, tema y notificaciones
+│   │   ├── hooks/          # Hooks compartidos
+│   │   ├── layouts/        # Layout principal responsive
+│   │   ├── pages/          # Módulos de la aplicación
+│   │   ├── routes/         # Enrutamiento y rutas protegidas
+│   │   ├── services/       # Cliente HTTP y servicios por dominio
+│   │   └── utils/          # Utilidades y formateadores
 │   └── package.json
-├── database/           # Scripts de base de datos MySQL 8+ normalizada (3FN)
-│   ├── init.sql        # Inicialización de BD y tabla de verificación tb_schema_version
-│   ├── 02_security_users_roles_audit.sql  # Seguridad, roles, permisos y auditoría
-│   ├── 03_auth_permissions.sql            # Migración Fase 3: permisos MODULO_ACCION y bloqueo
-│   ├── 04_university_module.sql           # Migración Fase 4: universidad, sedes, autoridades, parámetros
-│   ├── 05_teacher_module.sql              # Migración Fase 5: docentes, especialidades, asignaciones lectivas
-│   ├── 06_student_module.sql              # Migración Fase 6: estudiantes, historial de ingreso
-│   ├── 07_db_functions_normalization.sql  # Auditoría Fase 7: catálogos, funciones, vistas e índices
-│   ├── 08_normalizacion_duplicaciones.sql # Fase 8: elimina columnas duplicadas/derivadas
-│   ├── 09_catalogo_academico_permisos.sql # Fase 9: permisos del CRUD de facultades y carreras
-│   ├── 10_estructura_academica.sql        # Fase 7.1: periodos académicos, cursos y permisos
-│   ├── 11_estructura_academica_72.sql     # Fase 7.2: planes, secciones y matrícula
-│   ├── 12_estructura_academica_73.sql     # Fase 7.3: prerrequisitos y horarios
-│   ├── 13_evaluacion_academica.sql        # Fase 8.1: evaluaciones, notas, asistencia y actas
-│   ├── 14_portales_estudiante_docente.sql # Fase 8.2: vínculo de cuentas y portales
-│   └── README.md       # Convenciones DBA y diseño relacional
-├── docker/             # Dockerfiles y configuración de servidores
-│   ├── Dockerfile.backend   # Imagen Alpine JRE 21 con usuario sin privilegios
-│   ├── Dockerfile.frontend  # Imagen Alpine Nginx con soporte SPA y proxy reverso
-│   └── nginx.conf           # Configuración Nginx para frontend
-├── docker-compose.yml  # Orquestación de MySQL, phpMyAdmin, Backend y Frontend
-├── .env.example        # Plantilla de variables de entorno
-└── .env                # Variables de entorno locales
+├── database/               # Scripts de inicialización y migración de MySQL
+├── docker/                 # Dockerfiles y configuración de Nginx
+├── scripts/                # Respaldo y restauración de base de datos
+├── .github/workflows/      # Integración continua
+├── docker-compose.yml      # Orquestación de servicios
+├── .env.example            # Plantilla de variables de entorno
+└── README.md
 ```
-
-> La documentación técnica (`docs/`) no se incluye en este repositorio.
 
 ---
 
-## Inicio Rápido con Docker Compose
+## Puesta en marcha
+
+### Requisitos
+
+- Docker Desktop con Docker Compose.
+- Git.
+- Opcional para desarrollo local: JDK 21 y Node.js 24.
+
+### Pasos
 
 ```powershell
-docker compose up -d
+# 1. Clonar el repositorio
+git clone https://github.com/ivanechajay07/GestorAcad.git
+cd GestorAcad
+
+# 2. Crear el archivo de entorno
+Copy-Item .env.example .env
+
+# 3. Editar .env y reemplazar los valores CAMBIAR_*
+#    (contraseñas de MySQL y JWT_SECRET_KEY)
+
+# 4. Levantar todos los servicios
+docker compose up -d --build
 ```
 
-- **Frontend:** [http://localhost:3010](http://localhost:3010)
-- **Backend API:** [http://localhost:8094](http://localhost:8094)
-- **Swagger Docs:** [http://localhost:8094/swagger-ui.html](http://localhost:8094/swagger-ui.html)
-- **phpMyAdmin:** [http://localhost:8095](http://localhost:8095)
-- **MySQL:** `localhost:3310`
+En Linux o macOS, el archivo de entorno se crea con `cp .env.example .env`.
 
-> Los puertos son configurables en `.env` (`FRONTEND_PORT`, `BACKEND_PORT`, `PHPMYADMIN_PORT`, `MYSQL_PORT`) y están elegidos para no colisionar con otros contenedores del equipo.
->
-> **Importante:** el frontend de este proyecto es **http://localhost:3010**. Otros puertos como `5173` pueden pertenecer a proyectos distintos que estén corriendo en el mismo equipo. No abras `frontend/index.html` directamente con `file://`: el SPA necesita servirse por HTTP.
+Verificar el estado de los contenedores:
 
-### Desarrollo local del frontend (sin reconstruir Docker)
+```powershell
+docker compose ps
+```
+
+Cuando los servicios estén disponibles, abrir <http://localhost:3010>.
+
+### Desarrollo local del frontend
+
+El backend puede mantenerse en Docker y el frontend ejecutarse con Vite para recargar los cambios al instante:
 
 ```powershell
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-Vite sirve la aplicación en `http://localhost:5173` (o el siguiente puerto libre) y redirige `/api` al backend en `http://localhost:8094`. Si usas otro backend, define `VITE_BACKEND_URL` en `frontend/.env`.
+Vite sirve la aplicación en <http://localhost:5173> y redirige `/api` al backend en <http://localhost:8094>. Para usar otro backend, definir `VITE_BACKEND_URL` en `frontend/.env`.
+
+> El frontend debe servirse por HTTP. Abrir `frontend/index.html` con `file://` no funciona porque la aplicación requiere el enrutador y el proxy de la API.
+
+### Detener el entorno
+
+```powershell
+docker compose down
+```
+
+Para eliminar también los datos de MySQL:
+
+```powershell
+docker compose down -v
+```
 
 ---
 
-## Estado Actual: FASE 6 + DASHBOARD + FASE 7.1 (ESTRUCTURA ACADÉMICA)
+## Configuración
 
-Módulo Estudiante con gestión del padrón estudiantil (expediente y datos personales), estado académico (ciclo, créditos aprobados, promedio ponderado, condición y matrícula) e historial de ingreso/admisión. CRUD completo (alta, edición y borrado lógico), autorización por permisos `ESTUDIANTE/ADMISION` en backend y frontend, y auditoría de cada operación.
+Las variables principales se definen en `.env`:
 
-El **Panel Institucional** consume el endpoint agregado `GET /api/v1/dashboard/summary` con datos reales, permisos por bloque y sin PII. La **base de datos** fue auditada, normalizada por completo y completada con catálogos de facultades/carreras, 8 funciones, 8 procedimientos, 2 triggers, 8 vistas, 59 índices sin redundancias y 21 restricciones CHECK. El **Módulo Universidad** incorpora pestañas de **Facultades** y **Carreras** con CRUD completo sobre el catálogo académico (Fase 9).
-
-La **Fase 7 (Estructura Académica)** está completa y la **Fase 8 (Evaluación y portales)** está operativa: `/evaluation`, `/my-progress` y `/my-sections`. El docente puede registrar notas/asistencia y cerrar actas solo en sus secciones. Quedan los reportes de actas y el historial completo por periodos.
-
-### Auditoría y normalización de Base de Datos (Fases 7 y 8 técnicas)
-
-- **Normalización:** catálogos `tb_facultades`/`tb_carreras` con FK obligatorias desde estudiantes y docentes; se eliminó la dependencia transitiva carrera → facultad. En la Fase 8 se retiraron las columnas de texto `facultad`/`carrera`: el backend resuelve los nombres contra el catálogo.
-- **Datos de ingreso:** `periodo_ingreso`, `modalidad_ingreso` y `colegio_procedencia` ya no se duplican en el padrón; se leen de la admisión más antigua y se sincronizan al crear/editar.
-- **Objetos programables:** 8 funciones, 8 procedimientos, 2 triggers (inmutabilidad de auditoría) y 8 vistas de consulta.
-- **Integridad:** 14 claves foráneas, 21 CHECK, `horas_totales` calculado como `horas_teoricas + horas_practicas` y bitácora inmutable ante `UPDATE`/`DELETE`.
-- **Calidad:** `vw_integridad_datos` con 11 controles, todos en `OK`; índice de redundancias `sys` en 0.
-- **Evidencia y operación:** `database/07_db_functions_normalization.sql`, `database/08_normalizacion_duplicaciones.sql` y `database/09_catalogo_academico_permisos.sql` (idempotentes).
-
-### Cuentas Semilla de Prueba
-
-| Usuario | Contraseña | Rol |
+| Variable | Descripción | Valor de ejemplo |
 | :--- | :--- | :--- |
-| `admin` | `gestor123` | `ROLE_UNIVERSIDAD` (90 permisos) |
-| `carlos` | `docente123` | `ROLE_DOCENTE` (6 permisos) |
-| `lucia` | `alumno123` | `ROLE_ESTUDIANTE` (2 permisos) |
+| `MYSQL_DATABASE` | Nombre de la base de datos | `gestoracad_db` |
+| `MYSQL_USER` | Usuario de la aplicación | `gestor_user` |
+| `MYSQL_PASSWORD` | Contraseña del usuario de la aplicación | `CAMBIAR_CONTRASENA_USUARIO` |
+| `MYSQL_ROOT_PASSWORD` | Contraseña del usuario root | `CAMBIAR_CONTRASENA_ROOT` |
+| `MYSQL_PORT` | Puerto publicado de MySQL | `3310` |
+| `BACKEND_PORT` | Puerto publicado del backend | `8094` |
+| `FRONTEND_PORT` | Puerto publicado del frontend | `3010` |
+| `PHPMYADMIN_PORT` | Puerto publicado de phpMyAdmin | `8095` |
+| `SPRING_PROFILES_ACTIVE` | Perfil de Spring Boot | `dev` |
+| `JWT_SECRET_KEY` | Clave de firma de los tokens | `CAMBIAR_SECRETO_JWT_DE_AL_MENOS_32_CARACTERES` |
+| `JWT_EXPIRATION_MS` | Vigencia del token de acceso | `86400000` (24 h) |
+| `JWT_REFRESH_EXPIRATION_MS` | Vigencia del token de refresco | `604800000` (7 días) |
+| `CORS_ALLOWED_ORIGINS` | Orígenes permitidos | `http://localhost:3010,...` |
+| `ASSISTANT_MODE` | Modo del asistente (`local` o GPT) | `local` |
+| `OPENAI_API_KEY` | Clave opcional de OpenAI | vacío |
+| `OPENAI_MODEL` | Modelo opcional de OpenAI | `gpt-4o-mini` |
+| `ASSISTANT_MAX_TOKENS` | Límite de respuesta del asistente | `800` |
+| `ASSISTANT_TEMPERATURE` | Creatividad del asistente | `0.2` |
 
-> Estas cuentas son de demostración. En producción deben cambiarse por credenciales
-> que cumplan la política de contraseñas (8+ caracteres, mayúscula, minúscula, número y símbolo).
+Para generar una clave JWT segura:
 
-Consulte la carpeta `/docs` para ver el detalle de arquitectura, directrices funcionales y hoja de ruta.
+```bash
+openssl rand -base64 48
+```
 
-### Migraciones, respaldos y CI
-
-- **Flyway:** las migraciones viven en `backend/src/main/resources/db/migration`.
-  `V1__baseline.sql` representa el esquema actual. Las bases existentes se marcan
-  como versión 1 y las bases nuevas se crean desde cero. Los cambios futuros se
-  agregan como `V2__descripcion.sql`, `V3__...`, etc.
-- **Requisito MySQL:** con binlog activo, la creación de triggers/funciones requiere
-  `log-bin-trust-function-creators=1` (ya configurado en `docker-compose.yml`). En
-  producción debe aplicarlo el DBA o ejecutar la migración con un usuario privilegiado.
-- **Respaldo:** `.\scripts\backup-db.ps1` genera un `.sql.gz` en `backups/` con
-  retención de 14 días.
-- **Restauración:** `.\scripts\restore-db.ps1 -File backups\gestoracad_AAAAMMDD_HHmmss.sql.gz`
-  pide confirmación; usar `-Force` para automatización.
-- **CI:** `.github/workflows/ci.yml` ejecuta `mvn verify` en backend y
-  `npm ci`, lint, pruebas y build en frontend para cada push o pull request.
-- **Sistema de diseño:** tokens, componentes, responsive y accesibilidad en
-  `frontend/src/index.css`.
+También se admiten `LOGIN_MAX_ATTEMPTS` y `LOGIN_WINDOW_SECONDS` para ajustar el límite de intentos por IP.
 
 ---
 
-## Mejoras Transversales (v1.1)
+## Base de datos
 
-Pasada de endurecimiento y pulido previa a la Fase 7, aplicada en todo el proyecto:
+MySQL 8 se inicializa automáticamente al crear el volumen por primera vez. Los scripts están montados en `docker-entrypoint-initdb.d` y se ejecutan en orden:
 
-### Experiencia de usuario (frontend)
-- **Tema claro/oscuro conmutable** (`ThemeContext` + `ThemeToggle`) con detección de preferencia del sistema y persistencia en `localStorage`; todo el sistema de diseño usa tokens CSS que se adaptan dinámicamente.
-- **Notificaciones tipo toast** (`ToastContext`) con variantes éxito/error/info/advertencia y autocierre; reemplazan a los `alert()` nativos.
-- **Diálogos de confirmación** (`ConfirmContext`, `useConfirm`) con promesa, teclado (Escape) y cierre por clic en el fondo; reemplazan a `window.confirm`.
-- **ErrorBoundary global** que captura errores de render y ofrece volver al panel, evitando pantallas en blanco.
-- **Carga diferida de rutas** (`React.lazy` + `Suspense`) que reduce el bundle inicial (~530 kB → ~334 kB).
+| Script | Contenido |
+| :--- | :--- |
+| `init.sql` | Creación de la base y control de versión del esquema. |
+| `02_security_users_roles_audit.sql` | Usuarios, roles, permisos y auditoría. |
+| `03_auth_permissions.sql` | Modelo de permisos y bloqueo de cuentas. |
+| `04_university_module.sql` | Universidad, sedes, autoridades y parámetros. |
+| `05_teacher_module.sql` | Docentes, especialidades y asignaciones lectivas. |
+| `06_student_module.sql` | Estudiantes e historial de admisión. |
+| `07_db_functions_normalization.sql` | Funciones, procedimientos, vistas e índices. |
+| `08_normalizacion_duplicaciones.sql` | Normalización de datos duplicados y derivados. |
+| `09_catalogo_academico_permisos.sql` | Permisos del catálogo académico. |
+| `10_estructura_academica.sql` | Periodos académicos y cursos. |
+| `11_estructura_academica_72.sql` | Planes de estudio, secciones y matrícula. |
+| `12_estructura_academica_73.sql` | Prerrequisitos y horarios. |
+| `13_evaluacion_academica.sql` | Evaluaciones, notas, asistencia y actas. |
+| `14_portales_estudiante_docente.sql` | Vínculo de cuentas y portales académicos. |
+| `15_asistente_conocimiento.sql` | Base de conocimiento del asistente. |
+| `15_fix_conocimiento_utf8.sql` | Corrección de codificación UTF-8 de la base de conocimiento. |
 
-### Seguridad (backend)
-- **Cabeceras HTTP** en todas las respuestas: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security` y `Content-Security-Policy`.
-- **Límite de intentos de login** por IP (ventana deslizante, HTTP 429) además del bloqueo de cuenta existente. Configurable con `LOGIN_MAX_ATTEMPTS` y `LOGIN_WINDOW_SECONDS`.
-- Deshabilitado el doble registro de filtros (contenedor servlet + cadena de seguridad).
+### Integridad y normalización
 
-### Documentación y API
-- **OpenAPI/Swagger** enriquecido con versión, descripción y tags por dominio en [http://localhost:8094/swagger-ui.html](http://localhost:8094/swagger-ui.html).
-- Detalle técnico en el código del backend y en la configuración de seguridad.
+- Esquema en tercera forma normal con claves foráneas y restricciones `CHECK`.
+- Catálogos de facultades y carreras normalizados, sin duplicación de nombres.
+- Funciones y procedimientos almacenados para validaciones y cálculos.
+- Vistas de consulta para reportes y verificaciones de integridad.
+- Triggers que impiden modificar o eliminar registros de auditoría.
 
-### Pruebas y calidad (v3.7)
-- **178 pruebas backend** (JUnit 5, Mockito, MockMvc, `@DataJpaTest` y ArchUnit) y **90 pruebas frontend** (Vitest + jsdom).
-- **JaCoCo** con umbral obligatorio del 55 % de líneas: `mvn verify` falla si la cobertura baja. Cobertura actual: **61,0 %**. Reporte en `backend/target/site/jacoco/index.html`.
-- **ArchUnit** verifica en cada build la dirección de dependencias entre controlador, servicio, DAO y entidades.
+### Flyway
 
-### Seguridad reforzada (v3.5)
-- **Refresh token con rotación y revocación**: `POST /api/v1/auth/refresh` emite un nuevo par de tokens e invalida el anterior (`jti`). El logout revoca el token de refresco.
-- **Separación de tokens**: el filtro JWT solo acepta tokens con `tipo=access`; un refresh token no sirve como token de acceso.
-- **Política de contraseñas**: mínimo 8 caracteres con mayúscula, minúscula, número y símbolo, y bloqueo de claves comunes (`@ContrasenaSegura`).
-- **Actuator endurecido**: `/actuator/health` ya no expone `db`, `ssl` ni `diskSpace` sin autenticación.
-- **Secretos fuera del repositorio**: `.env` está en `.gitignore`; `.env.example` usa placeholders `CAMBIAR_*`.
-- **Perfil `prod`**: `ddl-auto: validate`, Swagger deshabilitado, CORS sin comodines y validación de secretos al arrancar (`ValidacionConfiguracionProductiva`).
-- **Sesión en el navegador**: `sessionStorage` por defecto; `localStorage` solo si se marca "Mantener sesión activa".
+Las migraciones de referencia están en `backend/src/main/resources/db/migration`. `V1__baseline.sql` representa el esquema actual; los cambios posteriores se agregan como `V2__descripcion.sql`, `V3__...`, etc.
 
-### Módulos y responsive (v1.2)
-- **Módulos retirados** del menú y las rutas por no corresponder a la etapa actual del prompt: `Asistente IA & Normativas` (la IA es opcional y de última fase), `Plano Arquitectónico` y `Diagnóstico & Salud` (herramientas TI, no módulos académicos).
-- **Estructura Académica** reemplazada por una vista **“Próximamente”** (se habilita en la Fase 7); se eliminó el CRUD con datos simulados.
-- **Diseño responsive** (móvil / tablet / escritorio): sidebar deslizable con fondo oscurecido en móvil, header adaptativo, tablas con scroll horizontal, rejillas `auto-fit` y modales que se ajustan al ancho de pantalla.
-- **Encabezado de página unificado** (`PageHeader` + `Breadcrumbs`) en todos los módulos, con icono acento, insignias y acciones.
-- **Paginación reutilizable** (`Pagination`) en Usuarios, Auditoría, Docentes y Estudiantes (vistas de tabla).
-- **Estado vacío unificado** (`EmptyState`) en Auditoría y actividad del Panel.
-- **Mensajería unificada con toasts**: Universidad, Docentes, Estudiantes, Roles y Auditoría usan notificaciones toast en lugar de banners/`console`; se añadió confirmación al deshabilitar usuarios.
-- **Dashboard con estadísticas lineales interactivas**: `LineChart` (SVG con tooltip al pasar el cursor, navegación por teclado y tabla equivalente) para **Actividad de Auditoría**, **Matrícula por Ciclo**, **Docentes por Categoría** y **Docentes por Facultad**, con selector **Línea/Barras** por tarjeta y vista lineal por defecto; se retiró la tarjeta "Actividad Reciente". Cards con padding fluido y rejillas responsive corregidas.
-- **Notificaciones reales en el encabezado**: la campana consume `GET /api/v1/notifications`, muestra el número de avisos sin leer, permite marcarlos como leídos, actualizar el listado y navegar con teclado; los avisos son agregados, se filtran por permisos y no contienen PII.
-- **Bitácora de auditoría legible**: tabla con las columnas **Acción, Usuario, Dispositivo / IP, Detalle y Fecha y hora**, reloj con la hora actual de Lima, búsqueda por usuario/IP/dispositivo/detalle y filtros por acción y resultado. Las fechas se publican en UTC y se convierten a `America/Lima`; el backend resuelve la IP real detrás de Nginx (`X-Forwarded-For`/`X-Real-IP`) y registra el `User-Agent` para identificar el dispositivo.
-- **Panel dinámico de actividad**: `GET /api/v1/audit/summary?dias=7|14|30` agrega totales, tasa de éxito, promedio diario, día pico, variación frente al periodo anterior, serie por día y distribución por acción. El panel permite cambiar el periodo sin recargar, explora las barras con teclado y ofrece una tabla equivalente para lectores de pantalla.
-- **Módulo de roles interactivo en español (v3.7)**: **Roles y permisos** en dos pestañas con búsqueda y ordenamiento de roles, tarjetas con **usuarios asignados**, permisos y módulos, panel lateral de detalle accesible (cierre con `Escape`), duplicado de roles y selector de permisos por módulo con búsqueda y selección masiva. El backend calcula `usuarios` por rol con una consulta agregada y **bloquea la eliminación** de roles con usuarios asignados. Toda la interfaz usa etiquetas en español y deja el código técnico (`ROLE_*`, `MODULO_ACCION`) como referencia secundaria.
-- **Cards dinámicas en el Panel**: "Población por Facultades" con selector de métrica (Matrícula/Docentes/Carreras), ordenamiento y totales; "Calendario Académico" con barra de progreso del semestre y línea de tiempo expandible.
-- **Patrón dinámico extendido**: **Auditoría** con gráfico de tendencia (eventos por día) y filtro segmentado con conteos por acción; **Roles** con tarjetas de resumen (roles/permisos/módulos), filtro segmentado por módulo y paginación del catálogo de permisos.
-- **Evaluación Académica (Fase 8.1)**: módulo `/evaluation` con evaluaciones por sección, planilla de notas, asistencia por fecha, cierre de acta, promedio ponderado y créditos aprobados. Bloquea notas/asistencia tras el cierre y audita cada operación.
-- **Portales académicos (Fase 8.2)**: `/my-progress` para estudiantes (cursos, notas, asistencia y acta) y `/my-sections` para docentes (secciones, estudiantes, evaluaciones y estado de acta), acotados por la cuenta autenticada.
-- **Estructura Académica (Fase 7 completa)**: módulo `/academic` con periodos, cursos, planes, malla curricular, secciones, matrícula, prerrequisitos y horarios estructurados con detección de choques por docente/aula. Incluye calendario, activación del periodo vigente, cupos y créditos máximos, con CRUD auditado y permisos por módulo.
-- **Login rediseñado y auditado (v4.0)**: layout de dos paneles con hero de capacidades reales (sin métricas ficticias), fecha y hora en vivo, formulario con etiquetas accesibles, aviso de Bloq Mayús, mensajes de error claros, modal de recuperación accesible, tema claro/oscuro y sesión no persistente por defecto.
-- **Rediseño de módulos (UI/UX profesional)**: lenguaje visual unificado en **Estudiantes, Docentes, Roles y Auditoría** con componentes reutilizables `Toolbar`, `ViewToggle` y `StatTile`, y estilos de sistema `.toolbar`, `.data-table` (cabecera fija, filas con hover) y `.entity-card`.
-- **Capa de animaciones y transiciones (v1.7)**: micro-interacciones globales en tarjetas (elevación + brillo al pasar el cursor), botones (gloss, elevación y press), pestañas (`.tab`), tablas (filas con entrada escalonada y acento lateral al hover), badges (pop-in) y títulos con degradado, con soporte de `prefers-reduced-motion`.
-- **Rediseño impactante de encabezados (v1.8)**: todos los módulos usan un **hero con degradado** de acento, icono en vidrio, título grande y una **franja de estadísticas** (KPIs) — aplicado a Universidad, Docentes, Estudiantes, Usuarios, Roles y Auditoría.
-- **Módulo Roles funcional (CRUD) (v1.9)**: el backend incorpora `POST/PUT/DELETE /api/v1/roles` con validación, unicidad y auditoría; el frontend permite **crear, editar (asignando permisos por módulo) y eliminar** roles, con permisos `ROL_CREATE/EDIT/DELETE`. Se protegieron los roles base (no eliminables).
-- **Refinamiento de tipografía, botones y tablas (v1.9)**: tablas `data-table` con mejor jerarquía tipográfica, botones y acciones (`link-action`) más definidos y checkboxes con color de acento.
-- **Permisos funcionales (CRUD) (v2.2)**: endpoints `POST/PUT/DELETE /api/v1/roles/permissions` con auditoría; en Roles se pueden **crear/editar/eliminar permisos** (el catálogo se movió a una barra propia con filtro por módulo y acciones por fila).
-- **Header profesional + tarjetas de entidad modernas (v2.2)**: header con acciones agrupadas, selector de rol y **menú de usuario** desplegable (perfil/logout); tarjetas de Docentes/Estudiantes con avatar, info con iconos, **franja de métricas** y **botones de acción**; Usuarios en tarjetas; acciones de tabla como **botones con iconos** (`.action-btn`).
-- **Login profesional (v2.3)**: layout de dos paneles, **“¿Olvidaste tu contraseña?”** con modal de recuperación, sin acceso rápido y **animación de inicio de sesión** (overlay con spinner y check de éxito antes de redirigir).
-- **Gestión de usuarios (v3.2)**: **editar usuario** (datos, rol y **cambio de contraseña**), **avatar/imagen** (subida con recorte a 200px y guardado como data URL) y **sidebar profesional** (secciones, indicador activo y gradiente).
-- **Módulo Universidad + navegación (v3.4)**: **tabs con iconos**, sedes y autoridades como **tarjetas de entidad** (`entity-card-v2`) con métricas y botones, parámetros como **data-table** con acciones; **avatar** en header/menú/perfil (subida propia vía `PUT /api/v1/auth/profile`), nombre de universidad **desde el Módulo Universidad** en el header y **sidebar interactivo** (búsqueda + secciones colapsables).
-- **Catálogo académico en Universidad (v3.9)**: nuevas pestañas **Facultades** (tarjetas con carreras, estudiantes y docentes) y **Carreras** (tabla con filtro por facultad y contador de estudiantes), con modales de alta/edición, borrado lógico protegido por reglas de dependencia y acciones condicionadas por los permisos `FACULTAD_*` y `CARRERA_*`. La reasignación de una carrera propaga la facultad a sus estudiantes.
+### Respaldos
+
+```powershell
+# Genera un respaldo comprimido en backups/
+.\scripts\backup-db.ps1
+
+# Restaura un respaldo (solicita confirmación)
+.\scripts\restore-db.ps1 -File backups\gestoracad_AAAAMMDD_HHmmss.sql.gz
+```
+
+---
+
+## API REST
+
+- **URL base:** `http://localhost:8094/api/v1`
+- **Documentación interactiva:** `http://localhost:8094/swagger-ui.html`
+- **Operaciones documentadas:** 157, distribuidas en 30 controladores.
+
+### Formato de respuesta
+
+Todas las respuestas **JSON** usan una estructura uniforme:
+
+```json
+{
+  "success": true,
+  "message": "Operación completada",
+  "data": {},
+  "timestamp": "2026-11-25T10:30:00"
+}
+```
+
+### Autenticación
+
+1. `POST /api/v1/auth/login` devuelve el token de acceso, el token de refresco y los permisos del usuario.
+2. Las peticiones protegidas incluyen `Authorization: Bearer <token>`.
+3. `POST /api/v1/auth/refresh` renueva la sesión y rota el token de refresco.
+4. `POST /api/v1/auth/logout` revoca la sesión.
+
+### Exportaciones
+
+- `GET /api/v1/reports/students`: padrón de estudiantes en CSV UTF-8.
+- `GET /api/v1/reports/teachers`: padrón docente en CSV UTF-8.
+- `GET /api/v1/reports/users`: directorio de usuarios en CSV UTF-8.
+- `GET /api/v1/reports/sections/{id}/acta.pdf`: acta de evaluación en PDF.
+
+---
+
+## Seguridad
+
+- Contraseñas cifradas con BCrypt y política de complejidad mínima.
+- JWT firmado, sin estado, con separación entre token de acceso y de refresco.
+- Rotación y revocación del token de refresco; el logout invalida la sesión.
+- Autorización por permisos en cada operación del backend.
+- Bloqueo de cuenta tras 5 intentos fallidos durante 15 minutos.
+- Límite de intentos de login por IP con respuesta HTTP 429.
+- Cabeceras de seguridad: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security` y `Content-Security-Policy`.
+- CORS restringido a orígenes configurados.
+- Actuator endurecido y perfil de producción con validación de secretos.
+- Credenciales y secretos fuera del repositorio mediante `.env`.
+- Auditoría inmutable de operaciones sensibles.
+
+---
+
+## Calidad y pruebas
+
+| Ámbito | Herramientas | Resultado |
+| :--- | :--- | :--- |
+| Backend | JUnit 5, Mockito, MockMvc, `@DataJpaTest`, ArchUnit | 204 pruebas, 0 fallos |
+| Frontend | Vitest 5, jsdom, oxlint | 104 pruebas, 0 fallos |
+| Cobertura | JaCoCo, umbral obligatorio del 55 % | 59,9 % de líneas |
+| Accesibilidad | axe-core | 0 violaciones en vistas principales, modales y móvil |
+| Integración continua | GitHub Actions | Java 21 y Node 24 en cada push o pull request a `main` y `develop` |
+
+### Ejecutar las pruebas
+
+```powershell
+# Backend (Windows)
+cd backend
+.\mvnw.cmd verify
+
+# Backend (Linux/macOS)
+./mvnw verify
+
+# Frontend
+cd frontend
+npm ci
+npm run lint
+npm test
+npm run build
+```
+
+El pipeline de integración continua ejecuta `mvn verify` en el backend y `npm ci`, lint, pruebas y build en el frontend. Cada cambio debe mantener las pruebas en verde y la cobertura por encima del umbral configurado.
+
+
+## Consideraciones
+
+- Las cuentas de demostración deben cambiarse antes de usar el sistema en un entorno real.
+- El asistente funciona en modo local por defecto. La integración con OpenAI es opcional y requiere `OPENAI_API_KEY`.
+- Docker Compose está pensado para desarrollo y demostración. Un despliegue productivo requiere TLS, gestión externa de secretos, monitoreo y una política de respaldos.
+- Los datos de MySQL persisten en el volumen `mysql_data`. El comando `docker compose down -v` elimina ese volumen y todos los datos.
+- Los puertos por defecto de Docker Compose son configurables para evitar conflictos con otros servicios del equipo.
+
+---
