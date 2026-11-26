@@ -24,6 +24,9 @@ visual-audit/
 backups/
 *.sql.gz
 
+# Documentación local (no se publica en el repositorio)
+docs/
+
 # Entornos de desarrollo
 .idea/
 .vscode/

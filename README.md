@@ -53,29 +53,12 @@ Plataforma académica modular y escalable para la gestión universitaria integra
 │   ├── Dockerfile.backend   # Imagen Alpine JRE 21 con usuario sin privilegios
 │   ├── Dockerfile.frontend  # Imagen Alpine Nginx con soporte SPA y proxy reverso
 │   └── nginx.conf           # Configuración Nginx para frontend
-├── docs/               # Documentación técnica del proyecto
-│   ├── 01_arquitectura_del_sistema.md
-│   ├── 02_roadmap_y_fases.md
-│   ├── 03_analisis_funcional_academico.md
-│   ├── 04_seguridad_y_auditoria.md
-│   ├── 05_guia_de_ejecucion_y_despliegue.md
-│   ├── 06_modulo_universidad.md
-│   ├── 07_modulo_docente.md
-│   ├── 08_modulo_estudiante.md
-│   ├── 09_mejoras_transversales.md
-│   ├── 10_cumplimiento_arquitectura.md
-│   ├── 11_auditoria_base_datos.md
-│   ├── 12_auditoria_bd_duplicaciones.md
-│   ├── 13_auditoria_general_modulos.md
-│   ├── 14_modulo_estructura_academica.md
-│   ├── 15_plan_cierre_proyecto.md
-│   ├── 16_auditoria_cierre_proyecto.md
-│   ├── 17_modulo_evaluacion.md
-│   └── 18_portales_estudiante_docente.md
 ├── docker-compose.yml  # Orquestación de MySQL, phpMyAdmin, Backend y Frontend
 ├── .env.example        # Plantilla de variables de entorno
 └── .env                # Variables de entorno locales
 ```
+
+> La documentación técnica (`docs/`) no se incluye en este repositorio.
 
 ---
 
@@ -122,7 +105,7 @@ La **Fase 7 (Estructura Académica)** está completa y la **Fase 8 (Evaluación 
 - **Objetos programables:** 8 funciones, 8 procedimientos, 2 triggers (inmutabilidad de auditoría) y 8 vistas de consulta.
 - **Integridad:** 14 claves foráneas, 21 CHECK, `horas_totales` calculado como `horas_teoricas + horas_practicas` y bitácora inmutable ante `UPDATE`/`DELETE`.
 - **Calidad:** `vw_integridad_datos` con 11 controles, todos en `OK`; índice de redundancias `sys` en 0.
-- **Evidencia y operación:** `database/07_db_functions_normalization.sql`, `database/08_normalizacion_duplicaciones.sql` y `database/09_catalogo_academico_permisos.sql` (idempotentes); detalle en `docs/11_auditoria_base_datos.md` y `docs/12_auditoria_bd_duplicaciones.md`.
+- **Evidencia y operación:** `database/07_db_functions_normalization.sql`, `database/08_normalizacion_duplicaciones.sql` y `database/09_catalogo_academico_permisos.sql` (idempotentes).
 
 ### Cuentas Semilla de Prueba
 
@@ -152,8 +135,8 @@ Consulte la carpeta `/docs` para ver el detalle de arquitectura, directrices fun
   pide confirmación; usar `-Force` para automatización.
 - **CI:** `.github/workflows/ci.yml` ejecuta `mvn verify` en backend y
   `npm ci`, lint, pruebas y build en frontend para cada push o pull request.
-- **Sistema de diseño:** ver `docs/26_sistema_diseno.md` (tokens, componentes,
-  responsive y checklist de accesibilidad).
+- **Sistema de diseño:** tokens, componentes, responsive y accesibilidad en
+  `frontend/src/index.css`.
 
 ---
 
@@ -175,7 +158,7 @@ Pasada de endurecimiento y pulido previa a la Fase 7, aplicada en todo el proyec
 
 ### Documentación y API
 - **OpenAPI/Swagger** enriquecido con versión, descripción y tags por dominio en [http://localhost:8094/swagger-ui.html](http://localhost:8094/swagger-ui.html).
-- Detalle técnico en `docs/09_mejoras_transversales.md` y matriz de cumplimiento en `docs/10_cumplimiento_arquitectura.md`.
+- Detalle técnico en el código del backend y en la configuración de seguridad.
 
 ### Pruebas y calidad (v3.7)
 - **178 pruebas backend** (JUnit 5, Mockito, MockMvc, `@DataJpaTest` y ArchUnit) y **90 pruebas frontend** (Vitest + jsdom).
