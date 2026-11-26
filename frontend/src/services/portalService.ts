@@ -109,6 +109,28 @@ export interface TeacherSectionDetailDto {
   students: { id: number; code: string; name: string }[];
 }
 
+export interface ActaPreviewStudentDto {
+  studentId: number;
+  studentCode: string;
+  studentName: string;
+  average: number | null;
+  approved: boolean | null;
+  credits: number;
+  gradedCount: number;
+}
+
+export interface ActaPreviewDto {
+  sectionId: number;
+  periodCode: string;
+  courseCode: string;
+  courseName: string;
+  sectionCode: string;
+  minimumGrade: number;
+  totalWeight: number;
+  complete: boolean;
+  students: ActaPreviewStudentDto[];
+}
+
 export const portalService = {
   async getStudentSummary(): Promise<ApiResponse<StudentPortalDto>> {
     const response = await api.get<ApiResponse<StudentPortalDto>>('/v1/portal/student/summary');
@@ -134,6 +156,13 @@ export const portalService = {
 
   async getTeacherSection(id: number): Promise<ApiResponse<TeacherSectionDetailDto>> {
     const response = await api.get<ApiResponse<TeacherSectionDetailDto>>(`/v1/portal/teacher/sections/${id}`);
+    return response.data;
+  },
+
+  async getTeacherActaPreview(sectionId: number): Promise<ApiResponse<ActaPreviewDto>> {
+    const response = await api.get<ApiResponse<ActaPreviewDto>>(
+      `/v1/portal/teacher/sections/${sectionId}/acta/preview`
+    );
     return response.data;
   },
 

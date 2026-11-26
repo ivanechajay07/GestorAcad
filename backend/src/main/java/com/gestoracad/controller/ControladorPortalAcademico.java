@@ -1,5 +1,6 @@
 package com.gestoracad.controller;
 
+import com.gestoracad.dto.DtoActaPreview;
 import com.gestoracad.dto.DtoAsistenciaEstudiante;
 import com.gestoracad.dto.DtoPortalDocente;
 import com.gestoracad.dto.DtoPortalEstudiante;
@@ -76,6 +77,15 @@ public class ControladorPortalAcademico {
     public ResponseEntity<DtoRespuestaApi<DtoPortalDocente>> teacherSummary() {
         return ResponseEntity.ok(DtoRespuestaApi.ok(
                 portalService.getTeacherSummary(), "Resumen del docente obtenido"));
+    }
+
+    @GetMapping("/teacher/sections/{sectionId}/acta/preview")
+    @PreAuthorize("hasRole('DOCENTE')")
+    @Operation(summary = "Vista previa del acta de una sección",
+            description = "Calcula promedios preliminares sin cerrar el acta")
+    public ResponseEntity<DtoRespuestaApi<DtoActaPreview>> teacherActaPreview(@PathVariable Long sectionId) {
+        return ResponseEntity.ok(DtoRespuestaApi.ok(
+                portalService.getTeacherActaPreview(sectionId), "Vista previa del acta obtenida"));
     }
 
     @GetMapping("/student/sections/{sectionId}/constancia.pdf")

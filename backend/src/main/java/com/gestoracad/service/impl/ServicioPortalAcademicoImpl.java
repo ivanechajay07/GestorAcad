@@ -1,5 +1,6 @@
 package com.gestoracad.service.impl;
 
+import com.gestoracad.dto.DtoActaPreview;
 import com.gestoracad.dto.DtoPortalDocente;
 import com.gestoracad.dto.DtoPortalEstudiante;
 import com.gestoracad.dto.DtoAsistenciaEstudiante;
@@ -38,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,6 +58,8 @@ public class ServicioPortalAcademicoImpl implements ServicioPortalAcademico {
 
     private static final String PARAM_MIN_GRADE = "NOTA_MINIMA_APROBATORIA";
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
+    private static final BigDecimal HUNDRED = new BigDecimal("100");
+    private static final BigDecimal TWENTY = new BigDecimal("20");
 
     private final RepositorioUsuario userRepository;
     private final RepositorioEstudiante studentRepository;
@@ -235,6 +239,84 @@ public class ServicioPortalAcademicoImpl implements ServicioPortalAcademico {
             }
         }
         return course;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DtoActaPreview getTeacherActaPreview(Long sectionId) {
+        Usuario user = currentUser();
+        Docente teacher = teacherRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ExcepcionRecursoNoEncontrado(
+                        "Ficha de docente", "usuario", user.getUsername()));
+        Seccion section = sectionRepository.findByTeacherIdDetailed(teacher.getId())
+                .stream()
+                .filter(item -> item.getId().equals(sectionId))
+                .findFirst()
+                .orElseThrow(() -> new ExcepcionRecursoNoEncontrado("Sección", "id", sectionId));
+
+        List<Evaluacion> evaluations = evaluationRepository
+                .findBySectionIdAndActiveTrueOrderByDateAscIdAsc(sectionId);
+        Map<Long, Map<Long, BigDecimal>> scoresByStudent = new HashMap<>();
+        for (Calificacion grade : gradeRepository.findActiveBySectionId(sectionId)) {
+            scoresByStudent
+                    .computeIfAbsent(grade.getStudent().getId(), key -> new HashMap<>())
+                    .put(grade.getEvaluation().getId(), grade.getScore());
+        }
+
+        BigDecimal totalWeight = evaluations.stream()
+                .map(Evaluacion::getWeight)
+                .filter(weight -> weight != null && weight.compareTo(BigDecimal.ZERO) > 0)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal minimum = minimumGrade();
+
+        DtoActaPreview preview = new DtoActaPreview();
+        preview.setSectionId(section.getId());
+        preview.setPeriodCode(section.getPeriod().getCode());
+        preview.setCourseCode(section.getCourse().getCode());
+        preview.setCourseName(section.getCourse().getName());
+        preview.setSectionCode(section.getCode());
+        preview.setMinimumGrade(minimum);
+        preview.setTotalWeight(totalWeight);
+        preview.setComplete(totalWeight.compareTo(HUNDRED) == 0);
+
+        for (Matricula enrollment : enrollmentRepository.findActiveBySectionId(sectionId)) {
+            Estudiante student = enrollment.getStudent();
+            Map<Long, BigDecimal> studentScores = scoresByStudent.getOrDefault(student.getId(), Map.of());
+            BigDecimal weighted = BigDecimal.ZERO;
+            int graded = 0;
+
+            for (Evaluacion evaluation : evaluations) {
+                BigDecimal score = studentScores.get(evaluation.getId());
+                if (score == null || evaluation.getMaxScore() == null
+                        || evaluation.getMaxScore().compareTo(BigDecimal.ZERO) <= 0
+                        || evaluation.getWeight() == null
+                        || evaluation.getWeight().compareTo(BigDecimal.ZERO) <= 0) {
+                    continue;
+                }
+                BigDecimal normalized = score.divide(evaluation.getMaxScore(), 4, RoundingMode.HALF_UP)
+                        .multiply(TWENTY);
+                weighted = weighted.add(normalized
+                        .multiply(evaluation.getWeight())
+                        .divide(HUNDRED, 4, RoundingMode.HALF_UP));
+                graded++;
+            }
+
+            BigDecimal average = totalWeight.compareTo(BigDecimal.ZERO) > 0
+                    ? weighted.divide(totalWeight.divide(HUNDRED, 4, RoundingMode.HALF_UP), 2, RoundingMode.HALF_UP)
+                    : null;
+
+            DtoActaPreview.Student item = new DtoActaPreview.Student();
+            item.setStudentId(student.getId());
+            item.setStudentCode(student.getCode());
+            item.setStudentName(((student.getFirstName() == null ? "" : student.getFirstName()) + " "
+                    + (student.getLastName() == null ? "" : student.getLastName())).trim());
+            item.setAverage(average);
+            item.setApproved(average == null ? null : average.compareTo(minimum) >= 0);
+            item.setCredits(section.getCourse().getCredits());
+            item.setGradedCount(graded);
+            preview.getStudents().add(item);
+        }
+        return preview;
     }
 
     @Override

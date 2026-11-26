@@ -12,11 +12,12 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { useToast } from '../contexts/ToastContext';
 import { portalService } from '../services/portalService';
 import { reportService } from '../services/reportService';
-import type { TeacherSectionDetailDto } from '../services/portalService';
 import { academicInputStyle } from '../components/academic/AcademicUi';
+import { ArrowLeft, CheckCircle2, ClipboardList, Download, Pencil, Search, UserCheck } from 'lucide-react';
+import type { ActaPreviewDto, TeacherSectionDetailDto } from '../services/portalService';
 import type { ActaDto, AttendanceDto, EvaluationDto, GradeDto } from '../services/evaluationService';
+import { downloadCsv } from '../utils/csv';
 import { attendanceSummary, evaluationWeight, gradesSummary } from '../utils/teacherSection';
-import { ArrowLeft, CheckCircle2, ClipboardList, Download, Pencil, UserCheck } from 'lucide-react';
 
 type TabKey = 'grades' | 'attendance' | 'act';
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -26,6 +27,18 @@ const STATUS_LABELS: Record<string, string> = {
   AUSENTE: 'Ausente',
   TARDANZA: 'Tardanza',
   JUSTIFICADO: 'Justificado',
+};
+
+const normalizeText = (value: string): string =>
+  value
+    .toLocaleLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+const matchesStudentQuery = (name: string | undefined, code: string | undefined, query: string): boolean => {
+  const term = normalizeText(query.trim());
+  if (!term) return true;
+  return normalizeText(`${name ?? ''} ${code ?? ''}`).includes(term);
 };
 
 export const TeacherSectionPage: React.FC = () => {
@@ -43,6 +56,8 @@ export const TeacherSectionPage: React.FC = () => {
   const [attendance, setAttendance] = useState<AttendanceDto[]>([]);
   const [attendanceDate, setAttendanceDate] = useState(TODAY);
   const [acta, setActa] = useState<ActaDto | null>(null);
+  const [preview, setPreview] = useState<ActaPreviewDto | null>(null);
+  const [studentQuery, setStudentQuery] = useState('');
   const initialTab = searchParams.get('tab');
   const [tab, setTab] = useState<TabKey>(
     initialTab === 'attendance' || initialTab === 'act' ? initialTab : 'grades'
@@ -69,11 +84,12 @@ export const TeacherSectionPage: React.FC = () => {
     if (!sectionId) return;
     setLoading(true);
     try {
-      const [sectionRes, evaluationRes, attendanceRes, actRes] = await Promise.all([
+      const [sectionRes, evaluationRes, attendanceRes, actRes, previewRes] = await Promise.all([
         portalService.getTeacherSection(sectionId),
         portalService.getTeacherEvaluations(sectionId),
         portalService.getTeacherAttendance(sectionId, attendanceDate),
         portalService.getTeacherActa(sectionId),
+        portalService.getTeacherActaPreview(sectionId),
       ]);
       setSection(sectionRes.data);
       setEvaluations(evaluationRes.data);
@@ -84,6 +100,7 @@ export const TeacherSectionPage: React.FC = () => {
       );
       setAttendance(attendanceRes.data);
       setActa(actRes.data);
+      setPreview(previewRes.data);
     } catch {
       toast.error('No se pudo cargar la sección o no tienes acceso');
       navigate('/my-sections', { replace: true });
@@ -95,6 +112,16 @@ export const TeacherSectionPage: React.FC = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadPreview = useCallback(async () => {
+    if (!sectionId) return;
+    try {
+      const response = await portalService.getTeacherActaPreview(sectionId);
+      setPreview(response.data);
+    } catch {
+      // La vista previa es complementaria; no bloquea la gestión de la sección.
+    }
+  }, [sectionId]);
 
   const loadGrades = useCallback(async () => {
     if (!selectedEvaluationId) {
@@ -124,6 +151,49 @@ export const TeacherSectionPage: React.FC = () => {
     setAttendance((items) => items.map((item) => ({ ...item, status })));
   };
 
+  const filteredGrades = useMemo(
+    () => grades.filter((grade) => matchesStudentQuery(grade.studentName, grade.studentCode, studentQuery)),
+    [grades, studentQuery]
+  );
+
+  const filteredAttendance = useMemo(
+    () => attendance.filter((record) => matchesStudentQuery(record.studentName, record.studentCode, studentQuery)),
+    [attendance, studentQuery]
+  );
+
+  const exportGradesCsv = () => {
+    if (filteredGrades.length === 0) return;
+    downloadCsv(
+      `notas_${section?.courseCode ?? 'seccion'}-${section?.sectionCode ?? ''}.csv`,
+      [
+        ['Código', 'Estudiante', 'Nota', 'Observación'],
+        ...filteredGrades.map((grade) => [
+          grade.studentCode ?? '',
+          grade.studentName ?? '',
+          grade.score ?? '',
+          grade.observation ?? '',
+        ]),
+      ]
+    );
+    toast.success('Notas exportadas en CSV.');
+  };
+
+  const exportAttendanceCsv = () => {
+    if (filteredAttendance.length === 0) return;
+    downloadCsv(
+      `asistencia_${section?.courseCode ?? 'seccion'}-${section?.sectionCode ?? ''}_${attendanceDate}.csv`,
+      [
+        ['Código', 'Estudiante', 'Estado'],
+        ...filteredAttendance.map((record) => [
+          record.studentCode ?? '',
+          record.studentName ?? '',
+          STATUS_LABELS[record.status] ?? record.status,
+        ]),
+      ]
+    );
+    toast.success('Asistencia exportada en CSV.');
+  };
+
   const saveGrades = async () => {
     if (!selectedEvaluationId) return;
     setSaving(true);
@@ -131,6 +201,7 @@ export const TeacherSectionPage: React.FC = () => {
       await portalService.saveTeacherGrades(selectedEvaluationId, grades);
       toast.success('Notas guardadas correctamente.');
       await loadGrades();
+      await loadPreview();
     } catch {
       toast.error('No se pudieron guardar las notas');
     } finally {
@@ -163,6 +234,7 @@ export const TeacherSectionPage: React.FC = () => {
     try {
       const response = await portalService.closeTeacherActa(sectionId);
       setActa(response.data);
+      await loadPreview();
       toast.success('Acta cerrada correctamente.');
     } catch {
       toast.error('No se pudo cerrar el acta. Verifica que los pesos sumen 100%.');
@@ -275,12 +347,41 @@ export const TeacherSectionPage: React.FC = () => {
                   <option value="">— Evaluación —</option>
                   {evaluations.map((evaluation) => <option key={evaluation.id} value={evaluation.id}>{evaluation.name} ({evaluation.weight}%)</option>)}
                 </Select>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  leftIcon={<Download size={14} />}
+                  onClick={exportGradesCsv}
+                  disabled={filteredGrades.length === 0}
+                >
+                  CSV
+                </Button>
                 {selectedEvaluation && !closed && (
                   <Button size="sm" onClick={saveGrades} isLoading={saving}>Guardar notas</Button>
                 )}
               </>
             }
           />
+
+          {grades.length > 0 && (
+            <div className="section-toolbar">
+              <div className="search-box">
+                <Search size={15} color="var(--text-muted)" aria-hidden="true" />
+                <input
+                  type="search"
+                  value={studentQuery}
+                  onChange={(event) => setStudentQuery(event.target.value)}
+                  placeholder="Buscar estudiante por nombre o código..."
+                  aria-label="Buscar estudiante en las notas"
+                />
+              </div>
+              {studentQuery && (
+                <Button size="sm" variant="ghost" onClick={() => setStudentQuery('')}>
+                  Limpiar
+                </Button>
+              )}
+            </div>
+          )}
 
           {selectedEvaluation && (
             <div className="section-summary-grid">
@@ -318,7 +419,7 @@ export const TeacherSectionPage: React.FC = () => {
               </colgroup>
               <thead><tr><th>Código</th><th>Estudiante</th><th>Nota (0–{selectedEvaluation?.maxScore ?? 20})</th><th>Observación</th></tr></thead>
               <tbody>
-                {grades.map((grade) => (
+                {filteredGrades.map((grade) => (
                   <tr key={grade.studentId}>
                     <td className="cell-mono">{grade.studentCode}</td>
                     <td>{grade.studentName}</td>
@@ -338,13 +439,18 @@ export const TeacherSectionPage: React.FC = () => {
                     </td>
                   </tr>
                 ))}
-                {grades.length === 0 && <tr>
+                {filteredGrades.length === 0 && <tr>
                   <td colSpan={4}>
                     <EmptyState
                       compact
                       icon={<Pencil size={22} />}
-                      title="Sin notas para mostrar"
-                      description="Selecciona una evaluación y verifica que la sección tenga estudiantes matriculados."
+                      title={grades.length === 0 ? 'Sin notas para mostrar' : 'Sin coincidencias'}
+                      description={grades.length === 0
+                        ? 'Selecciona una evaluación y verifica que la sección tenga estudiantes matriculados.'
+                        : 'Prueba con otro nombre o código de estudiante.'}
+                      action={grades.length > 0 ? (
+                        <Button size="sm" variant="ghost" onClick={() => setStudentQuery('')}>Limpiar búsqueda</Button>
+                      ) : undefined}
                     />
                   </td>
                 </tr>}
@@ -371,10 +477,39 @@ export const TeacherSectionPage: React.FC = () => {
             aside={
               <>
                 <DatePicker style={{ ...academicInputStyle, width: 'auto' }} ariaLabel="Fecha de asistencia" value={attendanceDate} onChange={setAttendanceDate} />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  leftIcon={<Download size={14} />}
+                  onClick={exportAttendanceCsv}
+                  disabled={filteredAttendance.length === 0}
+                >
+                  CSV
+                </Button>
                 {!closed && <Button size="sm" onClick={saveAttendance} isLoading={saving}>Guardar asistencia</Button>}
               </>
             }
           />
+
+          {attendance.length > 0 && (
+            <div className="section-toolbar">
+              <div className="search-box">
+                <Search size={15} color="var(--text-muted)" aria-hidden="true" />
+                <input
+                  type="search"
+                  value={studentQuery}
+                  onChange={(event) => setStudentQuery(event.target.value)}
+                  placeholder="Buscar estudiante por nombre o código..."
+                  aria-label="Buscar estudiante en la asistencia"
+                />
+              </div>
+              {studentQuery && (
+                <Button size="sm" variant="ghost" onClick={() => setStudentQuery('')}>
+                  Limpiar
+                </Button>
+              )}
+            </div>
+          )}
 
           {attendance.length > 0 && (
             <>
@@ -430,7 +565,7 @@ export const TeacherSectionPage: React.FC = () => {
               </colgroup>
               <thead><tr><th>Código</th><th>Estudiante</th><th>Estado</th></tr></thead>
               <tbody>
-                {attendance.map((record) => (
+                {filteredAttendance.map((record) => (
                   <tr key={record.studentId}>
                     <td className="cell-mono">{record.studentCode}</td>
                     <td>{record.studentName}</td>
@@ -447,13 +582,18 @@ export const TeacherSectionPage: React.FC = () => {
                     </td>
                   </tr>
                 ))}
-                {attendance.length === 0 && <tr>
+                {filteredAttendance.length === 0 && <tr>
                   <td colSpan={3}>
                     <EmptyState
                       compact
                       icon={<UserCheck size={22} />}
-                      title="Sin estudiantes matriculados"
-                      description="La sección todavía no tiene estudiantes para registrar asistencia."
+                      title={attendance.length === 0 ? 'Sin estudiantes matriculados' : 'Sin coincidencias'}
+                      description={attendance.length === 0
+                        ? 'La sección todavía no tiene estudiantes para registrar asistencia.'
+                        : 'Prueba con otro nombre o código de estudiante.'}
+                      action={attendance.length > 0 ? (
+                        <Button size="sm" variant="ghost" onClick={() => setStudentQuery('')}>Limpiar búsqueda</Button>
+                      ) : undefined}
                     />
                   </td>
                 </tr>}
@@ -539,43 +679,94 @@ export const TeacherSectionPage: React.FC = () => {
             </p>
           )}
 
-          <div className="data-table-wrap">
-            <table className="data-table data-table--stack">
-              <colgroup>
-              <col style={{ width: '13%' }} />
-              <col style={{ width: '32%' }} />
-              <col style={{ width: '15%' }} />
-              <col style={{ width: '25%' }} />
-              <col style={{ width: '15%' }} />
-              </colgroup>
-              <thead><tr><th>Código</th><th>Estudiante</th><th>Promedio</th><th>Estado</th><th>Créditos</th></tr></thead>
-              <tbody>
-                {(acta?.details ?? []).map((detail) => (
-                  <tr key={detail.studentId}>
-                    <td className="cell-mono">{detail.studentCode}</td>
-                    <td>{detail.studentName}</td>
-                    <td>{detail.average}</td>
-                    <td><Badge variant={detail.approved ? 'success' : 'danger'} size="sm">{detail.approved ? 'Aprobado' : 'Desaprobado'}</Badge></td>
-                    <td>{detail.credits}</td>
-                  </tr>
-                ))}
-                {(acta?.details ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={5}>
-                      <EmptyState
-                        compact
-                        icon={<ClipboardList size={22} />}
-                        title={closed ? 'Sin detalles del acta' : 'El acta aún no ha sido cerrada'}
-                        description={closed
-                          ? 'No hay promedios registrados en el acta.'
-                          : 'Al cerrar el acta se calcularán los promedios y los créditos aprobados.'}
-                      />
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {!closed && preview && preview.complete && preview.students.length > 0 && (
+            <p className="section-callout is-info">
+              Vista previa: el acta está lista para cerrarse. Los promedios se consolidarán al confirmar el cierre.
+            </p>
+          )}
+
+          {closed ? (
+            <div className="data-table-wrap">
+              <table className="data-table data-table--stack">
+                <colgroup>
+                <col style={{ width: '13%' }} />
+                <col style={{ width: '32%' }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '25%' }} />
+                <col style={{ width: '15%' }} />
+                </colgroup>
+                <thead><tr><th>Código</th><th>Estudiante</th><th>Promedio</th><th>Estado</th><th>Créditos</th></tr></thead>
+                <tbody>
+                  {(acta?.details ?? []).map((detail) => (
+                    <tr key={detail.studentId}>
+                      <td className="cell-mono">{detail.studentCode}</td>
+                      <td>{detail.studentName}</td>
+                      <td>{detail.average}</td>
+                      <td><Badge variant={detail.approved ? 'success' : 'danger'} size="sm">{detail.approved ? 'Aprobado' : 'Desaprobado'}</Badge></td>
+                      <td>{detail.credits}</td>
+                    </tr>
+                  ))}
+                  {(acta?.details ?? []).length === 0 && (
+                    <tr>
+                      <td colSpan={5}>
+                        <EmptyState
+                          compact
+                          icon={<ClipboardList size={22} />}
+                          title="Sin detalles del acta"
+                          description="No hay promedios registrados en el acta."
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="data-table-wrap">
+              <table className="data-table data-table--stack">
+                <colgroup>
+                <col style={{ width: '13%' }} />
+                <col style={{ width: '28%' }} />
+                <col style={{ width: '14%' }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '12%' }} />
+                </colgroup>
+                <thead><tr><th>Código</th><th>Estudiante</th><th>Calificadas</th><th>Promedio</th><th>Estado</th><th>Créditos</th></tr></thead>
+                <tbody>
+                  {(preview?.students ?? []).map((student) => {
+                    const noAverage = student.average == null;
+                    const preliminary = !preview?.complete;
+                    const variant = noAverage ? 'outline' : preliminary ? 'warning' : student.approved ? 'success' : 'danger';
+                    const label = noAverage ? 'Sin notas' : preliminary ? 'Preliminar' : student.approved ? 'Aprobado' : 'Desaprobado';
+
+                    return (
+                      <tr key={student.studentId}>
+                        <td className="cell-mono">{student.studentCode}</td>
+                        <td>{student.studentName}</td>
+                        <td>{student.gradedCount}/{evaluations.length}</td>
+                        <td>{student.average ?? '—'}</td>
+                        <td><Badge variant={variant} size="sm">{label}</Badge></td>
+                        <td>{student.credits}</td>
+                      </tr>
+                    );
+                  })}
+                  {(preview?.students ?? []).length === 0 && (
+                    <tr>
+                      <td colSpan={6}>
+                        <EmptyState
+                          compact
+                          icon={<ClipboardList size={22} />}
+                          title="Vista previa no disponible"
+                          description="Agrega estudiantes y evaluaciones para ver los promedios preliminares."
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
           {closed && acta?.closedAt && (
             <p style={{ margin: '12px 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
               Cerrada el {new Date(acta.closedAt).toLocaleString('es-PE')}.

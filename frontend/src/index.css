@@ -15476,6 +15476,12 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   border-color: color-mix(in srgb, var(--status-up) 30%, transparent);
 }
 
+.section-callout.is-info {
+  color: var(--primary-hover);
+  background: var(--primary-glow);
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
 /* Horario, evaluaciones y malla del estudiante */
 .student-insights-grid {
   display: grid;

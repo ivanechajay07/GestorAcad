@@ -16,7 +16,7 @@ Plataforma web para la **gestión académica universitaria**. Centraliza la estr
 | **Problema** | La información académica suele estar dispersa entre hojas de cálculo y procesos manuales, sin trazabilidad ni control de acceso. |
 | **Solución** | Una plataforma integrada con una API REST, base de datos normalizada y una interfaz web común para estudiantes, docentes y administradores. |
 | **Alcance** | Universidad, facultades y carreras; periodos, cursos, planes, secciones y matrículas; evaluaciones, notas, asistencia y actas; portales de docente y estudiante; usuarios, roles, permisos y auditoría. |
-| **Resultado** | Aplicación funcional, con 339 pruebas automatizadas, integración continua y auditoría de accesibilidad sin hallazgos. |
+| **Resultado** | Aplicación funcional, con 340 pruebas automatizadas, integración continua y auditoría de accesibilidad sin hallazgos. |
 
 > **Estado actual:** el sistema está implementado y operativo de extremo a extremo. Los flujos principales están cubiertos por pruebas automatizadas y el proyecto cuenta con integración continua.
 
@@ -53,11 +53,11 @@ La aplicación aplica el modelo de permisos `MODULO_ACCION` y distingue tres per
 
 | Indicador | Valor |
 | :--- | :--- |
-| Operaciones REST | 160 |
+| Operaciones REST | 161 |
 | Controladores | 30 |
 | Roles base / permisos | 3 / 90 |
-| Pruebas automatizadas | 339 (207 backend + 132 frontend) |
-| Cobertura de líneas del backend | 63,2 % (umbral mínimo: 55 %) |
+| Pruebas automatizadas | 340 (207 backend + 133 frontend) |
+| Cobertura de líneas del backend | 62,2 % (umbral mínimo: 55 %) |
 | Accesibilidad | 0 violaciones detectadas con axe |
 
 > Los valores corresponden al estado actual del repositorio y a la última ejecución local de pruebas y reportes.
@@ -104,7 +104,7 @@ Los puertos son configurables en el archivo `.env` (`FRONTEND_PORT`, `BACKEND_PO
 | Roles y permisos | `/roles` | Roles, permisos por módulo, duplicado y protección de roles base. |
 | Auditoría | `/audit` | Bitácora de operaciones, filtros, métricas y tendencias de actividad. |
 | Asistente académico | `/assistant` | Consultas sobre normativa y procesos, con base de conocimiento administrable. |
-| Portal docente | `/my-sections` | Secciones en tarjetas, resumen de notas y asistencia, filtros, acciones masivas y accesos rápidos. |
+| Portal docente | `/my-sections` | Secciones en tarjetas, vista previa del acta, búsqueda de estudiantes, exportación CSV, filtros y acciones masivas. |
 | Portal estudiante | `/my-progress` | Cursos en tarjetas, promedio, asistencia detallada, alertas, horario semanal, evaluaciones, simulador, malla curricular y reporte PDF. |
 | Perfil | `/profile` | Datos personales, avatar y cambio de contraseña. |
 
@@ -140,7 +140,7 @@ Los puertos son configurables en el archivo `.env` (`FRONTEND_PORT`, `BACKEND_PO
 
 ### Portales de consulta
 
-- **Portal docente:** secciones en tarjetas, filtros por periodo y acta, pendientes de gestión, resumen de notas/asistencia, acciones masivas y validación del peso del acta.
+- **Portal docente:** secciones en tarjetas, filtros por periodo y acta, pendientes de gestión, resumen de notas/asistencia, vista previa del acta, búsqueda de estudiantes, exportación CSV, acciones masivas y validación del peso.
 - **Portal estudiante:** cursos en tarjetas, promedio final o parcial, horario semanal, calendario de evaluaciones, simulador de nota, malla curricular, asistencia detallada, alertas académicas, filtros del historial, evolución y constancia/reporte PDF.
 - Ambos portales se limitan automáticamente a la cuenta autenticada.
 
@@ -468,6 +468,7 @@ Todas las respuestas **JSON** usan una estructura uniforme:
 - `GET /api/v1/portal/student/sections/{id}/constancia.pdf`: constancia de notas del estudiante en PDF.
 - `GET /api/v1/portal/student/report.pdf`: reporte de avance académico y malla curricular en PDF.
 - `GET /api/v1/portal/student/sections/{id}/attendance`: asistencia diaria del estudiante en una sección.
+- `GET /api/v1/portal/teacher/sections/{id}/acta/preview`: vista previa del acta con promedios preliminares.
 
 ---
 
@@ -492,8 +493,8 @@ Todas las respuestas **JSON** usan una estructura uniforme:
 | Ámbito | Herramientas | Resultado |
 | :--- | :--- | :--- |
 | Backend | JUnit 5, Mockito, MockMvc, `@DataJpaTest`, ArchUnit | 207 pruebas, 0 fallos |
-| Frontend | Vitest 5, jsdom, oxlint | 132 pruebas, 0 fallos |
-| Cobertura | JaCoCo, umbral obligatorio del 55 % | 63,2 % de líneas |
+| Frontend | Vitest 5, jsdom, oxlint | 133 pruebas, 0 fallos |
+| Cobertura | JaCoCo, umbral obligatorio del 55 % | 62,2 % de líneas |
 | Accesibilidad | axe-core | 0 violaciones en vistas principales, modales y móvil |
 | Integración continua | GitHub Actions | Java 21 y Node 24 en cada push o pull request a `main` y `develop` |
 
