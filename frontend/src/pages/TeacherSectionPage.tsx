@@ -386,7 +386,7 @@ export const TeacherSectionPage: React.FC = () => {
       setJustifications((items) => items.map((item) =>
         item.id === response.data.id ? response.data : item
       ));
-      if (resolutionStatus === 'APROBADA') {
+      if (resolutionStatus === 'APROBADA' && response.data.date === attendanceDate) {
         setAttendance((items) => items.map((item) =>
           item.studentId === response.data.studentId ? { ...item, status: 'JUSTIFICADO' } : item
         ));
