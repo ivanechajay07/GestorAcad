@@ -37,7 +37,6 @@ Plataforma web para la **gestión académica universitaria**. Centraliza la estr
 - [API REST](#api-rest)
 - [Seguridad](#seguridad)
 - [Calidad y pruebas](#calidad-y-pruebas)
-- [Guion de demostración para el docente](#guion-de-demostración-para-el-docente)
 - [Consideraciones](#consideraciones)
 
 ---
